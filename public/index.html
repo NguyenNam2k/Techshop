@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Techshop - Đăng nhập & Đăng ký</title>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <!-- Background Decorative Orbs -->
+  <div class="bg-orb orb-1"></div>
+  <div class="bg-orb orb-2"></div>
+  <div class="bg-orb orb-3"></div>
+
+  <!-- Main Container -->
+  <div class="app-container">
+    
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- Auth Card (Login / Register) -->
+    <div id="auth-card" class="auth-card">
+      
+      <!-- Brand Header -->
+      <div class="brand-header">
+        <div class="brand-logo">
+          <i class="fa-solid fa-laptop-code"></i>
+        </div>
+        <h1 class="brand-title">Tech<span>shop</span></h1>
+        <p class="brand-tagline">Hệ thống Thiết bị & Công nghệ Hàng đầu</p>
+      </div>
+
+      <!-- Navigation Tabs -->
+      <div class="auth-tabs">
+        <button id="tab-login" class="tab-btn active" onclick="switchTab('login')">
+          <i class="fa-solid fa-right-to-bracket"></i> Đăng Nhập
+        </button>
+        <button id="tab-register" class="tab-btn" onclick="switchTab('register')">
+          <i class="fa-solid fa-user-plus"></i> Đăng Ký
+        </button>
+      </div>
+
+      <!-- FORM 1: LOGIN -->
+      <form id="form-login" class="auth-form active" onsubmit="handleLogin(event)">
+
+        <div class="form-group">
+          <label for="login-account"><i class="fa-regular fa-envelope"></i> Email / Mã tài khoản</label>
+          <div class="input-wrapper">
+            <i class="input-icon fa-regular fa-user"></i>
+            <input type="text" id="login-account" placeholder="Nhập email hoặc mã tài khoản" autocomplete="username">
+          </div>
+          <span class="error-msg" id="err-login-account"></span>
+        </div>
+
+        <div class="form-group">
+          <label for="login-password"><i class="fa-solid fa-lock"></i> Mật khẩu</label>
+          <div class="input-wrapper">
+            <i class="input-icon fa-solid fa-key"></i>
+            <input type="password" id="login-password" placeholder="Nhập mật khẩu" autocomplete="current-password">
+            <i class="toggle-password fa-regular fa-eye-slash" onclick="togglePasswordVisibility('login-password', this)"></i>
+          </div>
+          <span class="error-msg" id="err-login-password"></span>
+        </div>
+
+        <div class="form-options">
+          <label class="remember-me">
+            <input type="checkbox" id="remember-me" checked> Ghi nhớ đăng nhập
+          </label>
+          <a href="#" class="forgot-pass" onclick="showToast('Tính năng quên mật khẩu đang phát triển!', 'info')">Quên mật khẩu?</a>
+        </div>
+
+        <button type="submit" id="btn-login" class="submit-btn">
+          <span>Đăng Nhập</span>
+          <i class="fa-solid fa-arrow-right"></i>
+        </button>
+      </form>
+
+      <!-- FORM 2: REGISTER -->
+      <form id="form-register" class="auth-form" onsubmit="handleRegister(event)">
+        
+        <div class="form-group">
+          <label for="reg-name"><i class="fa-regular fa-id-card"></i> Họ và tên <span class="required">*</span></label>
+          <div class="input-wrapper">
+            <i class="input-icon fa-regular fa-user"></i>
+            <input type="text" id="reg-name" placeholder="Nguyễn Văn A">
+          </div>
+          <span class="error-msg" id="err-reg-name"></span>
+        </div>
+
+        <div class="form-group">
+          <label for="reg-email"><i class="fa-regular fa-envelope"></i> Địa chỉ Email <span class="required">*</span></label>
+          <div class="input-wrapper">
+            <i class="input-icon fa-regular fa-envelope"></i>
+            <input type="email" id="reg-email" placeholder="example@techshop.com">
+          </div>
+          <span class="error-msg" id="err-reg-email"></span>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group col">
+            <label for="reg-phone"><i class="fa-solid fa-phone"></i> Số điện thoại</label>
+            <div class="input-wrapper">
+              <i class="input-icon fa-solid fa-mobile-screen"></i>
+              <input type="text" id="reg-phone" placeholder="0901234567">
+            </div>
+            <span class="error-msg" id="err-reg-phone"></span>
+          </div>
+
+          <div class="form-group col">
+            <label for="reg-address"><i class="fa-solid fa-location-dot"></i> Địa chỉ</label>
+            <div class="input-wrapper">
+              <i class="input-icon fa-solid fa-house"></i>
+              <input type="text" id="reg-address" placeholder="Hà Nội / TP.HCM">
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="reg-password"><i class="fa-solid fa-lock"></i> Mật khẩu <span class="required">*</span></label>
+          <div class="input-wrapper">
+            <i class="input-icon fa-solid fa-key"></i>
+            <input type="password" id="reg-password" placeholder="Tối thiểu 6 ký tự">
+            <i class="toggle-password fa-regular fa-eye-slash" onclick="togglePasswordVisibility('reg-password', this)"></i>
+          </div>
+          <span class="error-msg" id="err-reg-password"></span>
+        </div>
+
+        <div class="form-group">
+          <label for="reg-confirm-password"><i class="fa-solid fa-shield-check"></i> Xác nhận mật khẩu <span class="required">*</span></label>
+          <div class="input-wrapper">
+            <i class="input-icon fa-solid fa-check-double"></i>
+            <input type="password" id="reg-confirm-password" placeholder="Nhập lại mật khẩu">
+            <i class="toggle-password fa-regular fa-eye-slash" onclick="togglePasswordVisibility('reg-confirm-password', this)"></i>
+          </div>
+          <span class="error-msg" id="err-reg-confirm-password"></span>
+        </div>
+
+        <button type="submit" id="btn-register" class="submit-btn accent">
+          <span>Tạo Tài Khoản Khách Hàng</span>
+          <i class="fa-solid fa-user-check"></i>
+        </button>
+      </form>
+
+    </div>
+
+    <!-- DASHBOARD CARD (Appears after authentication) -->
+    <div id="user-dashboard" class="user-dashboard hidden">
+      <div class="dashboard-header">
+        <div class="user-avatar-badge">
+          <i class="fa-solid fa-user-astronaut"></i>
+        </div>
+        <h2>Xin chào, <span id="dash-user-name">User</span>!</h2>
+        <span id="dash-role-badge" class="role-badge">CUSTOMER</span>
+      </div>
+
+      <div class="dashboard-info-grid">
+        <div class="info-card">
+          <i class="fa-regular fa-envelope"></i>
+          <div>
+            <small>Email tài khoản</small>
+            <p id="dash-user-email">email@domain.com</p>
+          </div>
+        </div>
+
+        <div class="info-card">
+          <i class="fa-solid fa-id-badge"></i>
+          <div>
+            <small>ID Người dùng</small>
+            <p id="dash-user-id">#0</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="jwt-box">
+        <div class="jwt-box-header">
+          <span><i class="fa-solid fa-key"></i> JWT Bearer Token</span>
+          <button class="copy-btn" onclick="copyToken()"><i class="fa-regular fa-copy"></i> Sao chép</button>
+        </div>
+        <textarea id="dash-jwt-token" readonly></textarea>
+      </div>
+
+      <div class="dashboard-actions">
+        <button class="action-btn secondary" onclick="verifyCurrentToken()">
+          <i class="fa-solid fa-arrows-rotate"></i> Kiểm tra API (/api/auth/me)
+        </button>
+        <button class="action-btn danger" onclick="handleLogout()">
+          <i class="fa-solid fa-right-from-bracket"></i> Đăng Xuất
+        </button>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="js/main.js"></script>
+</body>
+</html>

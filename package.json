@@ -1,13 +1,31 @@
 {
-  "name": "bleentechgear",
+  "name": "techgear",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "backend/src/app.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "concurrently -n \"BACKEND,FRONTEND\" -c \"blue,green\" \"npm run dev --prefix backend\" \"npm run dev --prefix frontend\"",
+    "dev:backend": "npm run dev --prefix backend",
+    "dev:frontend": "npm run dev --prefix frontend",
+    "backend": "npm run dev --prefix backend",
+    "frontend": "npm run dev --prefix frontend",
+    "db:seed": "node backend/scripts/seed_mock.js",
+    "db:clean": "node backend/scripts/clean_mock.js",
+    "mock:seed": "node backend/scripts/seed_mock.js",
+    "mock:clean": "node backend/scripts/clean_mock.js",
+    "dev:mock": "node backend/scripts/mock_runner.js",
+    "kill:ports": "powershell -NoProfile -Command \"Get-NetTCPConnection -LocalPort 3000,5000,5173 -ErrorAction SilentlyContinue | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue }\""
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "commonjs"
+  "type": "commonjs",
+  "dependencies": {
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "mysql2": "^3.24.4"
+  },
+  "devDependencies": {
+    "concurrently": "^10.0.5"
+  }
 }

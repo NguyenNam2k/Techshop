@@ -1,7 +1,7 @@
-# BleenGear-Tech-Gaming-Store
+# TechGear-Gaming-Store
 A specialized, full-featured e-commerce platform for computer hardware, PC components, and high-performance gaming peripherals. Built with React, Node.js (Express), Python (FastAPI), and MySQL, featuring a cutting-edge Multimodal AI Search Engine (Reverse Image & Semantic Search), real-time hardware configuration, and transactional order management.
 ## 🚀 Project Overview
-BleenGear is a modern e-commerce solution engineered specifically for tech enthusiasts, gamers, and custom PC builders. The platform bridges the gap between visual inspiration and technical specifications by allowing users to search for complex hardware components using real-world setup photos, natural language intent, or hybrid combinations, alongside deep hardware configuration, atomic inventory locking, and instant VietQR banking payments.
+TechGear is a modern e-commerce solution engineered specifically for tech enthusiasts, gamers, and custom PC builders. The platform bridges the gap between visual inspiration and technical specifications by allowing users to search for complex hardware components using real-world setup photos, natural language intent, or hybrid combinations, alongside deep hardware configuration, atomic inventory locking, and instant VietQR banking payments.
 ## ✨ Key Features
 
 ### 🏠 Homepage
@@ -95,7 +95,7 @@ BleenGear is a modern e-commerce solution engineered specifically for tech enthu
 ## 📁 Project Structure
 
 <details open>
-  <summary>📁 <b>bleengear/</b> <i>(Root Monorepo)</i></summary>
+  <summary>📁 <b>techgear/</b> <i>(Root Monorepo)</i></summary>
   <ul>
     <li>
       <details open>

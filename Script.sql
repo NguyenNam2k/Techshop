@@ -34,7 +34,7 @@ CREATE TABLE `customers` (
     `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     `name` VARCHAR(100) NOT NULL,
     `email` VARCHAR(150) NOT NULL UNIQUE,
-    `password_hash` VARCHAR(255) NULL, 
+    `password_hash` VARCHAR(255) NULL,
     `phone` VARCHAR(20) NULL,
     `address` TEXT NULL,
     `avatar_url` VARCHAR(500) NULL,
@@ -64,13 +64,13 @@ CREATE TABLE `admins` (
 
 CREATE TABLE `managers` (
     `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    `manager_code` VARCHAR(20) NOT NULL UNIQUE, 
-    `admin_id` INT UNSIGNED NULL, 
+    `manager_code` VARCHAR(20) NOT NULL UNIQUE,
+    `admin_id` INT UNSIGNED NULL,
     `full_name` VARCHAR(100) NOT NULL,
     `email` VARCHAR(150) NOT NULL UNIQUE,
     `password_hash` VARCHAR(255) NOT NULL,
     `phone` VARCHAR(20) NULL,
-    `branch_name` VARCHAR(100) NOT NULL DEFAULT 'BleenTechGear Flagship Store',
+    `branch_name` VARCHAR(100) NOT NULL DEFAULT 'TechGear Flagship Store',
     `status` ENUM('active', 'inactive') NOT NULL DEFAULT 'active',
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -83,8 +83,8 @@ CREATE TABLE `managers` (
 
 CREATE TABLE `staffs` (
     `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    `staff_code` VARCHAR(20) NOT NULL UNIQUE, 
-    `manager_id` INT UNSIGNED NULL, 
+    `staff_code` VARCHAR(20) NOT NULL UNIQUE,
+    `manager_id` INT UNSIGNED NULL,
     `full_name` VARCHAR(100) NOT NULL,
     `email` VARCHAR(150) NOT NULL UNIQUE,
     `password_hash` VARCHAR(255) NOT NULL,
@@ -115,11 +115,10 @@ CREATE TABLE `categories` (
         ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-
 CREATE TABLE `products` (
     `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     `category_id` INT UNSIGNED NOT NULL,
-    `created_by_manager_id` INT UNSIGNED NULL, 
+    `created_by_manager_id` INT UNSIGNED NULL,
     `name` VARCHAR(255) NOT NULL,
     `slug` VARCHAR(280) NOT NULL UNIQUE,
     `brand` VARCHAR(100) NOT NULL,
@@ -141,14 +140,13 @@ CREATE TABLE `products` (
     INDEX `idx_products_status` (`status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-
 CREATE TABLE `product_variants` (
     `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     `product_id` INT UNSIGNED NOT NULL,
     `sku` VARCHAR(100) NOT NULL UNIQUE,
     `color` VARCHAR(50) NOT NULL,
     `color_code` VARCHAR(20) NULL,
-    `spec_version` VARCHAR(150) NOT NULL, 
+    `spec_version` VARCHAR(150) NOT NULL,
     `price` DECIMAL(12, 2) NOT NULL,
     `stock` INT NOT NULL DEFAULT 0,
     `image_url` VARCHAR(500) NULL,
@@ -195,13 +193,12 @@ CREATE TABLE `product_images` (
         ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-
 CREATE TABLE `product_embeddings` (
     `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     `product_id` INT UNSIGNED NOT NULL,
     `image_id` INT UNSIGNED NULL DEFAULT NULL,
     `embedding_type` ENUM('image', 'text', 'hybrid') NOT NULL DEFAULT 'image',
-    `vector` JSON NOT NULL, -- Mảng float 512D từ model CLIP
+    `vector` JSON NOT NULL,
     `model_name` VARCHAR(100) NOT NULL DEFAULT 'clip-ViT-B-32-multilingual-v1',
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -213,7 +210,6 @@ CREATE TABLE `product_embeddings` (
         ON DELETE SET NULL ON UPDATE CASCADE,
     INDEX `idx_embeddings_type` (`embedding_type`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
 
 CREATE TABLE `cart_items` (
     `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -234,12 +230,11 @@ CREATE TABLE `cart_items` (
         ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-
 CREATE TABLE `orders` (
     `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     `order_code` VARCHAR(50) NOT NULL UNIQUE,
-    `customer_id` INT UNSIGNED NOT NULL, 
-    `processed_by_staff_id` INT UNSIGNED NULL DEFAULT NULL, 
+    `customer_id` INT UNSIGNED NOT NULL,
+    `processed_by_staff_id` INT UNSIGNED NULL DEFAULT NULL,
     `recipient_name` VARCHAR(100) NOT NULL,
     `recipient_phone` VARCHAR(20) NOT NULL,
     `shipping_address` TEXT NOT NULL,
@@ -283,13 +278,12 @@ CREATE TABLE `order_items` (
         ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-
 CREATE TABLE `inventory_logs` (
     `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     `variant_id` INT UNSIGNED NOT NULL,
     `staff_id` INT UNSIGNED NULL DEFAULT NULL,
-    `manager_id` INT UNSIGNED NULL DEFAULT NULL, 
-    `order_id` INT UNSIGNED NULL DEFAULT NULL, 
+    `manager_id` INT UNSIGNED NULL DEFAULT NULL,
+    `order_id` INT UNSIGNED NULL DEFAULT NULL,
     `change_type` ENUM('import', 'order_deduct', 'order_cancel_restock', 'manual_adjustment') NOT NULL,
     `quantity_changed` INT NOT NULL,
     `stock_after` INT NOT NULL,

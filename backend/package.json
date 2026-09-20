@@ -1,0 +1,17 @@
+{
+  "name": "techgear-backend",
+  "version": "1.0.0",
+  "description": "Backend for TechGear PC Hardware Store",
+  "main": "src/app.js",
+  "scripts": {
+    "dev": "node --watch src/app.js",
+    "start": "node src/app.js",
+    "mock:seed": "node scripts/seed_mock.js",
+    "mock:clean": "node scripts/clean_mock.js"
+  },
+  "dependencies": {
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "mysql2": "^3.24.4"
+  }
+}

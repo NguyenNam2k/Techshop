@@ -141,3 +141,24 @@ dist
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 .vite/
+
+# --- AI SERVICE CONFIGURATION (PYTHON) ---
+# Python virtual environments
+venv/
+env/
+.venv/
+ai_service/venv/
+ai_service/.venv/
+
+# Python bytecode and cache
+__pycache__/
+*.py[cod]
+
+# Hugging Face / Transformers model download cache
+.cache/
+huggingface/
+
+# Temporary files and test images
+*.jpg
+*.jpeg
+*.png

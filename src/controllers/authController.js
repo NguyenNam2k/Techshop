@@ -1,6 +1,9 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const db = require('../config/db');
+const { OAuth2Client } = require('google-auth-library');
+
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 /**
  * Đăng ký tài khoản Khách hàng (Customer)
@@ -26,6 +29,14 @@ const register = async (req, res) => {
 
     if (!password || password.length < 6) {
       return res.status(400).json({ success: false, message: 'Mật khẩu phải chứa ít nhất 6 ký tự!' });
+    }
+
+    if (!phone || !phone.trim()) {
+      return res.status(400).json({ success: false, message: 'Vui lòng nhập Số điện thoại!' });
+    }
+
+    if (!/^[0-9]{10}$/.test(phone.trim())) {
+      return res.status(400).json({ success: false, message: 'Số điện thoại phải đúng 10 chữ số!' });
     }
 
     const cleanEmail = email.trim().toLowerCase();
@@ -295,8 +306,146 @@ const getMe = async (req, res) => {
   }
 };
 
+/**
+ * Đăng nhập / Đăng ký bằng Google OAuth 2.0
+ * POST /api/auth/google
+ * Body: { credential: "<Google JWT hoặc access_token>", isAccessToken?: boolean }
+ */
+const googleAuth = async (req, res) => {
+  try {
+    const { credential, isAccessToken } = req.body;
+
+    if (!credential) {
+      return res.status(400).json({ success: false, message: 'Thiếu Google credential token!' });
+    }
+
+    let googleId, email, name, picture;
+
+    if (isAccessToken) {
+      // Implicit flow: dùng access_token để lấy userinfo từ Google
+      const https = require('https');
+      const userInfo = await new Promise((resolve, reject) => {
+        https.get(
+          `https://www.googleapis.com/oauth2/v3/userinfo?access_token=${credential}`,
+          (resp) => {
+            let data = '';
+            resp.on('data', chunk => data += chunk);
+            resp.on('end', () => {
+              try { resolve(JSON.parse(data)); }
+              catch (e) { reject(e); }
+            });
+          }
+        ).on('error', reject);
+      });
+
+      if (userInfo.error || !userInfo.sub) {
+        return res.status(401).json({ success: false, message: 'Access token Google không hợp lệ!' });
+      }
+
+      googleId = userInfo.sub;
+      email    = userInfo.email;
+      name     = userInfo.name;
+      picture  = userInfo.picture;
+    } else {
+      // Authorization code flow: verify ID token
+      const ticket = await googleClient.verifyIdToken({
+        idToken: credential,
+        audience: process.env.GOOGLE_CLIENT_ID,
+      });
+      const payload = ticket.getPayload();
+      googleId = payload.sub;
+      email    = payload.email;
+      name     = payload.name;
+      picture  = payload.picture;
+    }
+
+    if (!email) {
+      return res.status(400).json({ success: false, message: 'Không lấy được email từ tài khoản Google!' });
+    }
+
+    // 2. Tìm customer theo google_id trước
+    let [rows] = await db.query(
+      'SELECT id, name, email, google_id, status FROM customers WHERE google_id = ?',
+      [googleId]
+    );
+
+    let user = rows[0] || null;
+    let isNewUser = false;
+
+    if (!user) {
+      // 3. Tìm theo email (tài khoản email/password đã tồn tại)
+      const [emailRows] = await db.query(
+        'SELECT id, name, email, google_id, status FROM customers WHERE email = ?',
+        [email.toLowerCase()]
+      );
+
+      if (emailRows.length > 0) {
+        // Email đã tồn tại → link google_id vào tài khoản cũ
+        user = emailRows[0];
+        await db.query(
+          'UPDATE customers SET google_id = ?, avatar_url = COALESCE(avatar_url, ?) WHERE id = ?',
+          [googleId, picture || null, user.id]
+        );
+      } else {
+        // 4. Tạo tài khoản mới từ Google
+        const [result] = await db.query(
+          'INSERT INTO customers (name, email, google_id, avatar_url, password_hash, status) VALUES (?, ?, ?, ?, NULL, ?)',
+          [name, email.toLowerCase(), googleId, picture || null, 'active']
+        );
+        isNewUser = true;
+        user = { id: result.insertId, name, email: email.toLowerCase(), status: 'active' };
+      }
+    }
+
+    // 5. Kiểm tra trạng thái tài khoản
+    if (user.status === 'blocked' || user.status === 'inactive') {
+      return res.status(403).json({
+        success: false,
+        message: 'Tài khoản của bạn đã bị khóa. Vui lòng liên hệ quản trị viên!'
+      });
+    }
+
+    // 6. Tạo JWT nội bộ
+    const jwtPayload = {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: 'customer'
+    };
+
+    const token = require('jsonwebtoken').sign(
+      jwtPayload,
+      process.env.JWT_SECRET || 'techshop_super_secret_jwt_key_2026',
+      { expiresIn: process.env.JWT_EXPIRES_IN || '24h' }
+    );
+
+    return res.status(isNewUser ? 201 : 200).json({
+      success: true,
+      message: isNewUser ? 'Đăng ký tài khoản Google thành công!' : 'Đăng nhập Google thành công!',
+      token,
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: 'customer',
+        avatar: picture || null,
+        isNewUser
+      }
+    });
+
+  } catch (error) {
+    console.error('[GoogleAuth Error]:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Xác thực Google thất bại!',
+      error: error.message
+    });
+  }
+};
+
 module.exports = {
   register,
   login,
-  getMe
+  getMe,
+  googleAuth
 };

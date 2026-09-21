@@ -15,7 +15,6 @@ const VariantSelector = ({ variants, selectedVariant, onVariantSelect, categoryS
     return null;
   }
 
-  
   const formatDiff = (variantPrice, basePrice) => {
     const diff = variantPrice - basePrice;
     if (diff === 0) return null;
@@ -24,61 +23,57 @@ const VariantSelector = ({ variants, selectedVariant, onVariantSelect, categoryS
   };
 
   const basePrice = variants[0]?.price || 0;
+  const currentSelectedLabel = selectedVariant?.color || selectedVariant?.spec_version || selectedVariant?.sku || '';
 
   return (
-    <div className="space-y-3 p-4 rounded-xl bg-slate-800/40 border border-slate-700/60">
-      <div className="flex items-center">
-        <span className="text-xs font-semibold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
-          <span className="text-cyan-400">❖</span> Tùy chọn cấu hình / Phiên bản:
-        </span>
+    <div className="p-4 rounded-2xl bg-sky-50/60 dark:bg-sky-950/30 border border-sky-200 dark:border-sky-800/60 space-y-3 transition-colors">
+      <div className="flex items-center justify-between">
+        <label className="block text-xs font-bold text-slate-800 dark:text-slate-200">
+          Tùy chọn cấu hình / Màu sắc: <span className="text-sky-600 dark:text-sky-400 font-normal">{currentSelectedLabel}</span>
+        </label>
       </div>
 
-      <div className="flex flex-wrap gap-2.5">
+      <div className="flex flex-wrap gap-2">
         {variants.map((v) => {
-          const isSelected = selectedVariant && selectedVariant.id === v.id;
-          const isOutOfStock = Number(v.stock) <= 0;
+          const isSelected = selectedVariant?.id === v.id;
+          const isOutOfStock = v.stock === 0;
           const diffText = formatDiff(v.price, basePrice);
-          const optionLabel = v.spec_version || v.color || 'Bản tiêu chuẩn';
+          const optionLabel = v.color || v.spec_version || v.sku;
 
           return (
             <button
               key={v.id}
+              type="button"
+              onClick={() => onVariantSelect(v)}
               disabled={isOutOfStock}
-              onClick={() => !isOutOfStock && onVariantSelect(v)}
-              title={isOutOfStock ? `Phiên bản ${optionLabel} hiện đã hết hàng` : ''}
-              className={`group relative flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-medium transition-all duration-200 border text-left
-                ${isSelected 
-                  ? 'bg-cyan-950/60 border-cyan-400 text-cyan-200 shadow-lg shadow-cyan-500/10 ring-1 ring-cyan-400/50 scale-[1.02]' 
-                  : 'bg-slate-900/70 border-slate-700/80 text-slate-300 hover:border-slate-500 hover:text-white hover:bg-slate-800/70'}
-                ${isOutOfStock ? 'opacity-40 cursor-not-allowed hover:bg-slate-900/70 hover:border-slate-700/80 hover:text-slate-300' : ''}
-              `}
+              className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold border transition cursor-pointer ${
+                isSelected
+                  ? 'border-sky-600 bg-sky-600 text-white shadow-md'
+                  : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:border-sky-400 dark:hover:border-sky-500'
+              } ${isOutOfStock ? 'opacity-40 cursor-not-allowed bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 border-slate-200 dark:border-slate-700' : ''}`}
             >
-              {}
               {(v.color_code || v.color) && (
                 <span 
-                  className="w-3.5 h-3.5 rounded-full border border-slate-600 shrink-0 shadow-sm"
-                  style={{ backgroundColor: v.color_code || '#64748b' }}
+                  className="w-3.5 h-3.5 rounded-full border border-slate-300 dark:border-slate-600 shrink-0 shadow-sm"
+                  style={{ backgroundColor: v.color_code || '#94a3b8' }}
                   title={v.color || 'Màu sắc'}
                 />
               )}
 
-              {}
-              <span className="font-medium">{optionLabel}</span>
+              <span>{optionLabel}</span>
 
-              {}
               {diffText && (
-                <span className={`text-[11px] font-mono font-semibold px-2 py-0.5 rounded-md border
-                  ${isSelected
-                    ? 'text-cyan-300 bg-cyan-900/60 border-cyan-700/60'
-                    : 'text-amber-300 bg-amber-950/60 border-amber-800/60'}
-                `}>
+                <span className={`text-[11px] font-mono font-semibold px-1.5 py-0.5 rounded-md ${
+                  isSelected
+                    ? 'bg-sky-700/80 text-white'
+                    : 'bg-sky-100 dark:bg-sky-900/60 text-sky-700 dark:text-sky-300'
+                }`}>
                   {diffText}
                 </span>
               )}
 
-              {}
               {isOutOfStock && (
-                <span className="text-[10px] text-rose-400 font-semibold uppercase bg-rose-950/80 px-1.5 py-0.5 rounded border border-rose-800/60">
+                <span className="text-[10px] text-rose-600 dark:text-rose-400 font-semibold uppercase bg-rose-50 dark:bg-rose-950/60 px-1.5 py-0.5 rounded border border-rose-200 dark:border-rose-800">
                   Hết hàng
                 </span>
               )}

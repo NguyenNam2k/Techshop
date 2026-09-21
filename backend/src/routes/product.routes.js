@@ -9,4 +9,6 @@ router.get('/:id/similar', productController.getSimilarProducts);
 
 router.get('/:id', productController.getProductDetail);
 
+router.get('/', productController.getProductDetail);
+
 module.exports = router;

@@ -3,8 +3,16 @@ const productService = require('../services/product.service');
 
 async function getProductDetail(req, res) {
   try {
-    const { id } = req.params;
-    const productData = await productService.getProductById(id);
+    const targetId = req.params.id || req.query.id || req.query.slug;
+
+    if (!targetId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Product ID or slug is required'
+      });
+    }
+
+    const productData = await productService.getProductById(targetId);
 
     if (!productData) {
       return res.status(404).json({

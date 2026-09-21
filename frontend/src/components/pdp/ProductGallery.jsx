@@ -15,9 +15,9 @@ const ProductGallery = ({ product, selectedVariant, onVariantSelect }) => {
   });
   const containerRef = useRef(null);
 
-  const LENS_WIDTH = 220;   
-  const LENS_HEIGHT = 145;  
-  const SCALE = 2.5;        
+  const LENS_WIDTH = 220;
+  const LENS_HEIGHT = 145;
+  const SCALE = 2.5;
 
   const variantImages = selectedVariant?.image_url
     ? [{ image_url: selectedVariant.image_url, angle_label: selectedVariant.color ? `Bản ${selectedVariant.color}` : 'Góc chính', is_primary: true, sort_order: 0 }]
@@ -63,7 +63,6 @@ const ProductGallery = ({ product, selectedVariant, onVariantSelect }) => {
   };
 
   const handleMouseMove = (e) => {
-
     if (e.target.closest('button') || e.target.closest('.no-magnify')) {
       if (isHovering) setIsHovering(false);
       return;
@@ -110,63 +109,54 @@ const ProductGallery = ({ product, selectedVariant, onVariantSelect }) => {
 
   return (
     <div className="space-y-4 select-none">
+  
       <div 
         ref={containerRef}
-        className="relative group rounded-2xl bg-gradient-to-b from-slate-800/80 via-slate-900/90 to-slate-950 border border-slate-700/60 shadow-2xl overflow-hidden cursor-crosshair"
+        className="relative group rounded-3xl border border-slate-200 dark:border-slate-800 bg-[#F1F5F9] dark:bg-slate-900 shadow-inner overflow-hidden flex items-center justify-center p-6 cursor-crosshair h-96 sm:h-[420px] transition-colors"
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
         onMouseMove={handleMouseMove}
       >
-
-        <div className="absolute inset-0 bg-gradient-to-tr from-cyan-500/10 via-transparent to-blue-500/10 pointer-events-none" />
         <div 
-          className="flex transition-transform duration-500 ease-out h-[360px] md:h-[420px] w-full"
+          className="flex transition-transform duration-500 ease-out h-full w-full"
           style={{ transform: `translateX(-${mainImageIndex * 100}%)` }}
         >
           {imagesToShow.map((image, index) => (
             <div 
               key={`${image.image_url}-${index}`}
-              className="w-full h-full flex-shrink-0 flex items-center justify-center p-6 md:p-8"
+              className="w-full h-full flex-shrink-0 flex items-center justify-center p-4 md:p-6"
             >
               <img
                 src={image.image_url}
                 alt={`${product?.name} - ${image.angle_label || `Góc ${index + 1}`}`}
-                className="max-h-full max-w-full object-contain filter drop-shadow-[0_20px_25px_rgba(0,0,0,0.65)] pointer-events-none"
+                className="max-h-full max-w-full object-contain pointer-events-none transition-transform duration-200"
                 loading={index === 0 ? 'eager' : 'lazy'}
               />
             </div>
           ))}
         </div>
-
         {isHovering && currentImageUrl && lensData.containerW > 0 && (
           <div
-            className="pointer-events-none absolute z-30 w-[220px] h-[145px] rounded-xl border-2 border-cyan-400 bg-slate-950 shadow-[0_0_30px_rgba(6,182,212,0.45),0_20px_40px_rgba(0,0,0,0.85)] overflow-hidden hidden md:block"
+            className="pointer-events-none absolute z-30 w-[220px] h-[145px] rounded-2xl border-2 border-sky-500 bg-white dark:bg-slate-950 shadow-2xl overflow-hidden hidden md:block"
             style={{
               left: `${lensData.lensX}px`,
               top: `${lensData.lensY}px`,
               transform: 'translate(-50%, -50%)',
             }}
           >
-
             <div
               className="w-full h-full bg-no-repeat"
               style={{
                 backgroundImage: `url(${currentImageUrl})`,
                 backgroundSize: `${lensData.containerW * SCALE}px ${lensData.containerH * SCALE}px`,
                 backgroundPosition: `${lensData.bgX}px ${lensData.bgY}px`,
-                backgroundColor: '#030712'
+                backgroundColor: 'transparent'
               }}
             />
-
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <div className="w-3.5 h-0.5 bg-cyan-400/90 shadow-[0_0_6px_rgba(6,182,212,1)]" />
-              <div className="h-3.5 w-0.5 bg-cyan-400/90 shadow-[0_0_6px_rgba(6,182,212,1)] absolute" />
-            </div>
-
-            <div className="absolute inset-0 bg-gradient-to-b from-white/10 via-transparent to-black/25 pointer-events-none" />
           </div>
         )}
-        <div className="no-magnify absolute top-3 right-3 z-20 flex items-center gap-1.5 bg-slate-950/80 backdrop-blur-md border border-slate-700/60 px-3 py-1 rounded-full text-xs font-mono text-slate-300 shadow-lg pointer-events-none">
+
+        <div className="no-magnify absolute top-3 right-3 z-20 flex items-center gap-1.5 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border border-slate-200 dark:border-slate-700 px-2.5 py-1 rounded-full text-xs font-mono text-slate-700 dark:text-slate-300 shadow-sm pointer-events-none">
           <span>{mainImageIndex + 1} / {imagesToShow.length}</span>
         </div>
 
@@ -176,7 +166,7 @@ const ProductGallery = ({ product, selectedVariant, onVariantSelect }) => {
               onClick={handlePrev}
               onMouseEnter={() => setIsHovering(false)}
               aria-label="Ảnh trước"
-              className="absolute left-3 top-1/2 -translate-y-1/2 z-40 p-2.5 rounded-full bg-slate-950/80 text-slate-300 hover:text-white hover:bg-cyan-600/90 border border-slate-700/70 hover:border-cyan-400 backdrop-blur-md shadow-xl transition-all duration-200 opacity-0 group-hover:opacity-100 transform hover:scale-110 active:scale-95 cursor-pointer"
+              className="absolute left-3 top-1/2 -translate-y-1/2 z-40 p-2.5 rounded-full bg-white/90 dark:bg-slate-900/90 text-slate-700 dark:text-slate-300 hover:text-sky-600 dark:hover:text-sky-400 hover:bg-white dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-md transition-all duration-200 opacity-0 group-hover:opacity-100 transform hover:scale-110 active:scale-95 cursor-pointer"
             >
               <ChevronLeft className="w-5 h-5" />
             </button>
@@ -184,7 +174,7 @@ const ProductGallery = ({ product, selectedVariant, onVariantSelect }) => {
               onClick={handleNext}
               onMouseEnter={() => setIsHovering(false)}
               aria-label="Ảnh kế tiếp"
-              className="absolute right-3 top-1/2 -translate-y-1/2 z-40 p-2.5 rounded-full bg-slate-950/80 text-slate-300 hover:text-white hover:bg-cyan-600/90 border border-slate-700/70 hover:border-cyan-400 backdrop-blur-md shadow-xl transition-all duration-200 opacity-0 group-hover:opacity-100 transform hover:scale-110 active:scale-95 cursor-pointer"
+              className="absolute right-3 top-1/2 -translate-y-1/2 z-40 p-2.5 rounded-full bg-white/90 dark:bg-slate-900/90 text-slate-700 dark:text-slate-300 hover:text-sky-600 dark:hover:text-sky-400 hover:bg-white dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-md transition-all duration-200 opacity-0 group-hover:opacity-100 transform hover:scale-110 active:scale-95 cursor-pointer"
             >
               <ChevronRight className="w-5 h-5" />
             </button>
@@ -194,7 +184,7 @@ const ProductGallery = ({ product, selectedVariant, onVariantSelect }) => {
         {imagesToShow.length > 1 && (
           <div 
             onMouseEnter={() => setIsHovering(false)}
-            className="absolute bottom-3 left-1/2 -translate-x-1/2 z-40 flex items-center gap-1.5 bg-slate-950/70 backdrop-blur-md px-3 py-1.5 rounded-full border border-slate-800/80"
+            className="absolute bottom-3 left-1/2 -translate-x-1/2 z-40 flex items-center gap-1.5 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md px-3 py-1.5 rounded-full border border-slate-200 dark:border-slate-700 shadow-sm"
           >
             {imagesToShow.map((_, idx) => (
               <button
@@ -207,8 +197,8 @@ const ProductGallery = ({ product, selectedVariant, onVariantSelect }) => {
                 aria-label={`Đi tới ảnh ${idx + 1}`}
                 className={`h-1.5 rounded-full transition-all duration-300 cursor-pointer ${
                   idx === mainImageIndex
-                    ? 'w-6 bg-gradient-to-r from-cyan-400 to-blue-500 shadow-sm shadow-cyan-400/50'
-                    : 'w-1.5 bg-slate-600 hover:bg-slate-400'
+                    ? 'w-6 bg-sky-500 shadow-sm'
+                    : 'w-1.5 bg-slate-300 dark:bg-slate-700 hover:bg-slate-400'
                 }`}
               />
             ))}
@@ -222,21 +212,19 @@ const ProductGallery = ({ product, selectedVariant, onVariantSelect }) => {
             <button
               key={`${image.image_url}-${index}`}
               onClick={() => setMainImageIndex(index)}
-              className={`group relative flex-shrink-0 w-20 h-20 rounded-xl bg-slate-800/60 backdrop-blur-sm p-1.5 overflow-hidden transition-all duration-200 border-2 cursor-pointer
-                ${index === mainImageIndex
-                  ? 'border-cyan-400 bg-slate-800 shadow-lg shadow-cyan-500/20 scale-105 ring-2 ring-cyan-500/30'
-                  : 'border-slate-700/80 hover:border-slate-500 hover:scale-100 opacity-70 hover:opacity-100'
-                }
-              `}
+              className={`group relative flex-shrink-0 w-20 h-20 rounded-2xl border-2 overflow-hidden bg-[#F1F5F9] dark:bg-slate-900 p-1.5 transition-all duration-200 cursor-pointer ${
+                index === mainImageIndex
+                  ? 'border-sky-500 ring-2 ring-sky-500/30'
+                  : 'border-slate-200 dark:border-slate-700 opacity-70 hover:opacity-100 hover:border-slate-400 dark:hover:border-slate-600'
+              }`}
             >
               <img
                 src={image.image_url}
                 alt={`${product?.name} thumbnail ${index + 1}`}
                 className="w-full h-full object-contain"
               />
-              {/* Tooltip on hover */}
               {image.angle_label && (
-                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2 py-0.5 bg-slate-950 border border-slate-700 text-[10px] font-medium text-slate-200 rounded shadow-xl whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-150 z-20">
+                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2 py-0.5 bg-slate-900 border border-slate-700 text-[10px] font-medium text-white rounded shadow-xl whitespace-nowrap opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity duration-150 z-20">
                   {image.angle_label}
                 </div>
               )}
@@ -244,35 +232,34 @@ const ProductGallery = ({ product, selectedVariant, onVariantSelect }) => {
           ))}
         </div>
       )}
-
       <div className="grid grid-cols-3 gap-3 pt-2">
-        <div className="flex items-center gap-2 p-2.5 rounded-xl bg-slate-800/40 border border-slate-700/50 hover:border-cyan-500/40 transition-colors">
-          <div className="p-2 rounded-lg bg-cyan-950/80 text-cyan-400 border border-cyan-800/50">
+        <div className="flex items-center gap-2.5 p-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm transition-colors">
+          <div className="p-2 rounded-lg bg-sky-50 dark:bg-sky-950/60 text-sky-600 dark:text-sky-400 border border-sky-100 dark:border-sky-900/60">
             <ShieldCheck className="w-4 h-4" />
           </div>
           <div>
-            <div className="text-xs font-semibold text-slate-200">100% Chính Hãng</div>
-            <div className="text-[11px] text-slate-400">Nguyên seal NSX</div>
+            <div className="text-xs font-bold text-slate-800 dark:text-slate-200">100% Chính Hãng</div>
+            <div className="text-[11px] text-slate-500 dark:text-slate-400">Nguyên seal NSX</div>
           </div>
         </div>
 
-        <div className="flex items-center gap-2 p-2.5 rounded-xl bg-slate-800/40 border border-slate-700/50 hover:border-cyan-500/40 transition-colors">
-          <div className="p-2 rounded-lg bg-blue-950/80 text-blue-400 border border-blue-800/50">
+        <div className="flex items-center gap-2.5 p-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm transition-colors">
+          <div className="p-2 rounded-lg bg-sky-50 dark:bg-sky-950/60 text-sky-600 dark:text-sky-400 border border-sky-100 dark:border-sky-900/60">
             <Zap className="w-4 h-4" />
           </div>
           <div>
-            <div className="text-xs font-semibold text-slate-200">Giao Hỏa Tốc trong 2H</div>
-            <div className="text-[11px] text-slate-400">Nội thành hỏa tốc</div>
+            <div className="text-xs font-bold text-slate-800 dark:text-slate-200">Giao Hỏa Tốc 2H</div>
+            <div className="text-[11px] text-slate-500 dark:text-slate-400">Nội thành an toàn</div>
           </div>
         </div>
 
-        <div className="flex items-center gap-2 p-2.5 rounded-xl bg-slate-800/40 border border-slate-700/50 hover:border-cyan-500/40 transition-colors">
-          <div className="p-2 rounded-lg bg-purple-950/80 text-purple-400 border border-purple-800/50">
+        <div className="flex items-center gap-2.5 p-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm transition-colors">
+          <div className="p-2 rounded-lg bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-900/60">
             <RotateCcw className="w-4 h-4" />
           </div>
           <div>
-            <div className="text-xs font-semibold text-slate-200">Đổi Mới 30 Ngày</div>
-            <div className="text-[11px] text-slate-400">1 đổi 1 do lỗi NSX</div>
+            <div className="text-xs font-bold text-slate-800 dark:text-slate-200">Đổi Mới 30 Ngày</div>
+            <div className="text-[11px] text-slate-500 dark:text-slate-400">1 đổi 1 do lỗi NSX</div>
           </div>
         </div>
       </div>

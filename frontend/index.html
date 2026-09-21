@@ -5,6 +5,15 @@
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>TechGear - Product Detail</title>
+    <script>
+      try {
+        if (localStorage.getItem('techshop_theme') === 'dark') {
+          document.documentElement.classList.add('dark');
+        } else {
+          document.documentElement.classList.remove('dark');
+        }
+      } catch (_) {}
+    </script>
   </head>
   <body>
     <div id="root"></div>

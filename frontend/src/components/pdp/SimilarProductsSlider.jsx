@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
-import { ChevronLeft, ChevronRight, Sparkles, ArrowRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ArrowRight } from 'lucide-react';
 
 const SimilarProductsSlider = ({ id, currentProductId }) => {
   const [products, setProducts] = useState([]);
@@ -44,11 +44,11 @@ const SimilarProductsSlider = ({ id, currentProductId }) => {
 
   if (loading) {
     return (
-      <div className="mt-12 space-y-4">
-        <div className="h-6 bg-slate-800 rounded w-48 animate-pulse"></div>
-        <div className="flex gap-4 overflow-hidden">
+      <div className="pt-10 border-t border-slate-200 dark:border-slate-800 space-y-4">
+        <div className="h-6 bg-slate-200 dark:bg-slate-800 rounded w-48 animate-pulse"></div>
+        <div className="flex gap-5 overflow-hidden">
           {[1, 2, 3, 4].map((n) => (
-            <div key={n} className="w-64 h-72 bg-slate-800/60 rounded-2xl animate-pulse flex-shrink-0"></div>
+            <div key={n} className="w-64 h-64 bg-slate-100 dark:bg-slate-800/60 rounded-2xl animate-pulse flex-shrink-0"></div>
           ))}
         </div>
       </div>
@@ -60,46 +60,35 @@ const SimilarProductsSlider = ({ id, currentProductId }) => {
   }
 
   return (
-    <div className="mt-14 space-y-5">
-      {/* Slider Header */}
+    <div className="pt-10 border-t border-slate-200 dark:border-slate-800 space-y-6 transition-colors">
+
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2.5">
-          <div className="p-1.5 rounded-lg bg-cyan-950/80 text-cyan-400 border border-cyan-800/60">
-            <Sparkles className="w-4 h-4" />
-          </div>
-          <div>
-            <h3 className="text-lg md:text-xl font-bold text-white tracking-tight">
-              Sản Phẩm Tương Tự & Gợi Ý Phù Hợp
-            </h3>
-            <p className="text-xs text-slate-400">
-              Linh kiện cùng hệ sinh thái hoặc gợi ý cấu hình tương thích
-            </p>
-          </div>
+        <div>
+          <h2 className="text-xl font-bold text-slate-900 dark:text-white">Sản Phẩm Cùng Danh Mục</h2>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Gợi ý sản phẩm tương thích hoặc cùng dòng sản phẩm</p>
         </div>
 
-        {/* Navigation Buttons */}
         <div className="flex items-center gap-2">
           <button
             onClick={() => scroll('left')}
             aria-label="Cuộn sang trái"
-            className="p-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 transition-all active:scale-95 shadow-sm"
+            className="p-2 rounded-xl bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 hover:text-sky-600 dark:hover:text-sky-400 border border-slate-200 dark:border-slate-800 shadow-sm transition-all active:scale-95 cursor-pointer"
           >
             <ChevronLeft className="w-4 h-4" />
           </button>
           <button
             onClick={() => scroll('right')}
             aria-label="Cuộn sang phải"
-            className="p-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 transition-all active:scale-95 shadow-sm"
+            className="p-2 rounded-xl bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 hover:text-sky-600 dark:hover:text-sky-400 border border-slate-200 dark:border-slate-800 shadow-sm transition-all active:scale-95 cursor-pointer"
           >
             <ChevronRight className="w-4 h-4" />
           </button>
         </div>
       </div>
 
-      {/* Horizontal Carousel Track (Con lăn ngang đã được ẩn) */}
       <div
         ref={scrollRef}
-        className="flex gap-4 overflow-x-auto pb-2 pt-1 scroll-smooth no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+        className="flex gap-5 overflow-x-auto pb-3 pt-1 scroll-smooth no-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
       >
         {products.map((p) => (
           <Link
@@ -107,47 +96,40 @@ const SimilarProductsSlider = ({ id, currentProductId }) => {
             to={`/products/${p.slug}`}
             state={{ productId: p.id }}
             onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-            className="w-64 sm:w-72 flex-shrink-0 group rounded-2xl bg-gradient-to-b from-slate-800/60 via-slate-900/80 to-slate-950 border border-slate-800 hover:border-cyan-500/60 hover:shadow-xl hover:shadow-cyan-500/10 transition-all duration-300 flex flex-col overflow-hidden"
+            className="w-64 sm:w-72 flex-shrink-0 p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-sky-500 dark:hover:border-sky-500 transition cursor-pointer space-y-3 group shadow-sm flex flex-col justify-between"
           >
-            {/* Image Preview Container */}
-            <div className="h-44 p-4 flex items-center justify-center bg-slate-950/60 relative overflow-hidden">
+            <div className="h-40 bg-slate-50 dark:bg-slate-950 rounded-xl overflow-hidden p-3 flex items-center justify-center relative">
               <img
                 src={p.thumbnail_url || '/placeholder.jpg'}
                 alt={p.name}
-                className="max-h-full max-w-full object-contain filter drop-shadow-md group-hover:scale-110 transition-transform duration-300"
+                className="max-h-full max-w-full object-contain group-hover:scale-105 transition-transform duration-200"
                 loading="lazy"
               />
-
-              {/* Tag / Category Badge */}
-              <div className="absolute top-2.5 left-2.5">
-                <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-slate-900/80 text-cyan-300 border border-slate-700/60 backdrop-blur-sm">
+              <div className="absolute top-2 left-2">
+                <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-white/90 dark:bg-slate-900/90 text-sky-700 dark:text-sky-400 border border-sky-200 dark:border-sky-800 shadow-xs">
                   {p.match_type === 'same_category' ? p.category_name || 'Cùng dòng' : 'Gợi ý hot'}
                 </span>
               </div>
             </div>
 
-            {/* Product Info */}
-            <div className="p-4 flex flex-col flex-grow justify-between space-y-3">
+            <div className="space-y-1">
+              <span className="text-[10px] font-mono text-slate-400 dark:text-slate-500 block uppercase">
+                {p.brand}
+              </span>
+              <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200 line-clamp-2 group-hover:text-sky-600 dark:group-hover:text-sky-400 transition-colors">
+                {p.name}
+              </h4>
+            </div>
+
+            <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
               <div>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                  {p.brand}
-                </span>
-                <h4 className="text-xs sm:text-sm font-semibold text-slate-200 group-hover:text-cyan-300 line-clamp-2 transition-colors mt-0.5">
-                  {p.name}
-                </h4>
+                <span className="text-[10px] text-slate-400 dark:text-slate-500 block">Giá niêm yết:</span>
+                <p className="text-sm font-mono font-bold text-sky-600 dark:text-sky-400">
+                  {formatCurrency(p.min_price || p.base_price)}
+                </p>
               </div>
-
-              <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between">
-                <div>
-                  <span className="text-[10px] text-slate-400 block">Giá từ:</span>
-                  <span className="text-sm sm:text-base font-bold bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">
-                    {formatCurrency(p.min_price || p.base_price)}
-                  </span>
-                </div>
-
-                <div className="p-1.5 rounded-lg bg-slate-800 group-hover:bg-cyan-500 text-slate-400 group-hover:text-slate-950 transition-all">
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </div>
+              <div className="p-1.5 rounded-lg bg-slate-50 dark:bg-slate-800 group-hover:bg-sky-600 text-slate-400 dark:text-slate-400 group-hover:text-white transition-colors">
+                <ArrowRight className="w-3.5 h-3.5" />
               </div>
             </div>
           </Link>

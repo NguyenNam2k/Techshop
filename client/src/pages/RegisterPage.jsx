@@ -4,6 +4,38 @@ import { useGoogleLogin } from '@react-oauth/google';
 import axiosInstance from '../api/axiosInstance';
 import { useAuth } from '../context/AuthContext';
 
+const Field = ({ label, name, type = 'text', placeholder, required = false, rightElement, value, onChange, error }) => (
+  <div>
+    <label className="block text-slate-300 text-sm font-medium mb-1.5">
+      {label} {required && <span className="text-red-400">*</span>}
+    </label>
+    <div className="relative">
+      <input
+        type={type}
+        name={name}
+        value={value}
+        onChange={onChange}
+        placeholder={placeholder}
+        className={`w-full bg-slate-700 text-white placeholder-slate-400 rounded-xl px-4 py-3 text-sm border outline-none transition
+          ${rightElement ? 'pr-12' : ''}
+          ${error ? 'border-red-500 focus:border-red-400' : 'border-slate-600 focus:border-blue-500'}`}
+      />
+      {rightElement}
+    </div>
+    {error && <p className="text-red-400 text-xs mt-1">{error}</p>}
+  </div>
+);
+
+const EyeBtn = ({ show, onToggle }) => (
+  <button
+    type="button"
+    onClick={onToggle}
+    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 text-lg"
+  >
+    {show ? '🙈' : '👁️'}
+  </button>
+);
+
 function RegisterPage() {
   const navigate  = useNavigate();
   const { login } = useAuth();
@@ -106,39 +138,6 @@ function RegisterPage() {
     flow: 'implicit',
   });
 
-  // Helper: render một input field
-  const Field = ({ label, name, type = 'text', placeholder, required = false, rightElement }) => (
-    <div>
-      <label className="block text-slate-300 text-sm font-medium mb-1.5">
-        {label} {required && <span className="text-red-400">*</span>}
-      </label>
-      <div className="relative">
-        <input
-          type={type}
-          name={name}
-          value={form[name]}
-          onChange={handleChange}
-          placeholder={placeholder}
-          className={`w-full bg-slate-700 text-white placeholder-slate-400 rounded-xl px-4 py-3 text-sm border outline-none transition
-            ${rightElement ? 'pr-12' : ''}
-            ${errors[name] ? 'border-red-500 focus:border-red-400' : 'border-slate-600 focus:border-blue-500'}`}
-        />
-        {rightElement}
-      </div>
-      {errors[name] && <p className="text-red-400 text-xs mt-1">{errors[name]}</p>}
-    </div>
-  );
-
-  const EyeBtn = ({ show, onToggle }) => (
-    <button
-      type="button"
-      onClick={onToggle}
-      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 text-lg"
-    >
-      {show ? '🙈' : '👁️'}
-    </button>
-  );
-
   return (
     <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4">
       <div className="w-full max-w-md bg-slate-800 rounded-2xl shadow-2xl border border-slate-700 overflow-hidden">
@@ -151,7 +150,9 @@ function RegisterPage() {
           <h1 className="text-2xl font-bold text-white font-['Outfit']">
             Tạo Tài Khoản
           </h1>
-          <p className="text-emerald-100 text-sm mt-1">Đăng ký để trở thành Khách hàng Techshop</p>
+          <p className="text-emerald-100 text-sm mt-1">
+            Đăng ký để trở thành Khách hàng Techshop
+          </p>
         </div>
 
         <div className="px-8 py-6 space-y-4">
@@ -196,25 +197,27 @@ function RegisterPage() {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            <Field label="👤 Họ và tên" name="name" placeholder="Nguyễn Văn A" required />
-            <Field label="📧 Địa chỉ Email" name="email" type="email" placeholder="example@techshop.com" required />
+            <Field label="👤 Họ và tên" name="name" placeholder="Nguyễn Văn A" required value={form.name} onChange={handleChange} error={errors.name} />
+            <Field label="📧 Địa chỉ Email" name="email" type="email" placeholder="example@techshop.com" required value={form.email} onChange={handleChange} error={errors.email} />
 
             {/* Phone + Address — 2 cột */}
             <div className="grid grid-cols-2 gap-3">
-              <Field label="📱 Số điện thoại" name="phone" placeholder="0901234567" required />
-              <Field label="🏠 Địa chỉ" name="address" placeholder="Hà Nội / TP.HCM" />
+              <Field label="📱 Số điện thoại" name="phone" placeholder="0901234567" required value={form.phone} onChange={handleChange} error={errors.phone} />
+              <Field label="🏠 Địa chỉ" name="address" placeholder="Hà Nội / TP.HCM" value={form.address} onChange={handleChange} error={errors.address} />
             </div>
 
             <Field
               label="🔑 Mật khẩu" name="password"
               type={showPw ? 'text' : 'password'}
               placeholder="Tối thiểu 6 ký tự" required
+              value={form.password} onChange={handleChange} error={errors.password}
               rightElement={<EyeBtn show={showPw} onToggle={() => setShowPw(v => !v)} />}
             />
             <Field
               label="✅ Xác nhận mật khẩu" name="confirmPassword"
               type={showCpw ? 'text' : 'password'}
               placeholder="Nhập lại mật khẩu" required
+              value={form.confirmPassword} onChange={handleChange} error={errors.confirmPassword}
               rightElement={<EyeBtn show={showCpw} onToggle={() => setShowCpw(v => !v)} />}
             />
 

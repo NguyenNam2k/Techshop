@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { register, login, getMe, googleAuth } = require('../controllers/authController');
+const { register, login, getMe, googleAuth, verifyOtp } = require('../controllers/authController');
 const { verifyToken } = require('../middleware/authMiddleware');
 
 // POST /api/auth/register - Đăng ký tài khoản khách hàng mới

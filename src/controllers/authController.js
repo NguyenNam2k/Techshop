@@ -1,7 +1,11 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const db = require('../config/db');
 const { OAuth2Client } = require('google-auth-library');
+
+const Customer = require('../models/Customer');
+const Admin = require('../models/Admin');
+const Manager = require('../models/Manager');
+const Staff = require('../models/Staff');
 
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
@@ -41,13 +45,10 @@ const register = async (req, res) => {
 
     const cleanEmail = email.trim().toLowerCase();
 
-    // 2. Kiểm tra xem Email đã tồn tại trong bảng customers chưa
-    const [existingUsers] = await db.query(
-      'SELECT id FROM customers WHERE email = ?',
-      [cleanEmail]
-    );
+    // 2. Kiểm tra xem Email đã tồn tại trong bảng customers chưa thông qua Model
+    const existingUser = await Customer.findByEmail(cleanEmail);
 
-    if (existingUsers.length > 0) {
+    if (existingUser) {
       return res.status(400).json({
         success: false,
         message: 'Email này đã được đăng ký tài khoản! Vui lòng sử dụng email khác hoặc đăng nhập.'
@@ -58,13 +59,16 @@ const register = async (req, res) => {
     const salt = await bcrypt.genSalt(10);
     const password_hash = await bcrypt.hash(password, salt);
 
-    // 4. Lưu thông tin khách hàng mới vào CSDL
-    const [result] = await db.query(
-      'INSERT INTO customers (name, email, password_hash, phone, address, status) VALUES (?, ?, ?, ?, ?, ?)',
-      [name.trim(), cleanEmail, password_hash, phone ? phone.trim() : null, address ? address.trim() : null, 'active']
-    );
+    // 4. Lưu thông tin khách hàng mới vào CSDL qua Model
+    const newCustomerId = await Customer.create({
+      name: name.trim(),
+      email: cleanEmail,
+      password_hash,
+      phone: phone ? phone.trim() : null,
+      address: address ? address.trim() : null,
+      status: 'active'
+    });
 
-    const newCustomerId = result.insertId;
     const role = 'customer';
 
     // 5. Tạo JWT Token
@@ -126,70 +130,32 @@ const login = async (req, res) => {
     let user = null;
     let resolvedRole = 'customer';
 
-    // 2. Tra cứu tài khoản theo từng bảng tùy theo roleType hoặc tìm kiếm tự động
+    // 2. Tra cứu tài khoản theo từng model tùy theo roleType hoặc tìm kiếm tự động
     if (roleType === 'admin') {
-      const [rows] = await db.query(
-        'SELECT id, username, email, password_hash, full_name as name, status FROM admins WHERE email = ? OR username = ?',
-        [cleanAccount, cleanAccount]
-      );
-      if (rows.length > 0) {
-        user = rows[0];
-        resolvedRole = 'admin';
-      }
+      user = await Admin.findByAccount(cleanAccount);
+      if (user) resolvedRole = 'admin';
     } else if (roleType === 'manager') {
-      const [rows] = await db.query(
-        'SELECT id, manager_code, email, password_hash, full_name as name, status FROM managers WHERE email = ? OR manager_code = ?',
-        [cleanAccount, cleanAccount]
-      );
-      if (rows.length > 0) {
-        user = rows[0];
-        resolvedRole = 'manager';
-      }
+      user = await Manager.findByAccount(cleanAccount);
+      if (user) resolvedRole = 'manager';
     } else if (roleType === 'staff') {
-      const [rows] = await db.query(
-        'SELECT id, staff_code, email, password_hash, full_name as name, status FROM staffs WHERE email = ? OR staff_code = ?',
-        [cleanAccount, cleanAccount]
-      );
-      if (rows.length > 0) {
-        user = rows[0];
-        resolvedRole = 'staff';
-      }
+      user = await Staff.findByAccount(cleanAccount);
+      if (user) resolvedRole = 'staff';
     } else {
       // Mặc định hoặc tra cứu ưu tiên: Customer -> Admin -> Manager -> Staff
-      const [custRows] = await db.query(
-        'SELECT id, email, password_hash, name, status FROM customers WHERE email = ?',
-        [cleanAccount.toLowerCase()]
-      );
-
-      if (custRows.length > 0) {
-        user = custRows[0];
+      user = await Customer.findByEmailForLogin(cleanAccount.toLowerCase());
+      if (user) {
         resolvedRole = 'customer';
       } else {
-        // Kiểm tra trong admins
-        const [adminRows] = await db.query(
-          'SELECT id, username, email, password_hash, full_name as name, status FROM admins WHERE email = ? OR username = ?',
-          [cleanAccount, cleanAccount]
-        );
-        if (adminRows.length > 0) {
-          user = adminRows[0];
+        user = await Admin.findByAccount(cleanAccount);
+        if (user) {
           resolvedRole = 'admin';
         } else {
-          // Kiểm tra trong managers
-          const [managerRows] = await db.query(
-            'SELECT id, manager_code, email, password_hash, full_name as name, status FROM managers WHERE email = ? OR manager_code = ?',
-            [cleanAccount, cleanAccount]
-          );
-          if (managerRows.length > 0) {
-            user = managerRows[0];
+          user = await Manager.findByAccount(cleanAccount);
+          if (user) {
             resolvedRole = 'manager';
           } else {
-            // Kiểm tra trong staffs
-            const [staffRows] = await db.query(
-              'SELECT id, staff_code, email, password_hash, full_name as name, status FROM staffs WHERE email = ? OR staff_code = ?',
-              [cleanAccount, cleanAccount]
-            );
-            if (staffRows.length > 0) {
-              user = staffRows[0];
+            user = await Staff.findByAccount(cleanAccount);
+            if (user) {
               resolvedRole = 'staff';
             }
           }
@@ -243,7 +209,7 @@ const login = async (req, res) => {
       { expiresIn: process.env.JWT_EXPIRES_IN || '24h' }
     );
 
-    // 7. Trả về thông tin thành công
+    // 7. Trả về thông tự thành công
     return res.status(200).json({
       success: true,
       message: 'Đăng nhập thành công!',
@@ -273,22 +239,22 @@ const login = async (req, res) => {
 const getMe = async (req, res) => {
   try {
     const { id, role } = req.user;
+    let userData = null;
 
-    let tableName = 'customers';
-    if (role === 'admin') tableName = 'admins';
-    if (role === 'manager') tableName = 'managers';
-    if (role === 'staff') tableName = 'staffs';
+    if (role === 'customer') {
+      userData = await Customer.findByIdForProfile(id);
+    } else if (role === 'admin') {
+      userData = await Admin.findByIdForProfile(id);
+    } else if (role === 'manager') {
+      userData = await Manager.findByIdForProfile(id);
+    } else if (role === 'staff') {
+      userData = await Staff.findByIdForProfile(id);
+    }
 
-    const [rows] = await db.query(
-      `SELECT id, email, status, created_at ${role === 'customer' ? ', name, phone, address, avatar_url' : ', full_name as name, phone, avatar_url'} FROM ${tableName} WHERE id = ?`,
-      [id]
-    );
-
-    if (rows.length === 0) {
+    if (!userData) {
       return res.status(444).json({ success: false, message: 'Không tìm thấy thông tin người dùng!' });
     }
 
-    const userData = rows[0];
     userData.role = role;
 
     return res.status(200).json({
@@ -309,7 +275,6 @@ const getMe = async (req, res) => {
 /**
  * Đăng nhập / Đăng ký bằng Google OAuth 2.0
  * POST /api/auth/google
- * Body: { credential: "<Google JWT hoặc access_token>", isAccessToken?: boolean }
  */
 const googleAuth = async (req, res) => {
   try {
@@ -322,7 +287,6 @@ const googleAuth = async (req, res) => {
     let googleId, email, name, picture;
 
     if (isAccessToken) {
-      // Implicit flow: dùng access_token để lấy userinfo từ Google
       const https = require('https');
       const userInfo = await new Promise((resolve, reject) => {
         https.get(
@@ -347,7 +311,6 @@ const googleAuth = async (req, res) => {
       name     = userInfo.name;
       picture  = userInfo.picture;
     } else {
-      // Authorization code flow: verify ID token
       const ticket = await googleClient.verifyIdToken({
         idToken: credential,
         audience: process.env.GOOGLE_CLIENT_ID,
@@ -363,41 +326,32 @@ const googleAuth = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Không lấy được email từ tài khoản Google!' });
     }
 
-    // 2. Tìm customer theo google_id trước
-    let [rows] = await db.query(
-      'SELECT id, name, email, google_id, status FROM customers WHERE google_id = ?',
-      [googleId]
-    );
-
-    let user = rows[0] || null;
+    // 2. Tìm customer theo google_id qua Model
+    let user = await Customer.findByGoogleId(googleId);
     let isNewUser = false;
 
     if (!user) {
-      // 3. Tìm theo email (tài khoản email/password đã tồn tại)
-      const [emailRows] = await db.query(
-        'SELECT id, name, email, google_id, status FROM customers WHERE email = ?',
-        [email.toLowerCase()]
-      );
+      // 3. Tìm theo email
+      const existingUser = await Customer.findByEmail(email.toLowerCase());
 
-      if (emailRows.length > 0) {
-        // Email đã tồn tại → link google_id vào tài khoản cũ
-        user = emailRows[0];
-        await db.query(
-          'UPDATE customers SET google_id = ?, avatar_url = COALESCE(avatar_url, ?) WHERE id = ?',
-          [googleId, picture || null, user.id]
-        );
+      if (existingUser) {
+        // Cập nhật google_id vào tài khoản cũ
+        user = existingUser;
+        await Customer.updateGoogleId(user.id, googleId, picture || null);
       } else {
-        // 4. Tạo tài khoản mới từ Google
-        const [result] = await db.query(
-          'INSERT INTO customers (name, email, google_id, avatar_url, password_hash, status) VALUES (?, ?, ?, ?, NULL, ?)',
-          [name, email.toLowerCase(), googleId, picture || null, 'active']
-        );
+        // 4. Tạo tài khoản mới từ Google qua Model
+        const newId = await Customer.createFromGoogle({
+          name,
+          email: email.toLowerCase(),
+          google_id: googleId,
+          avatar_url: picture || null,
+          status: 'active'
+        });
         isNewUser = true;
-        user = { id: result.insertId, name, email: email.toLowerCase(), status: 'active' };
+        user = { id: newId, name, email: email.toLowerCase(), status: 'active' };
       }
     }
 
-    // 5. Kiểm tra trạng thái tài khoản
     if (user.status === 'blocked' || user.status === 'inactive') {
       return res.status(403).json({
         success: false,
@@ -405,7 +359,6 @@ const googleAuth = async (req, res) => {
       });
     }
 
-    // 6. Tạo JWT nội bộ
     const jwtPayload = {
       id: user.id,
       name: user.name,
@@ -413,7 +366,7 @@ const googleAuth = async (req, res) => {
       role: 'customer'
     };
 
-    const token = require('jsonwebtoken').sign(
+    const token = jwt.sign(
       jwtPayload,
       process.env.JWT_SECRET || 'techshop_super_secret_jwt_key_2026',
       { expiresIn: process.env.JWT_EXPIRES_IN || '24h' }

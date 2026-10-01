@@ -45,7 +45,8 @@ function LoginPage() {
 
       if (res.data.success) {
         login(res.data.token, res.data.user);
-        navigate('/dashboard', { replace: true });
+        const redirectUrl = res.data.user?.role === 'admin' ? '/admin' : '/dashboard';
+        navigate(redirectUrl, { replace: true });
       }
     } catch (err) {
       const msg = err.response?.data?.message || 'Đăng nhập thất bại, vui lòng thử lại!';
@@ -69,7 +70,8 @@ function LoginPage() {
         });
         if (res.data.success) {
           login(res.data.token, res.data.user);
-          navigate('/dashboard', { replace: true });
+          const redirectUrl = res.data.user?.role === 'admin' ? '/admin' : '/dashboard';
+          navigate(redirectUrl, { replace: true });
         }
       } catch (err) {
         setApiError(err.response?.data?.message || 'Đăng nhập Google thất bại!');

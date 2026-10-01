@@ -47,6 +47,23 @@ const Customer = {
       'UPDATE customers SET google_id = ?, avatar_url = COALESCE(avatar_url, ?) WHERE id = ?',
       [googleId, avatarUrl, id]
     );
+  },
+
+  // === Các hàm dành cho Admin ===
+  findAll: async () => {
+    const [rows] = await db.query(
+      'SELECT id, name, email, phone, address, status, created_at FROM customers ORDER BY id DESC'
+    );
+    return rows;
+  },
+
+  updateStatus: async (id, status) => {
+    await db.query('UPDATE customers SET status = ? WHERE id = ?', [status, id]);
+  },
+
+  deleteById: async (id) => {
+    const [result] = await db.query('DELETE FROM customers WHERE id = ?', [id]);
+    return result.affectedRows > 0;
   }
 };
 

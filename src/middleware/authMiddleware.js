@@ -5,7 +5,7 @@ const jwt = require('jsonwebtoken');
  */
 const verifyToken = (req, res, next) => {
   const authHeader = req.headers['authorization'];
-  
+
   if (!authHeader) {
     return res.status(401).json({
       success: false,
@@ -41,6 +41,9 @@ const verifyToken = (req, res, next) => {
  * @param {Array<string>} roles - Danh sách vai trò được phép truy cập, ví dụ: ['admin', 'manager']
  */
 const requireRole = (roles = []) => {
+  // Cho phép truyền vào 1 string hoặc 1 mảng
+  if (typeof roles === 'string') roles = [roles];
+
   return (req, res, next) => {
     if (!req.user || !roles.includes(req.user.role)) {
       return res.status(403).json({

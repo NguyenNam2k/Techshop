@@ -98,6 +98,16 @@ function DashboardPage() {
 
         {/* Actions */}
         <div className="px-8 py-6 flex flex-col gap-3">
+          {user?.role === 'admin' && (
+            <button
+              onClick={() => navigate('/admin')}
+              className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-semibold rounded-xl py-3 text-sm
+                transition-all duration-200 flex items-center justify-center gap-2 shadow-lg shadow-blue-500/20"
+            >
+              🛠️ Đi tới Trang Quản Trị (Admin Panel)
+            </button>
+          )}
+
           <button
             onClick={handleVerifyToken}
             disabled={apiLoading}

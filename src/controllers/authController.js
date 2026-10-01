@@ -307,9 +307,9 @@ const googleAuth = async (req, res) => {
       }
 
       googleId = userInfo.sub;
-      email    = userInfo.email;
-      name     = userInfo.name;
-      picture  = userInfo.picture;
+      email = userInfo.email;
+      name = userInfo.name;
+      picture = userInfo.picture;
     } else {
       const ticket = await googleClient.verifyIdToken({
         idToken: credential,
@@ -317,9 +317,9 @@ const googleAuth = async (req, res) => {
       });
       const payload = ticket.getPayload();
       googleId = payload.sub;
-      email    = payload.email;
-      name     = payload.name;
-      picture  = payload.picture;
+      email = payload.email;
+      name = payload.name;
+      picture = payload.picture;
     }
 
     if (!email) {

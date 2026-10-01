@@ -17,7 +17,14 @@ app.use(express.static(path.join(__dirname, '../public')));
 
 // Khai báo Routes API
 const authRoutes = require('./routes/authRoutes');
+const userRoutes = require('./routes/userRoutes');
+const roleRoutes = require('./routes/roleRoutes');
+const permissionRoutes = require('./routes/permissionRoutes');
+
 app.use('/api/auth', authRoutes);
+app.use('/api/users', userRoutes);
+app.use('/api/roles', roleRoutes);
+app.use('/api/permissions', permissionRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

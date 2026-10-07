@@ -1,6 +1,6 @@
 /**
  * seed-accounts.js
- * Tạo các tài khoản test cho từng role trong TechShop DB
+ * Tạo các tài khoản test cho từng role trong TechShop DB (Đã bổ sung Username)
  * Chạy: node seed-accounts.js
  */
 
@@ -17,6 +17,7 @@ const ACCOUNTS = {
   customers: [
     {
       name: 'Nguyễn Văn Khách',
+      username: 'customer1',
       email: 'customer@techshop.vn',
       password: 'customer123',
       phone: '0901234567',
@@ -25,6 +26,7 @@ const ACCOUNTS = {
     },
     {
       name: 'Trần Thị Mua Hàng',
+      username: 'customer2',
       email: 'customer2@techshop.vn',
       password: 'customer123',
       phone: '0912345678',
@@ -56,6 +58,7 @@ const ACCOUNTS = {
 
   managers: [
     {
+      username: 'manager1',
       manager_code: 'MGR001',
       full_name: 'Nguyễn Thị Quản Lý',
       email: 'manager@techshop.vn',
@@ -65,6 +68,7 @@ const ACCOUNTS = {
       status: 'active',
     },
     {
+      username: 'manager2',
       manager_code: 'MGR002',
       full_name: 'Lê Văn Trưởng Nhóm',
       email: 'manager2@techshop.vn',
@@ -77,6 +81,7 @@ const ACCOUNTS = {
 
   staffs: [
     {
+      username: 'staff1',
       staff_code: 'STF001',
       full_name: 'Phạm Văn Nhân Viên',
       email: 'staff@techshop.vn',
@@ -86,6 +91,7 @@ const ACCOUNTS = {
       status: 'active',
     },
     {
+      username: 'staff2',
       staff_code: 'STF002',
       full_name: 'Đỗ Thị Kho Hàng',
       email: 'staff2@techshop.vn',
@@ -95,6 +101,7 @@ const ACCOUNTS = {
       status: 'active',
     },
     {
+      username: 'staff3',
       staff_code: 'STF003',
       full_name: 'Võ Văn Hỗ Trợ',
       email: 'staff3@techshop.vn',
@@ -126,13 +133,13 @@ async function main() {
     const hash = await bcrypt.hash(c.password, SALT_ROUNDS);
     try {
       await conn.execute(
-        'INSERT INTO customers (name, email, password_hash, phone, address, status) VALUES (?, ?, ?, ?, ?, ?)',
-        [c.name, c.email, hash, c.phone, c.address, c.status]
+        'INSERT INTO customers (name, username, email, password_hash, phone, address, status) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        [c.name, c.username, c.email, hash, c.phone, c.address, c.status]
       );
-      console.log(`   ✓ ${c.email}  (password: ${c.password})`);
+      console.log(`   ✓ ${c.email} (username: ${c.username}, password: ${c.password})`);
     } catch (e) {
       if (e.code === 'ER_DUP_ENTRY') {
-        console.log(`   ⚠ ${c.email} đã tồn tại — bỏ qua`);
+        console.log(`   ⚠ ${c.email} hoặc ${c.username} đã tồn tại — bỏ qua`);
       } else throw e;
     }
   }
@@ -160,10 +167,10 @@ async function main() {
     const hash = await bcrypt.hash(m.password, SALT_ROUNDS);
     try {
       await conn.execute(
-        'INSERT INTO managers (manager_code, full_name, email, password_hash, phone, branch_name, status) VALUES (?, ?, ?, ?, ?, ?, ?)',
-        [m.manager_code, m.full_name, m.email, hash, m.phone, m.branch_name, m.status]
+        'INSERT INTO managers (username, manager_code, full_name, email, password_hash, phone, branch_name, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+        [m.username, m.manager_code, m.full_name, m.email, hash, m.phone, m.branch_name, m.status]
       );
-      console.log(`   ✓ ${m.email}  (code: ${m.manager_code}, password: ${m.password})`);
+      console.log(`   ✓ ${m.email}  (username: ${m.username}, code: ${m.manager_code}, password: ${m.password})`);
     } catch (e) {
       if (e.code === 'ER_DUP_ENTRY') {
         console.log(`   ⚠ ${m.email} đã tồn tại — bỏ qua`);
@@ -177,10 +184,10 @@ async function main() {
     const hash = await bcrypt.hash(s.password, SALT_ROUNDS);
     try {
       await conn.execute(
-        'INSERT INTO staffs (staff_code, full_name, email, password_hash, phone, department, status) VALUES (?, ?, ?, ?, ?, ?, ?)',
-        [s.staff_code, s.full_name, s.email, hash, s.phone, s.department, s.status]
+        'INSERT INTO staffs (username, staff_code, full_name, email, password_hash, phone, department, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+        [s.username, s.staff_code, s.full_name, s.email, hash, s.phone, s.department, s.status]
       );
-      console.log(`   ✓ ${s.email}  (code: ${s.staff_code}, password: ${s.password})`);
+      console.log(`   ✓ ${s.email}  (username: ${s.username}, code: ${s.staff_code}, password: ${s.password})`);
     } catch (e) {
       if (e.code === 'ER_DUP_ENTRY') {
         console.log(`   ⚠ ${s.email} đã tồn tại — bỏ qua`);
@@ -192,17 +199,17 @@ async function main() {
 
   console.log('\n═══════════════════════════════════════════════════════');
   console.log('🎉 HOÀN TẤT! Danh sách tài khoản test:\n');
-  console.log('ROLE        EMAIL                      PASSWORD      CODE/USERNAME');
-  console.log('──────────  ─────────────────────────  ────────────  ─────────────');
-  console.log('customer    customer@techshop.vn        customer123   (email)');
-  console.log('customer    customer2@techshop.vn       customer123   (email)');
-  console.log('admin       admin@techshop.vn           admin123      superadmin');
-  console.log('admin       sysadmin@techshop.vn        admin123      sysadmin');
-  console.log('manager     manager@techshop.vn         manager123    MGR001');
-  console.log('manager     manager2@techshop.vn        manager123    MGR002');
-  console.log('staff       staff@techshop.vn           staff123      STF001');
-  console.log('staff       staff2@techshop.vn          staff123      STF002');
-  console.log('staff       staff3@techshop.vn          staff123      STF003');
+  console.log('ROLE        USERNAME      EMAIL                      PASSWORD');
+  console.log('──────────  ────────────  ─────────────────────────  ────────────');
+  console.log('customer    customer1     customer@techshop.vn        customer123');
+  console.log('customer    customer2     customer2@techshop.vn       customer123');
+  console.log('admin       superadmin    admin@techshop.vn           admin123');
+  console.log('admin       sysadmin      sysadmin@techshop.vn        admin123');
+  console.log('manager     manager1      manager@techshop.vn         manager123');
+  console.log('manager     manager2      manager2@techshop.vn        manager123');
+  console.log('staff       staff1        staff@techshop.vn           staff123');
+  console.log('staff       staff2        staff2@techshop.vn          staff123');
+  console.log('staff       staff3        staff3@techshop.vn          staff123');
   console.log('═══════════════════════════════════════════════════════\n');
 }
 

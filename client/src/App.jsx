@@ -9,8 +9,6 @@ import DashboardPage from './pages/DashboardPage';
 import AdminLayout from './pages/admin/AdminLayout';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import UserManagement from './pages/admin/UserManagement';
-import RoleManagement from './pages/admin/RoleManagement';
-import PermissionManagement from './pages/admin/PermissionManagement';
 
 function App() {
   return (
@@ -42,8 +40,6 @@ function App() {
           >
             <Route index element={<AdminDashboard />} />
             <Route path="users" element={<UserManagement />} />
-            <Route path="roles" element={<RoleManagement />} />
-            <Route path="permissions" element={<PermissionManagement />} />
           </Route>
 
           {/* Redirect mặc định */}

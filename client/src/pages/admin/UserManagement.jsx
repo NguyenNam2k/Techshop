@@ -9,7 +9,7 @@ function UserManagement() {
   // Bộ lọc
   const [searchTerm, setSearchTerm] = useState('');
   const [filterRole, setFilterRole] = useState('all');
-  const [filterStatus, setFilterStatus] = useState('all');
+  const [filterStatus, setFilterStatus] = useState('all'); // 'all' | 'active' | 'locked'
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
 
@@ -48,14 +48,15 @@ function UserManagement() {
     setCurrentPage(1);
   }, [searchTerm, filterRole, filterStatus, startDate, endDate]);
 
-  // Lọc danh sách theo các tiêu chí (Search, Role, Status, Date)
+  // Lọc và sắp xếp danh sách (mặc định sắp xếp từ nhỏ đến lớn)
   const filteredUsers = useMemo(() => {
-    return users.filter(u => {
+    const list = users.filter(u => {
       // 1. Lọc theo Role
       if (filterRole !== 'all' && u.role !== filterRole) return false;
 
-      // 2. Lọc theo Status
-      if (filterStatus !== 'all' && u.status !== filterStatus) return false;
+      // 2. Lọc theo Trạng thái (chỉ có Hoạt động hoặc Đã khóa)
+      if (filterStatus === 'active' && u.status !== 'active') return false;
+      if (filterStatus === 'locked' && u.status === 'active') return false;
 
       // 3. Lọc theo Từ ngày (startDate)
       if (startDate) {
@@ -84,6 +85,9 @@ function UserManagement() {
 
       return true;
     });
+
+    // Sắp xếp theo thứ tự nhỏ đến lớn (Cũ ➔ Mới / ID nhỏ ➔ ID lớn)
+    return list.sort((a, b) => new Date(a.created_at) - new Date(b.created_at) || a.id - b.id);
   }, [users, filterRole, filterStatus, startDate, endDate, searchTerm]);
 
   // Dữ liệu đã phân trang
@@ -102,9 +106,14 @@ function UserManagement() {
     setEndDate('');
   };
 
-  // Toggle status
+  // Toggle status (Khóa / Mở khóa)
   const handleToggleStatus = async (user) => {
-    const newStatus = (user.status === 'active') ? (user.role === 'customer' ? 'blocked' : 'inactive') : 'active';
+    const isCurrentlyActive = user.status === 'active';
+    const actionText = isCurrentlyActive ? 'khóa' : 'mở khóa';
+
+    if (!confirm(`Bạn có chắc muốn ${actionText} tài khoản "${user.name}"?`)) return;
+
+    const newStatus = isCurrentlyActive ? (user.role === 'customer' ? 'blocked' : 'inactive') : 'active';
     try {
       await axiosInstance.patch(`/users/${user.id}/status`, { role: user.role, status: newStatus });
       fetchUsers();
@@ -141,10 +150,12 @@ function UserManagement() {
     }
   };
 
+  // Hiển thị Badge trạng thái (Chỉ có Hoạt động hoặc Đã khóa)
   const statusBadge = (status) => {
-    if (status === 'active') return <span className="px-2.5 py-0.5 rounded-full text-xs bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-medium">Active</span>;
-    if (status === 'blocked') return <span className="px-2.5 py-0.5 rounded-full text-xs bg-red-500/20 text-red-400 border border-red-500/30 font-medium">Blocked</span>;
-    return <span className="px-2.5 py-0.5 rounded-full text-xs bg-slate-500/20 text-slate-400 border border-slate-500/30 font-medium">{status}</span>;
+    if (status === 'active') {
+      return <span className="px-2.5 py-0.5 rounded-full text-xs bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-medium">Hoạt động</span>;
+    }
+    return <span className="px-2.5 py-0.5 rounded-full text-xs bg-red-500/20 text-red-400 border border-red-500/30 font-medium">Đã khóa</span>;
   };
 
   const roleBadge = (role) => {
@@ -155,6 +166,16 @@ function UserManagement() {
       staff: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30',
     };
     return <span className={`px-2.5 py-0.5 rounded-full text-xs border uppercase tracking-wider font-semibold ${styles[role] || ''}`}>{role}</span>;
+  };
+
+  const formatUserId = (u) => {
+    const prefixMap = {
+      customer: 'CUS',
+      admin: 'ADM',
+      manager: 'MGR',
+      staff: 'STF'
+    };
+    return `#${prefixMap[u.role] || 'USR'}-${u.id}`;
   };
 
   if (loading) {
@@ -173,7 +194,7 @@ function UserManagement() {
       <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
         <div>
           <h1 className="text-2xl font-bold text-white">👥 Quản lý Người dùng</h1>
-          <p className="text-slate-400 text-sm mt-1">Danh sách người dùng, lọc theo trạng thái, ngày tạo và phân trang</p>
+          <p className="text-slate-400 text-sm mt-1">Danh sách người dùng sắp xếp từ nhỏ đến lớn (#1 ➔ #N)</p>
         </div>
         <button
           onClick={() => setShowCreateModal(true)}
@@ -214,8 +235,8 @@ function UserManagement() {
             </select>
           </div>
 
-          {/* Lọc Status */}
-          <div className="w-40">
+          {/* Lọc Status (Chỉ có Hoạt động hoặc Đã khóa) */}
+          <div className="w-44">
             <label className="block text-slate-400 text-xs mb-1">⚡ Trạng thái</label>
             <select
               value={filterStatus}
@@ -223,9 +244,8 @@ function UserManagement() {
               className="w-full bg-slate-700/80 text-white border border-slate-600 rounded-xl px-3 py-2 text-sm outline-none focus:border-blue-500 transition cursor-pointer"
             >
               <option value="all">Tất cả trạng thái</option>
-              <option value="active">Active (Hoạt động)</option>
-              <option value="inactive">Inactive (Tạm khóa)</option>
-              <option value="blocked">Blocked (Bị khóa)</option>
+              <option value="active">Hoạt động</option>
+              <option value="locked">Đã khóa</option>
             </select>
           </div>
 
@@ -283,7 +303,7 @@ function UserManagement() {
             <tbody>
               {paginatedUsers.map((u) => (
                 <tr key={`${u.role}-${u.id}`} className="border-b border-slate-700/50 hover:bg-slate-700/30 transition">
-                  <td className="px-5 py-3 text-slate-300 font-mono text-xs">#{u.id}</td>
+                  <td className="px-5 py-3 text-slate-300 font-mono text-xs font-semibold">{formatUserId(u)}</td>
                   <td className="px-5 py-3 text-white font-medium">{u.name}</td>
                   <td className="px-5 py-3 text-slate-300">{u.email}</td>
                   <td className="px-5 py-3">{roleBadge(u.role)}</td>
@@ -297,7 +317,7 @@ function UserManagement() {
                         👁️ Chi tiết
                       </button>
                       <button onClick={() => handleToggleStatus(u)} className={`text-xs px-2.5 py-1 rounded-lg transition font-medium ${u.status === 'active' ? 'text-red-400 hover:text-red-300 hover:bg-red-500/10' : 'text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10'}`}>
-                        {u.status === 'active' ? '🔒 Khóa' : '🔓 Mở'}
+                        {u.status === 'active' ? '🔒 Khóa' : '🔓 Mở khóa'}
                       </button>
                     </div>
                   </td>
@@ -360,8 +380,10 @@ function UserManagement() {
               </div>
 
               <div>
-                <label className="block text-slate-300 text-sm mb-1">Mật khẩu *</label>
-                <input type="password" value={createForm.password} onChange={(e) => setCreateForm(f => ({ ...f, password: e.target.value }))} className="w-full bg-slate-700 text-white border border-slate-600 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-blue-500" placeholder="Ít nhất 6 ký tự" />
+                <label className="block text-slate-300 text-sm mb-1">
+                  Mật khẩu <span className="text-slate-400 text-xs font-normal">(Nếu để trống, mật khẩu mặc định sẽ là 123456)</span>
+                </label>
+                <input type="password" value={createForm.password} onChange={(e) => setCreateForm(f => ({ ...f, password: e.target.value }))} className="w-full bg-slate-700 text-white border border-slate-600 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-blue-500" placeholder="Mặc định: 123456" />
               </div>
 
               <div>

@@ -2,10 +2,8 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 
 const menuItems = [
-  { path: '/admin',             icon: '📊', label: 'Tổng quan',       end: true },
-  { path: '/admin/users',       icon: '👥', label: 'Quản lý User' },
-  { path: '/admin/roles',       icon: '🏷️', label: 'Quản lý Role' },
-  { path: '/admin/permissions', icon: '🔑', label: 'Quản lý Quyền' },
+  { path: '/admin',       icon: '📊', label: 'Tổng quan',       end: true },
+  { path: '/admin/users', icon: '👥', label: 'Quản lý User' },
 ];
 
 function Sidebar() {

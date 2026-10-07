@@ -41,7 +41,7 @@ function RegisterPage() {
   const { login } = useAuth();
 
   const [form, setForm] = useState({
-    name: '', email: '', phone: '', address: '', password: '', confirmPassword: '',
+    name: '', username: '', email: '', phone: '', address: '', password: '', confirmPassword: '',
   });
   const [errors, setErrors]   = useState({});
   const [loading, setLoading] = useState(false);
@@ -61,6 +61,11 @@ function RegisterPage() {
     const errs = {};
     if (!form.name.trim() || form.name.trim().length < 2)
       errs.name = 'Họ và tên phải có ít nhất 2 ký tự!';
+
+    if (!form.username.trim())
+      errs.username = 'Vui lòng nhập Tên đăng nhập!';
+    else if (!/^[a-zA-Z0-9_]{3,30}$/.test(form.username.trim()))
+      errs.username = 'Tên đăng nhập từ 3-30 ký tự, gồm chữ cái, chữ số và dấu _ !';
 
     const emailRegex = /^\S+@\S+\.\S+$/;
     if (!form.email.trim())
@@ -95,10 +100,11 @@ function RegisterPage() {
     setLoading(true);
     try {
       const res = await axiosInstance.post('/auth/register', {
-        name:    form.name.trim(),
-        email:   form.email.trim(),
-        phone:   form.phone.trim(),
-        address: form.address.trim() || undefined,
+        name:     form.name.trim(),
+        username: form.username.trim().toLowerCase(),
+        email:    form.email.trim(),
+        phone:    form.phone.trim(),
+        address:  form.address.trim() || undefined,
         password: form.password,
       });
 
@@ -192,12 +198,13 @@ function RegisterPage() {
           {/* Divider */}
           <div className="flex items-center gap-3">
             <div className="flex-1 h-px bg-slate-600" />
-            <span className="text-slate-500 text-xs">hoặc đăng ký bằng email</span>
+            <span className="text-slate-500 text-xs">hoặc đăng ký bằng tài khoản</span>
             <div className="flex-1 h-px bg-slate-600" />
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <Field label="👤 Họ và tên" name="name" placeholder="Nguyễn Văn A" required value={form.name} onChange={handleChange} error={errors.name} />
+            <Field label="🏷️ Tên đăng nhập" name="username" placeholder="nguyenvana123" required value={form.username} onChange={handleChange} error={errors.username} />
             <Field label="📧 Địa chỉ Email" name="email" type="email" placeholder="example@techshop.com" required value={form.email} onChange={handleChange} error={errors.email} />
 
             {/* Phone + Address — 2 cột */}

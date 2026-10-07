@@ -2,26 +2,20 @@ import { useState, useEffect } from 'react';
 import axiosInstance from '../../api/axiosInstance';
 
 function AdminDashboard() {
-  const [stats, setStats] = useState({ customers: 0, admins: 0, managers: 0, staffs: 0, roles: 0, permissions: 0 });
+  const [stats, setStats] = useState({ customers: 0, admins: 0, managers: 0, staffs: 0, total: 0 });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const [usersRes, rolesRes, permsRes] = await Promise.all([
-          axiosInstance.get('/users'),
-          axiosInstance.get('/roles'),
-          axiosInstance.get('/permissions')
-        ]);
-
-        const users = usersRes.data.users || [];
+        const res = await axiosInstance.get('/users');
+        const users = res.data.users || [];
         setStats({
           customers: users.filter(u => u.role === 'customer').length,
           admins: users.filter(u => u.role === 'admin').length,
           managers: users.filter(u => u.role === 'manager').length,
           staffs: users.filter(u => u.role === 'staff').length,
-          roles: rolesRes.data.roles?.length || 0,
-          permissions: permsRes.data.permissions?.length || 0
+          total: users.length
         });
       } catch (err) {
         console.error('Lỗi lấy thống kê:', err);
@@ -33,12 +27,11 @@ function AdminDashboard() {
   }, []);
 
   const cards = [
-    { label: 'Khách hàng',  value: stats.customers,   icon: '🛒', color: 'from-blue-600 to-blue-500' },
-    { label: 'Quản trị viên', value: stats.admins,     icon: '🛡️', color: 'from-red-600 to-red-500' },
-    { label: 'Quản lý',     value: stats.managers,     icon: '📋', color: 'from-amber-600 to-amber-500' },
-    { label: 'Nhân viên',   value: stats.staffs,       icon: '👷', color: 'from-emerald-600 to-emerald-500' },
-    { label: 'Vai trò',     value: stats.roles,        icon: '🏷️', color: 'from-purple-600 to-purple-500' },
-    { label: 'Quyền hạn',   value: stats.permissions,  icon: '🔑', color: 'from-cyan-600 to-cyan-500' },
+    { label: 'Tổng số tài khoản', value: stats.total,     icon: '👥', color: 'from-indigo-600 to-indigo-500' },
+    { label: 'Khách hàng',       value: stats.customers, icon: '🛒', color: 'from-blue-600 to-blue-500' },
+    { label: 'Quản trị viên',    value: stats.admins,    icon: '🛡️', color: 'from-red-600 to-red-500' },
+    { label: 'Quản lý',          value: stats.managers,  icon: '📋', color: 'from-amber-600 to-amber-500' },
+    { label: 'Nhân viên',        value: stats.staffs,    icon: '👷', color: 'from-emerald-600 to-emerald-500' },
   ];
 
   if (loading) {

@@ -26,7 +26,7 @@ function LoginPage() {
   // Validate phía client
   const validate = () => {
     const errs = {};
-    if (!form.account.trim()) errs.account = 'Vui lòng nhập Email hoặc Mã tài khoản!';
+    if (!form.account.trim()) errs.account = 'Vui lòng nhập Tên đăng nhập!';
     if (!form.password) errs.password = 'Vui lòng nhập Mật khẩu!';
     return errs;
   };
@@ -142,17 +142,17 @@ function LoginPage() {
             <div className="flex-1 h-px bg-slate-600" />
           </div>
 
-          {/* Email / Mã tài khoản */}
+          {/* Tên đăng nhập */}
           <div>
             <label className="block text-slate-300 text-sm font-medium mb-1.5">
-              📧 Email / Mã tài khoản
+              👤 Tên đăng nhập
             </label>
             <input
               type="text"
               name="account"
               value={form.account}
               onChange={handleChange}
-              placeholder="Nhập email hoặc mã tài khoản"
+              placeholder="Nhập tên đăng nhập"
               autoComplete="username"
               className={`w-full bg-slate-700 text-white placeholder-slate-400 rounded-xl px-4 py-3 text-sm border outline-none transition
                 ${errors.account ? 'border-red-500 focus:border-red-400' : 'border-slate-600 focus:border-blue-500'}`}

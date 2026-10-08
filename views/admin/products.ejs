@@ -113,7 +113,6 @@
         <button onclick="openBatchStockModal()" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800/60 transition-all text-left">
           <i data-lucide="boxes" class="w-4 h-4 text-slate-400"></i>
           <span>Nhập kho hàng loạt</span>
-          <span class="ml-auto text-[10px] px-1.5 py-0.5 rounded bg-violet-500/20 text-violet-300 font-mono">TX-4</span>
         </button>
 
         <div class="pt-4 px-3 py-2 text-[11px] font-semibold tracking-wider text-slate-400 uppercase">
@@ -440,25 +439,25 @@
                               <button 
                                 onclick="editProduct(<%= prod.id %>)" 
                                 class="p-1.5 rounded-lg bg-slate-800 hover:bg-cyan-500/20 text-slate-300 hover:text-cyan-400 border border-slate-700/60 hover:border-cyan-500/40 transition-all"
-                                title="Chỉnh sửa thiết bị (Transaction 2)"
+                                title="Chỉnh sửa thiết bị"
                               >
                                 <i data-lucide="edit-3" class="w-4 h-4"></i>
                               </button>
 
-                              <!-- Quick Stock Adjust Button (TX 4) -->
+                              <!-- Quick Stock Adjust Button -->
                               <button 
                                 onclick="quickAdjustStock(<%= prod.default_variant_id || prod.id %>, '<%= prod.sku_code %>', <%= prod.total_stock %>)" 
                                 class="p-1.5 rounded-lg bg-slate-800 hover:bg-violet-500/20 text-slate-300 hover:text-violet-400 border border-slate-700/60 hover:border-violet-500/40 transition-all"
-                                title="Điều chỉnh kho nhanh (Transaction 4)"
+                                title="Điều chỉnh kho nhanh"
                               >
                                 <i data-lucide="package-plus" class="w-4 h-4"></i>
                               </button>
 
-                              <!-- Safe Delete Button (TX 3) -->
+                              <!-- Delete Button -->
                               <button 
                                 onclick="confirmDeleteProduct(<%= prod.id %>, '<%= prod.name.replace(/'/g, "\\'") %>', <%= prod.total_stock %>)" 
                                 class="p-1.5 rounded-lg bg-slate-800 hover:bg-rose-500/20 text-slate-300 hover:text-rose-400 border border-slate-700/60 hover:border-rose-500/40 transition-all"
-                                title="Xóa an toàn (Transaction 3: Kiểm tra tồn kho)"
+                                title="Xóa thiết bị"
                               >
                                 <i data-lucide="trash-2" class="w-4 h-4"></i>
                               </button>
@@ -560,7 +559,7 @@
                     <i data-lucide="plus-circle" id="formHeaderIcon" class="w-5 h-5 text-cyan-400"></i>
                     <span>Thêm Thiết Bị Công Nghệ</span>
                   </h3>
-                  <p id="formSubtitle" class="text-xs text-slate-400 mt-0.5">Khởi tạo thiết bị kèm biến thể và nhập kho (TX-1)</p>
+                  <p id="formSubtitle" class="text-xs text-slate-400 mt-0.5">Khởi tạo thiết bị mới và thiết lập tồn kho ban đầu</p>
                 </div>
                 
                 <span id="formModeBadge" class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
@@ -704,7 +703,7 @@
                     class="flex-1 py-2.5 px-4 bg-gradient-to-r from-cyan-500 to-cyan-600 hover:from-cyan-400 hover:to-cyan-500 text-slate-950 font-bold text-xs rounded-xl shadow-lg shadow-cyan-500/20 transition-all flex items-center justify-center gap-2"
                   >
                     <i data-lucide="check" class="w-4 h-4"></i>
-                    <span id="submitBtnText">Thêm Mới Thiết Bị (TX-1)</span>
+                    <span id="submitBtnText">Thêm Mới Thiết Bị</span>
                   </button>
 
                   <button 
@@ -717,14 +716,6 @@
                   </button>
                 </div>
               </form>
-
-              <!-- Technical Notice / Transaction Info -->
-              <div class="p-3 bg-slate-900/80 border-t border-slate-800 text-[11px] text-slate-400 flex items-start gap-2">
-                <i data-lucide="shield-alert" class="w-3.5 h-3.5 text-cyan-400 shrink-0 mt-0.5"></i>
-                <span id="formHelpNotice">
-                  Hệ thống tự động kích hoạt <b>Transaction 1</b>: Thêm sản phẩm, sinh biến thể tiêu chuẩn và ghi nhật ký nhập kho atomic.
-                </span>
-              </div>
             </div>
           </section>
 
@@ -734,7 +725,7 @@
   </div>
 
   <!-- ===================================================================== -->
-  <!-- MODAL: ĐIỀU CHỈNH TỒN KHO HÀNG LOẠT (TRANSACTION 4: SELECT FOR UPDATE)  -->
+  <!-- MODAL: ĐIỀU CHỈNH TỒN KHO HÀNG LOẠT                                    -->
   <!-- ===================================================================== -->
   <div id="batchStockModal" class="fixed inset-0 z-50 hidden bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
     <div class="glass-card rounded-2xl w-full max-w-xl border border-slate-800 overflow-hidden shadow-2xl">
@@ -744,8 +735,8 @@
             <i data-lucide="boxes" class="w-5 h-5"></i>
           </div>
           <div>
-            <h3 class="text-base font-bold text-white">Điều Chỉnh Kho Hàng Loạt (Transaction 4)</h3>
-            <p class="text-xs text-slate-400">Khóa hàng dữ liệu bằng SELECT ... FOR UPDATE chống Race Condition</p>
+            <h3 class="text-base font-bold text-white">Điều Chỉnh Kho Hàng Loạt</h3>
+            <p class="text-xs text-slate-400">Cập nhật số lượng nhập kho hoặc điều chỉnh tồn kho cho thiết bị</p>
           </div>
         </div>
         <button onclick="closeBatchStockModal()" class="text-slate-400 hover:text-white p-1">
@@ -812,7 +803,7 @@
           </button>
           <button type="submit" class="px-5 py-2 text-xs rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-bold flex items-center gap-2 shadow-lg shadow-violet-600/30">
             <i data-lucide="check" class="w-4 h-4"></i>
-            <span>Xác Nhận Cập Nhật Kho (TX-4)</span>
+            <span>Xác Nhận Cập Nhật Kho</span>
           </button>
         </div>
       </form>
@@ -820,7 +811,7 @@
   </div>
 
   <!-- ===================================================================== -->
-  <!-- MODAL: QUẢN LÝ DANH MỤC & CASCADE REASSIGNMENT (TRANSACTION 5)         -->
+  <!-- MODAL: QUẢN LÝ DANH MỤC & CHUYỂN GIAO SẢN PHẨM                        -->
   <!-- ===================================================================== -->
   <div id="categoryModal" class="fixed inset-0 z-50 hidden bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
     <div class="glass-card rounded-2xl w-full max-w-2xl border border-slate-800 overflow-hidden shadow-2xl">
@@ -830,8 +821,8 @@
             <i data-lucide="folder-tree" class="w-5 h-5"></i>
           </div>
           <div>
-            <h3 class="text-base font-bold text-white">Quản Lý Danh Mục & Chuyển Giao (Transaction 5)</h3>
-            <p class="text-xs text-slate-400">Xóa an toàn danh mục và tự động chuyển giao sản phẩm sang danh mục mặc định</p>
+            <h3 class="text-base font-bold text-white">Quản Lý Danh Mục</h3>
+            <p class="text-xs text-slate-400">Quản lý và chuyển giao sản phẩm sang danh mục mặc định khi xóa</p>
           </div>
         </div>
         <button onclick="closeCategoryModal()" class="text-slate-400 hover:text-white p-1">
@@ -880,10 +871,10 @@
                     <button 
                       onclick="confirmDeleteCategory(<%= cat.id %>, '<%= cat.name.replace(/'/g, "\\'") %>', <%= cat.product_count %>)" 
                       class="px-2.5 py-1 text-xs rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 transition-all flex items-center gap-1"
-                      title="Xóa danh mục và chuyển giao sản phẩm sang Uncategorized (TX-5)"
+                      title="Xóa danh mục và chuyển giao sản phẩm sang Uncategorized"
                     >
                       <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
-                      <span>Xóa (TX-5)</span>
+                      <span>Xóa</span>
                     </button>
                   <% } else { %>
                     <span class="text-[10px] px-2 py-0.5 rounded bg-cyan-950 text-cyan-400 border border-cyan-800/50">Mặc định</span>
@@ -909,7 +900,7 @@
           </div>
           <div>
             <h3 id="logsModalTitle" class="text-base font-bold text-white">Nhật Ký Biến Động</h3>
-            <p class="text-xs text-slate-400">Theo dõi toàn bộ lịch sử biến động kho (TX-1, TX-4) và kiểm toán (TX-2)</p>
+            <p class="text-xs text-slate-400">Theo dõi toàn bộ lịch sử biến động kho và nhật ký kiểm toán hệ thống</p>
           </div>
         </div>
         <button onclick="closeLogsModal()" class="text-slate-400 hover:text-white p-1">
@@ -995,7 +986,7 @@
       showToast(`Đã tự tạo SKU: ${sku}`, 'success');
     }
 
-    // RESET PRODUCT FORM (SWITCH TO CREATE MODE - TRANSACTION 1)
+    // RESET PRODUCT FORM (SWITCH TO CREATE MODE)
     function resetProductForm() {
       document.getElementById('productForm').reset();
       document.getElementById('editingProductId').value = '';
@@ -1004,12 +995,11 @@
         <i data-lucide="plus-circle" class="w-5 h-5 text-cyan-400"></i>
         <span>Thêm Thiết Bị Công Nghệ</span>
       `;
-      document.getElementById('formSubtitle').innerText = 'Khởi tạo thiết bị kèm biến thể và nhập kho (TX-1)';
+      document.getElementById('formSubtitle').innerText = 'Khởi tạo thiết bị mới và thiết lập tồn kho ban đầu';
       document.getElementById('formModeBadge').innerText = 'TẠO MỚI';
       document.getElementById('formModeBadge').className = 'text-[10px] font-mono px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/30';
       
-      document.getElementById('submitBtnText').innerText = 'Thêm Mới Thiết Bị (TX-1)';
-      document.getElementById('formHelpNotice').innerHTML = 'Hệ thống tự động kích hoạt <b>Transaction 1</b>: Thêm sản phẩm, sinh biến thể tiêu chuẩn và ghi nhật ký nhập kho atomic.';
+      document.getElementById('submitBtnText').innerText = 'Thêm Mới Thiết Bị';
       
       // Initial stock field enabled for creation
       document.getElementById('fieldInitialStock').disabled = false;
@@ -1018,7 +1008,7 @@
       lucide.createIcons();
     }
 
-    // POPULATE PRODUCT INTO FORM (SWITCH TO EDIT MODE - TRANSACTION 2)
+    // POPULATE PRODUCT INTO FORM (SWITCH TO EDIT MODE)
     async function editProduct(id) {
       try {
         const response = await fetch(`/api/products/${id}`);
@@ -1041,19 +1031,18 @@
         document.getElementById('fieldSkuCode').value = prod.sku_code || (prod.default_variant ? prod.default_variant.sku : '');
         document.getElementById('fieldDescription').value = prod.description || '';
 
-        // Switch UI to Edit Mode (TX-2)
+        // Switch UI to Edit Mode
         document.getElementById('formTitle').innerHTML = `
           <i data-lucide="edit" class="w-5 h-5 text-amber-400"></i>
           <span>Chỉnh Sửa Thiết Bị #${prod.id}</span>
         `;
-        document.getElementById('formSubtitle').innerText = 'Cập nhật thông tin cơ bản & đồng bộ giá biến thể (TX-2)';
+        document.getElementById('formSubtitle').innerText = 'Cập nhật thông tin cơ bản & đồng bộ giá biến thể';
         document.getElementById('formModeBadge').innerText = 'CHẾ ĐỘ SỬA';
         document.getElementById('formModeBadge').className = 'text-[10px] font-mono px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30';
         
-        document.getElementById('submitBtnText').innerText = 'Lưu Thay Đổi & Đồng Bộ (TX-2)';
-        document.getElementById('formHelpNotice').innerHTML = 'Hệ thống sẽ thực hiện <b>Transaction 2</b>: Cập nhật thông tin, đồng bộ giá sang biến thể và ghi Audit Log.';
+        document.getElementById('submitBtnText').innerText = 'Lưu Thay Đổi';
 
-        // In edit mode, disable direct initial stock editing (stock must be adjusted via TX-4)
+        // In edit mode, disable direct initial stock editing
         document.getElementById('fieldInitialStock').disabled = true;
         document.getElementById('fieldInitialStock').parentElement.classList.add('opacity-50');
 
@@ -1067,7 +1056,7 @@
       }
     }
 
-    // FORM SUBMIT HANDLER: DISPATCH TRANSACTION 1 OR 2
+    // FORM SUBMIT HANDLER
     async function handleProductSubmit(e) {
       e.preventDefault();
 
@@ -1109,17 +1098,17 @@
       }
     }
 
-    // TRANSACTION 3: SAFE DELETE PRODUCT
+    // SAFE DELETE PRODUCT
     async function confirmDeleteProduct(id, name, totalStock) {
       // Client-side quick check
       if (totalStock > 0) {
-        const msg = `TỪ CHỐI XÓA (Transaction 3 Constraint): Thiết bị "${name}" hiện vẫn còn ${totalStock} sản phẩm trong kho! Vui lòng điều chỉnh tồn kho về 0 trước khi xóa an toàn.`;
+        const msg = `Không thể xóa: Thiết bị "${name}" hiện vẫn còn ${totalStock} sản phẩm trong kho! Vui lòng điều chỉnh tồn kho về 0 trước khi xóa.`;
         alert(msg);
         showToast(msg, 'error');
         return;
       }
 
-      if (!confirm(`Bạn có chắc chắn muốn XÓA VĨNH VIỄN thiết bị "${name}" (ID: ${id})?\n(Tồn kho hiện tại = 0, đủ điều kiện thực thi Transaction 3 Safe Delete).`)) {
+      if (!confirm(`Bạn có chắc chắn muốn xóa vĩnh viễn thiết bị "${name}" (ID: ${id})?\n(Tồn kho hiện tại: 0).`)) {
         return;
       }
 
@@ -1142,7 +1131,7 @@
       }
     }
 
-    // TRANSACTION 4: QUICK / BATCH ADJUST STOCK
+    // QUICK / BATCH ADJUST STOCK
     function openBatchStockModal() {
       document.getElementById('batchStockModal').classList.remove('hidden');
     }
@@ -1198,7 +1187,7 @@
       }
     }
 
-    // TRANSACTION 5: CATEGORY CASCADE REASSIGNMENT & DELETE
+    // CATEGORY CASCADE REASSIGNMENT & DELETE
     function openCategoryModal() {
       document.getElementById('categoryModal').classList.remove('hidden');
     }
@@ -1233,7 +1222,7 @@
 
     async function confirmDeleteCategory(id, name, productCount) {
       const confirmText = `Bạn có chắc chắn muốn xóa danh mục "${name}" (ID: ${id})?\n\n` +
-        `• Theo TRANSACTION 5: Toàn bộ ${productCount} thiết bị trong danh mục này sẽ được tự động chuyển giao an toàn sang danh mục mặc định "Uncategorized" (ID: 1).\n` +
+        `• Toàn bộ ${productCount} thiết bị trong danh mục này sẽ được tự động chuyển giao an toàn sang danh mục mặc định "Uncategorized" (ID: 1).\n` +
         `• Sau đó danh mục "${name}" mới được xóa.`;
 
       if (!confirm(confirmText)) return;

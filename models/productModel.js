@@ -581,7 +581,7 @@ class ProductModel {
         success: true,
         productId: prodId,
         syncedPrice: priceNum,
-        message: 'Cập nhật thiết bị và đồng bộ giá biến thể thành công (Audit Log đã ghi).'
+        message: 'Cập nhật thiết bị và đồng bộ giá biến thể thành công.'
       };
     } catch (error) {
       await connection.rollback();

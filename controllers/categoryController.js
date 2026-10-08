@@ -1,8 +1,9 @@
-const CategoryModel = require('../models/categoryModel');
+const CategoryService = require('../services/categoryService');
 
 /**
  * Category Controller
- * Handles HTTP requests, validations, and responses for Category management
+ * Handles HTTP requests, validations, and responses for Category management.
+ * Delegates all business logic to CategoryService.
  */
 class CategoryController {
   /**
@@ -14,14 +15,14 @@ class CategoryController {
       const { page, limit, search, all } = req.query;
 
       if (all === 'true' || all === '1') {
-        const categories = await CategoryModel.getAllCategories();
+        const categories = await CategoryService.getAllCategories();
         return res.status(200).json({
           success: true,
           data: categories
         });
       }
 
-      const result = await CategoryModel.getCategories({
+      const result = await CategoryService.getCategories({
         page: parseInt(page, 10) || 1,
         limit: parseInt(limit, 10) || 10,
         search: search || ''
@@ -44,7 +45,7 @@ class CategoryController {
   static async getCategory(req, res, next) {
     try {
       const { id } = req.params;
-      const category = await CategoryModel.getCategoryById(id);
+      const category = await CategoryService.getCategoryById(id);
 
       if (!category) {
         return res.status(404).json({
@@ -77,7 +78,7 @@ class CategoryController {
         });
       }
 
-      const result = await CategoryModel.createCategory({
+      const result = await CategoryService.createCategory({
         name: name.trim(),
         slug,
         description,
@@ -111,7 +112,7 @@ class CategoryController {
         });
       }
 
-      const updated = await CategoryModel.updateCategory(id, {
+      const updated = await CategoryService.updateCategory(id, {
         name: name.trim(),
         slug,
         description,
@@ -140,7 +141,7 @@ class CategoryController {
 
       const targetId = parseInt(target_category_id, 10) || 1;
 
-      const result = await CategoryModel.deleteCategoryWithCascadeReassignment(id, targetId);
+      const result = await CategoryService.deleteCategoryWithCascadeReassignment(id, targetId);
 
       return res.status(200).json({
         success: true,
@@ -148,7 +149,6 @@ class CategoryController {
         data: result
       });
     } catch (error) {
-      // Return 400 for business logic rejection (e.g. attempting to delete default category)
       if (error.statusCode) {
         return res.status(error.statusCode).json({
           success: false,

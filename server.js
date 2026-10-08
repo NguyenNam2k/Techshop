@@ -24,9 +24,9 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use(productRoutes);
 app.use('/api/categories', categoryRoutes);
 
-// Root redirect
+// Root redirect to Manager Portal
 app.get('/', (req, res) => {
-  res.redirect('/admin/products');
+  res.redirect('/manager/products');
 });
 
 // 404 Not Found Handler
@@ -38,10 +38,10 @@ app.use((req, res, next) => {
     });
   }
   res.status(404).send(`
-    <div style="font-family:sans-serif; text-align:center; padding: 50px;">
-      <h2>404 - Không tìm thấy trang</h2>
-      <p>Đường dẫn yêu cầu không tồn tại.</p>
-      <a href="/admin/products" style="color: #06b6d4;">Quay lại Trang Quản Trị</a>
+    <div style="font-family:sans-serif; text-align:center; padding: 50px; background: #0b0f19; color: #f1f5f9; min-height: 100vh;">
+      <h2 style="color: #06b6d4;">404 - Không tìm thấy trang</h2>
+      <p style="color: #94a3b8;">Đường dẫn yêu cầu không tồn tại trên hệ thống.</p>
+      <a href="/manager/products" style="display:inline-block; margin-top:20px; padding:10px 20px; background:#06b6d4; color:#0b0f19; text-decoration:none; border-radius:8px; font-weight:600;">Quay lại Trang Quản Lý (Manager)</a>
     </div>
   `);
 });
@@ -66,7 +66,7 @@ app.use((err, req, res, next) => {
     <div style="font-family:sans-serif; text-align:center; padding: 50px; background: #0f172a; color: #f8fafc; min-height: 100vh;">
       <h2 style="color: #f43f5e;">Lỗi hệ thống (${statusCode})</h2>
       <p style="color: #cbd5e1;">${message}</p>
-      <a href="/admin/products" style="display:inline-block; margin-top:20px; padding:10px 20px; background:#06b6d4; color:#0f172a; text-decoration:none; border-radius:6px; font-weight:600;">Quay lại Quản trị</a>
+      <a href="/manager/products" style="display:inline-block; margin-top:20px; padding:10px 20px; background:#06b6d4; color:#0f172a; text-decoration:none; border-radius:6px; font-weight:600;">Quay lại Quản lý</a>
     </div>
   `);
 });
@@ -79,10 +79,10 @@ async function startServer() {
   const HOST = process.env.HOST || '0.0.0.0';
   app.listen(PORT, HOST, () => {
     console.log(`====================================================`);
-    console.log(`🚀 TechShop Admin Server đang chạy tại:`);
-    console.log(`👉 Dashboard Quản trị: http://localhost:${PORT}/admin/products`);
-    console.log(`👉 API Sản phẩm:       http://localhost:${PORT}/api/products`);
-    console.log(`👉 API Danh mục:       http://localhost:${PORT}/api/categories`);
+    console.log(`🚀 TechShop Manager Server đang chạy tại:`);
+    console.log(`👉 Dashboard Quản lý (Manager): http://localhost:${PORT}/manager/products`);
+    console.log(`👉 API Sản phẩm:                http://localhost:${PORT}/api/products`);
+    console.log(`👉 API Danh mục:                http://localhost:${PORT}/api/categories`);
     console.log(`====================================================`);
   });
 }

@@ -1,9 +1,9 @@
-const ProductModel = require('../models/productModel');
-const CategoryModel = require('../models/categoryModel');
+const ProductService = require('../services/productService');
+const CategoryService = require('../services/categoryService');
 
 /**
  * Product Controller
- * Handles Request/Response, validations, and coordinates Model Transactions
+ * Handles Request/Response, validations, and coordinates Service layer for Manager Catalog.
  */
 class ProductController {
   /**
@@ -19,10 +19,10 @@ class ProductController {
   }
 
   /**
-   * GET /admin/products
-   * Renders the complete Admin Product & Category Management Dashboard UI
+   * GET /manager/products (and legacy /admin/products)
+   * Renders the complete Manager Product & Category Management Dashboard UI
    */
-  static async renderAdminPage(req, res, next) {
+  static async renderManagerPage(req, res, next) {
     try {
       const page = parseInt(req.query.page, 10) || 1;
       const limit = parseInt(req.query.limit, 10) || 10;
@@ -32,8 +32,8 @@ class ProductController {
       const stock_status = req.query.stock_status || 'all';
       const sort = req.query.sort || 'newest';
 
-      // 1. Fetch paginated products
-      const productResult = await ProductModel.getProducts({
+      // 1. Fetch paginated products via Service
+      const productResult = await ProductService.getProducts({
         page,
         limit,
         category_id,
@@ -43,15 +43,15 @@ class ProductController {
         sort
       });
 
-      // 2. Fetch all categories for filter and dropdown select
-      const categories = await CategoryModel.getAllCategories();
+      // 2. Fetch all categories for filter and dropdown via Service
+      const categories = await CategoryService.getAllCategories();
 
-      // 3. Fetch KPI stats
-      const stats = await ProductModel.getCatalogStats();
+      // 3. Fetch KPI stats via Service
+      const stats = await ProductService.getCatalogStats();
 
-      // 4. Render EJS view
-      return res.render('admin/products', {
-        title: 'Quản trị danh mục & Thiết bị công nghệ - TechShop',
+      // 4. Render EJS view for Manager
+      return res.render('manager/products', {
+        title: 'Quản lý Thiết Bị Công Nghệ - Manager Portal | TechShop',
         products: productResult.products,
         pagination: productResult.pagination,
         categories,
@@ -73,6 +73,11 @@ class ProductController {
     }
   }
 
+  // Alias for backward compatibility
+  static renderAdminPage(req, res, next) {
+    return ProductController.renderManagerPage(req, res, next);
+  }
+
   /**
    * GET /api/products
    * Returns paginated products in JSON for dynamic AJAX data table refresh
@@ -81,7 +86,7 @@ class ProductController {
     try {
       const { page, limit, category_id, search, status, stock_status, sort } = req.query;
 
-      const result = await ProductModel.getProducts({
+      const result = await ProductService.getProducts({
         page: parseInt(page, 10) || 1,
         limit: parseInt(limit, 10) || 10,
         category_id: category_id || null,
@@ -108,7 +113,7 @@ class ProductController {
   static async getProductJson(req, res, next) {
     try {
       const { id } = req.params;
-      const product = await ProductModel.getProductById(id);
+      const product = await ProductService.getProductById(id);
 
       if (!product) {
         return res.status(404).json({
@@ -132,7 +137,7 @@ class ProductController {
    */
   static async getCatalogStats(req, res, next) {
     try {
-      const stats = await ProductModel.getCatalogStats();
+      const stats = await ProductService.getCatalogStats();
       return res.status(200).json({
         success: true,
         data: stats
@@ -145,14 +150,7 @@ class ProductController {
   /**
    * POST /api/products
    * TRANSACTION 1: Create Product with Initial Inventory
-   * Validates the exact 7 required fields:
-   * 1. name
-   * 2. category_id
-   * 3. brand
-   * 4. base_price
-   * 5. initial_stock
-   * 6. sku_code
-   * 7. description
+   * Validates the exact 7 required fields
    */
   static async createProduct(req, res, next) {
     try {
@@ -187,8 +185,8 @@ class ProductController {
         });
       }
 
-      // Execute Transaction 1
-      const result = await ProductModel.createProductWithInitialInventory({
+      // Execute via ProductService
+      const result = await ProductService.createProduct({
         name: name.trim(),
         category_id: parseInt(category_id, 10),
         brand: brand.trim(),
@@ -247,15 +245,15 @@ class ProductController {
         });
       }
 
-      // Execute Transaction 2
-      const result = await ProductModel.updateProductAndSyncVariantPrice(id, {
+      // Execute via ProductService
+      const result = await ProductService.updateProduct(id, {
         name: name.trim(),
         category_id: parseInt(category_id, 10),
         brand: brand.trim(),
         base_price: price,
         sku_code: sku_code ? sku_code.trim() : null,
         description: description ? description.trim() : '',
-        changed_by: req.body.changed_by || 'Admin'
+        changed_by: req.body.changed_by || 'Manager'
       });
 
       return res.status(200).json({
@@ -276,14 +274,14 @@ class ProductController {
 
   /**
    * DELETE /api/products/:id
-   * TRANSACTION 3: Safe Delete/Archive Product
+   * TRANSACTION 3: Safe Delete/Archive Product (Stock Guard Rule)
    */
   static async deleteProduct(req, res, next) {
     try {
       const { id } = req.params;
 
-      // Execute Transaction 3
-      const result = await ProductModel.safeDeleteProduct(id);
+      // Execute via ProductService
+      const result = await ProductService.deleteProduct(id);
 
       return res.status(200).json({
         success: true,
@@ -291,7 +289,6 @@ class ProductController {
         data: result
       });
     } catch (error) {
-      // Custom rejection when stock > 0
       if (error.statusCode === 400 || error.totalStock > 0) {
         return res.status(400).json({
           success: false,
@@ -324,7 +321,7 @@ class ProductController {
         });
       }
 
-      const result = await ProductModel.batchAdjustStock(items, {
+      const result = await ProductService.batchAdjustStock(items, {
         staff_id,
         manager_id
       });
@@ -355,7 +352,7 @@ class ProductController {
       const productId = req.query.product_id ? parseInt(req.query.product_id, 10) : null;
       const variantId = req.query.variant_id ? parseInt(req.query.variant_id, 10) : null;
 
-      const logs = await ProductModel.getInventoryLogs({ limit, productId, variantId });
+      const logs = await ProductService.getInventoryLogs({ limit, productId, variantId });
 
       return res.status(200).json({
         success: true,
@@ -375,7 +372,7 @@ class ProductController {
       const limit = parseInt(req.query.limit, 10) || 30;
       const entityId = req.query.entity_id ? parseInt(req.query.entity_id, 10) : null;
 
-      const logs = await ProductModel.getAuditLogs({ limit, entityId });
+      const logs = await ProductService.getAuditLogs({ limit, entityId });
 
       return res.status(200).json({
         success: true,

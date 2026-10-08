@@ -136,19 +136,13 @@
         </button>
 
         <div class="pt-4 px-3 py-2 text-[11px] font-semibold tracking-wider text-slate-400 uppercase">
-          Kiểm toán & Hệ thống
+          Lịch sử kho vận
         </div>
 
-        <button onclick="openLogsModal('inventory')"
+        <button onclick="openLogsModal()"
           class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800/60 transition-all text-left">
           <i data-lucide="clipboard-list" class="w-4 h-4 text-slate-400"></i>
           <span>Nhật ký tồn kho</span>
-        </button>
-
-        <button onclick="openLogsModal('audit')"
-          class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800/60 transition-all text-left">
-          <i data-lucide="shield-check" class="w-4 h-4 text-slate-400"></i>
-          <span>Audit Logs</span>
         </button>
 
         <div class="pt-4 px-3 py-2 text-[11px] font-semibold tracking-wider text-slate-400 uppercase">
@@ -920,7 +914,7 @@
   </div>
 
   <!-- ===================================================================== -->
-  <!-- MODAL: NHẬT KÝ & AUDIT LOGS                                          -->
+  <!-- MODAL: NHẬT KÝ NHẬP XUẤT KHO (INVENTORY LOGS)                         -->
   <!-- ===================================================================== -->
   <div id="logsModal"
     class="fixed inset-0 z-50 hidden bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
@@ -930,26 +924,15 @@
         <div class="flex items-center gap-3">
           <div
             class="w-9 h-9 rounded-lg bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400">
-            <i data-lucide="history" class="w-5 h-5"></i>
+            <i data-lucide="clipboard-list" class="w-5 h-5"></i>
           </div>
           <div>
-            <h3 id="logsModalTitle" class="text-base font-bold text-white">Nhật Ký Biến Động</h3>
-            <p class="text-xs text-slate-400">Theo dõi toàn bộ lịch sử biến động kho và nhật ký kiểm toán hệ thống</p>
+            <h3 id="logsModalTitle" class="text-base font-bold text-white">Nhật Ký Nhập Xuất Kho</h3>
+            <p class="text-xs text-slate-400">Lịch sử các lần nhập kho, xuất kho và kiểm kê điều chỉnh tồn kho thiết bị</p>
           </div>
         </div>
         <button onclick="closeLogsModal()" class="text-slate-400 hover:text-white p-1">
           <i data-lucide="x" class="w-5 h-5"></i>
-        </button>
-      </div>
-
-      <div class="p-4 border-b border-slate-800 flex gap-2">
-        <button id="tabInvLogs" onclick="switchLogsTab('inventory')"
-          class="px-3.5 py-1.5 text-xs rounded-lg font-medium bg-cyan-500/20 text-cyan-300 border border-cyan-500/40">
-          Nhật ký kho (inventory_logs)
-        </button>
-        <button id="tabAuditLogs" onclick="switchLogsTab('audit')"
-          class="px-3.5 py-1.5 text-xs rounded-lg font-medium bg-slate-800 text-slate-400 hover:text-white">
-          Kiểm toán cập nhật (audit_logs)
         </button>
       </div>
 
@@ -1488,93 +1471,49 @@
       }
     }
 
-    // LOGS & AUDIT MODAL
-    let currentLogsTab = 'inventory';
-
-    function openLogsModal(tab = 'inventory') {
+    // INVENTORY LOGS MODAL (MANAGER DASHBOARD)
+    async function openLogsModal() {
       document.getElementById('logsModal').classList.remove('hidden');
-      switchLogsTab(tab);
+      const content = document.getElementById('logsContent');
+      content.innerHTML = '<div class="py-10 text-center text-slate-400">Đang tải lịch sử nhập xuất kho...</div>';
+
+      try {
+        const res = await fetch('/api/logs/inventory?limit=40');
+        const data = await res.json();
+
+        if (!data.data || data.data.length === 0) {
+          content.innerHTML = '<div class="py-10 text-center text-slate-500">Chưa có bản ghi nhập xuất kho nào.</div>';
+          return;
+        }
+
+        content.innerHTML = data.data.map(log => `
+          <div class="p-3 bg-slate-800/60 rounded-xl border border-slate-700/60 flex items-center justify-between gap-3">
+            <div>
+              <div class="flex items-center gap-2">
+                <span class="font-mono text-cyan-400 font-bold">[${log.sku}]</span>
+                <span class="text-slate-200 font-medium">${log.product_name}</span>
+              </div>
+              <div class="text-[11px] text-slate-400 mt-1">
+                ${log.note || 'Không có ghi chú'}
+              </div>
+            </div>
+            <div class="text-right">
+              <div class="font-mono font-bold ${log.quantity_changed >= 0 ? 'text-emerald-400' : 'text-rose-400'}">
+                ${log.quantity_changed >= 0 ? '+' : ''}${log.quantity_changed} cái
+              </div>
+              <div class="text-[10px] text-slate-400 font-mono">
+                Tồn sau: ${log.stock_after} | ${log.created_at}
+              </div>
+            </div>
+          </div>
+        `).join('');
+      } catch (e) {
+        content.innerHTML = `<div class="text-rose-400 text-center py-5">Lỗi tải dữ liệu: ${e.message}</div>`;
+      }
     }
 
     function closeLogsModal() {
       document.getElementById('logsModal').classList.add('hidden');
-    }
-
-    async function switchLogsTab(tab) {
-      currentLogsTab = tab;
-      const content = document.getElementById('logsContent');
-      const tabInv = document.getElementById('tabInvLogs');
-      const tabAudit = document.getElementById('tabAuditLogs');
-
-      if (tab === 'inventory') {
-        tabInv.className = 'px-3.5 py-1.5 text-xs rounded-lg font-medium bg-cyan-500/20 text-cyan-300 border border-cyan-500/40';
-        tabAudit.className = 'px-3.5 py-1.5 text-xs rounded-lg font-medium bg-slate-800 text-slate-400 hover:text-white';
-        content.innerHTML = '<div class="py-10 text-center text-slate-400">Đang tải lịch sử nhập xuất kho...</div>';
-
-        try {
-          const res = await fetch('/api/logs/inventory?limit=40');
-          const data = await res.json();
-
-          if (!data.data || data.data.length === 0) {
-            content.innerHTML = '<div class="py-10 text-center text-slate-500">Chưa có bản ghi nhập kho nào.</div>';
-            return;
-          }
-
-          content.innerHTML = data.data.map(log => `
-            <div class="p-3 bg-slate-800/60 rounded-xl border border-slate-700/60 flex items-center justify-between gap-3">
-              <div>
-                <div class="flex items-center gap-2">
-                  <span class="font-mono text-cyan-400 font-bold">[${log.sku}]</span>
-                  <span class="text-slate-200 font-medium">${log.product_name}</span>
-                </div>
-                <div class="text-[11px] text-slate-400 mt-1">
-                  ${log.note || 'Không có ghi chú'}
-                </div>
-              </div>
-              <div class="text-right">
-                <div class="font-mono font-bold ${log.quantity_changed >= 0 ? 'text-emerald-400' : 'text-rose-400'}">
-                  ${log.quantity_changed >= 0 ? '+' : ''}${log.quantity_changed} cái
-                </div>
-                <div class="text-[10px] text-slate-400 font-mono">
-                  Tồn sau: ${log.stock_after} | ${log.created_at}
-                </div>
-              </div>
-            </div>
-          `).join('');
-        } catch (e) {
-          content.innerHTML = `<div class="text-rose-400 text-center py-5">Lỗi tải dữ liệu: ${e.message}</div>`;
-        }
-      } else {
-        tabAudit.className = 'px-3.5 py-1.5 text-xs rounded-lg font-medium bg-cyan-500/20 text-cyan-300 border border-cyan-500/40';
-        tabInv.className = 'px-3.5 py-1.5 text-xs rounded-lg font-medium bg-slate-800 text-slate-400 hover:text-white';
-        content.innerHTML = '<div class="py-10 text-center text-slate-400">Đang tải Audit Logs...</div>';
-
-        try {
-          const res = await fetch('/api/logs/audit?limit=40');
-          const data = await res.json();
-
-          if (!data.data || data.data.length === 0) {
-            content.innerHTML = '<div class="py-10 text-center text-slate-500">Chưa có nhật ký kiểm toán nào.</div>';
-            return;
-          }
-
-          content.innerHTML = data.data.map(log => `
-            <div class="p-3 bg-slate-800/60 rounded-xl border border-slate-700/60 space-y-1.5">
-              <div class="flex items-center justify-between">
-                <span class="font-mono text-xs px-2 py-0.5 rounded bg-amber-500/10 text-amber-300 border border-amber-500/30">
-                  ${log.action}
-                </span>
-                <span class="text-[10px] text-slate-400 font-mono">${log.created_at}</span>
-              </div>
-              <div class="text-[11px] text-slate-300">
-                Thực hiện bởi: <b class="text-slate-100">${log.changed_by}</b> trên Thiết bị ID: #${log.entity_id}
-              </div>
-            </div>
-          `).join('');
-        } catch (e) {
-          content.innerHTML = `<div class="text-rose-400 text-center py-5">Lỗi tải dữ liệu: ${e.message}</div>`;
-        }
-      }
     }
 
     // =========================================================================

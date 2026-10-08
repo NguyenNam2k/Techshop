@@ -1,5 +1,6 @@
 const ProductService = require('../services/productService');
 const CategoryService = require('../services/categoryService');
+const StaffService = require('../services/staffService');
 
 /**
  * Product Controller
@@ -49,13 +50,17 @@ class ProductController {
       // 3. Fetch KPI stats via Service
       const stats = await ProductService.getCatalogStats();
 
-      // 4. Render EJS view for Manager
+      // 4. Fetch subordinate staff list via StaffService
+      const staffs = await StaffService.getStaffsByManager(1);
+
+      // 5. Render EJS view for Manager
       return res.render('manager/products', {
         title: 'Quản lý Thiết Bị Công Nghệ - Manager Portal | TechShop',
         products: productResult.products,
         pagination: productResult.pagination,
         categories,
         stats,
+        staffs,
         filters: {
           page,
           limit,

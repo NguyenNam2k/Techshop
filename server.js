@@ -6,6 +6,7 @@ require('dotenv').config();
 const { testConnection } = require('./config/database');
 const categoryRoutes = require('./routes/categoryRoutes');
 const productRoutes = require('./routes/productRoutes');
+const staffRoutes = require('./routes/staffRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -23,6 +24,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 // Application Routes
 app.use(productRoutes);
 app.use('/api/categories', categoryRoutes);
+app.use('/api/staffs', staffRoutes);
 
 // Root redirect to Manager Portal
 app.get('/', (req, res) => {
@@ -83,6 +85,7 @@ async function startServer() {
     console.log(`👉 Dashboard Quản lý (Manager): http://localhost:${PORT}/manager/products`);
     console.log(`👉 API Sản phẩm:                http://localhost:${PORT}/api/products`);
     console.log(`👉 API Danh mục:                http://localhost:${PORT}/api/categories`);
+    console.log(`👉 API Phân quyền Nhân sự:      http://localhost:${PORT}/api/staffs`);
     console.log(`====================================================`);
   });
 }

@@ -1,0 +1,1351 @@
+<!DOCTYPE html>
+<html lang="vi" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts: Inter & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            brand: {
+              50: '#ecfeff',
+              400: '#22d3ee',
+              500: '#06b6d4',
+              600: '#0891b2',
+            },
+            cyber: {
+              cyan: '#06b6d4',
+              violet: '#8b5cf6',
+              emerald: '#10b981',
+              rose: '#f43f5e',
+              amber: '#f59e0b'
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #0b0f19;
+      color: #f1f5f9;
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: #0f172a;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 9999px;
+    }
+    .glass-card {
+      background: rgba(17, 24, 39, 0.75);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .glow-cyan {
+      box-shadow: 0 0 20px -3px rgba(6, 182, 212, 0.25);
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col bg-[#0b0f19] text-slate-100 antialiased selection:bg-cyan-500 selection:text-slate-900">
+
+  <!-- Toast Notification Container -->
+  <div id="toastContainer" class="fixed top-5 right-5 z-50 flex flex-col gap-3 pointer-events-none"></div>
+
+  <div class="flex flex-1 min-h-screen overflow-hidden">
+    <!-- SIDEBAR NAVIGATION -->
+    <aside class="w-64 bg-[#0f172a] border-r border-slate-800 flex flex-col shrink-0">
+      <!-- Brand Logo -->
+      <div class="p-6 border-b border-slate-800/80 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-500 to-violet-600 flex items-center justify-center shadow-lg shadow-cyan-500/20">
+            <i data-lucide="cpu" class="w-6 h-6 text-white"></i>
+          </div>
+          <div>
+            <h1 class="text-lg font-bold tracking-tight bg-gradient-to-r from-cyan-400 via-sky-200 to-violet-400 bg-clip-text text-transparent">
+              TECHSHOP
+            </h1>
+            <p class="text-xs text-slate-400 font-mono">Admin Portal v1.0</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Navigation Links -->
+      <nav class="flex-1 p-4 space-y-1.5 custom-scrollbar overflow-y-auto">
+        <div class="px-3 py-2 text-[11px] font-semibold tracking-wider text-slate-400 uppercase">
+          Quản trị Danh mục
+        </div>
+
+        <a href="/admin/products" class="flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-medium transition-all bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+          <i data-lucide="layers" class="w-4 h-4"></i>
+          <span>Quản lý thiết bị</span>
+          <span class="ml-auto text-[10px] font-mono px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300">Active</span>
+        </a>
+
+        <button onclick="openCategoryModal()" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800/60 transition-all text-left">
+          <i data-lucide="folder-tree" class="w-4 h-4 text-slate-400"></i>
+          <span>Danh mục phần cứng</span>
+          <span class="ml-auto text-xs px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 font-mono"><%= categories.length %></span>
+        </button>
+
+        <button onclick="openBatchStockModal()" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800/60 transition-all text-left">
+          <i data-lucide="boxes" class="w-4 h-4 text-slate-400"></i>
+          <span>Nhập kho hàng loạt</span>
+          <span class="ml-auto text-[10px] px-1.5 py-0.5 rounded bg-violet-500/20 text-violet-300 font-mono">TX-4</span>
+        </button>
+
+        <div class="pt-4 px-3 py-2 text-[11px] font-semibold tracking-wider text-slate-400 uppercase">
+          Kiểm toán & Hệ thống
+        </div>
+
+        <button onclick="openLogsModal('inventory')" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800/60 transition-all text-left">
+          <i data-lucide="clipboard-list" class="w-4 h-4 text-slate-400"></i>
+          <span>Nhật ký tồn kho</span>
+        </button>
+
+        <button onclick="openLogsModal('audit')" class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-medium text-slate-300 hover:text-white hover:bg-slate-800/60 transition-all text-left">
+          <i data-lucide="shield-check" class="w-4 h-4 text-slate-400"></i>
+          <span>Audit Logs</span>
+        </button>
+      </nav>
+
+      <!-- Database Status Card -->
+      <div class="p-4 border-t border-slate-800/80 bg-slate-900/60">
+        <div class="flex items-center gap-2 mb-2">
+          <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+          <span class="text-xs font-semibold text-slate-300">MySQL Connection Pool</span>
+        </div>
+        <div class="flex justify-between items-center text-[11px] text-slate-400 font-mono">
+          <span>Database:</span>
+          <span class="text-cyan-400">techshop_db</span>
+        </div>
+        <div class="flex justify-between items-center text-[11px] text-slate-400 font-mono mt-1">
+          <span>Engine:</span>
+          <span class="text-slate-300">InnoDB ACID</span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- MAIN DASHBOARD CONTENT AREA -->
+    <main class="flex-1 flex flex-col min-w-0 overflow-y-auto custom-scrollbar">
+      <!-- TOP HEADER BAR -->
+      <header class="h-16 px-8 border-b border-slate-800 bg-[#0f172a]/70 backdrop-blur-md flex items-center justify-between sticky top-0 z-30">
+        <div class="flex items-center gap-3 text-sm text-slate-400">
+          <span class="hover:text-slate-200 cursor-pointer">Bảng điều khiển</span>
+          <i data-lucide="chevron-right" class="w-4 h-4 text-slate-600"></i>
+          <span class="hover:text-slate-200 cursor-pointer">Catalog Quản trị</span>
+          <i data-lucide="chevron-right" class="w-4 h-4 text-slate-600"></i>
+          <span class="text-cyan-400 font-medium">Thiết bị công nghệ</span>
+        </div>
+
+        <div class="flex items-center gap-3">
+          <button onclick="openBatchStockModal()" class="px-3.5 py-1.5 rounded-lg bg-violet-500/10 hover:bg-violet-500/20 text-violet-400 text-xs font-medium border border-violet-500/30 transition-all flex items-center gap-2">
+            <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
+            <span>Điều chỉnh tồn kho</span>
+          </button>
+        </div>
+      </header>
+
+      <div class="p-8 space-y-8 max-w-[1600px] w-full mx-auto">
+        
+        <!-- KPI METRICS OVERVIEW CARDS -->
+        <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          <!-- Card 1: Total Products -->
+          <div class="glass-card rounded-2xl p-5 relative overflow-hidden group hover:border-cyan-500/40 transition-all">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-xs font-medium text-slate-400 uppercase tracking-wider">Tổng Thiết Bị</p>
+                <h3 class="text-2xl font-bold text-white mt-1.5 font-mono"><%= stats.totalProducts %></h3>
+                <p class="text-xs text-emerald-400 mt-1 flex items-center gap-1">
+                  <i data-lucide="check-circle" class="w-3 h-3"></i>
+                  <span><%= stats.activeProducts %> đang kinh doanh</span>
+                </p>
+              </div>
+              <div class="w-12 h-12 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400 group-hover:scale-110 transition-transform">
+                <i data-lucide="monitor" class="w-6 h-6"></i>
+              </div>
+            </div>
+            <div class="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-cyan-500 to-transparent"></div>
+          </div>
+
+          <!-- Card 2: Total Inventory Units -->
+          <div class="glass-card rounded-2xl p-5 relative overflow-hidden group hover:border-violet-500/40 transition-all">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-xs font-medium text-slate-400 uppercase tracking-wider">Tổng Tồn Kho</p>
+                <h3 class="text-2xl font-bold text-white mt-1.5 font-mono"><%= stats.totalStockUnits.toLocaleString('vi-VN') %></h3>
+                <p class="text-xs text-slate-400 mt-1 flex items-center gap-1 font-mono">
+                  <span>Trị giá: <%= stats.totalInventoryValue.toLocaleString('vi-VN') %> ₫</span>
+                </p>
+              </div>
+              <div class="w-12 h-12 rounded-xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center text-violet-400 group-hover:scale-110 transition-transform">
+                <i data-lucide="package-check" class="w-6 h-6"></i>
+              </div>
+            </div>
+            <div class="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-violet-500 to-transparent"></div>
+          </div>
+
+          <!-- Card 3: Low Stock Warnings -->
+          <div class="glass-card rounded-2xl p-5 relative overflow-hidden group hover:border-amber-500/40 transition-all">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-xs font-medium text-slate-400 uppercase tracking-wider">Cảnh Báo Tồn Kho</p>
+                <h3 class="text-2xl font-bold text-amber-400 mt-1.5 font-mono"><%= stats.lowStockCount %></h3>
+                <p class="text-xs text-rose-400 mt-1 flex items-center gap-1">
+                  <i data-lucide="alert-triangle" class="w-3 h-3"></i>
+                  <span><%= stats.zeroStockCount %> biến thể hết sạch hàng</span>
+                </p>
+              </div>
+              <div class="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400 group-hover:scale-110 transition-transform">
+                <i data-lucide="alert-octagon" class="w-6 h-6"></i>
+              </div>
+            </div>
+            <div class="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-amber-500 to-transparent"></div>
+          </div>
+
+          <!-- Card 4: Categories -->
+          <div class="glass-card rounded-2xl p-5 relative overflow-hidden group hover:border-emerald-500/40 transition-all">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-xs font-medium text-slate-400 uppercase tracking-wider">Danh Mục Quản Trị</p>
+                <h3 class="text-2xl font-bold text-white mt-1.5 font-mono"><%= stats.totalCategories %></h3>
+                <button onclick="openCategoryModal()" class="text-xs text-cyan-400 hover:underline mt-1 flex items-center gap-1">
+                  <span>Quản lý & chuyển giao</span>
+                  <i data-lucide="arrow-right" class="w-3 h-3"></i>
+                </button>
+              </div>
+              <div class="w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 group-hover:scale-110 transition-transform">
+                <i data-lucide="folder-kanban" class="w-6 h-6"></i>
+              </div>
+            </div>
+            <div class="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-emerald-500 to-transparent"></div>
+          </div>
+        </section>
+
+        <!-- 2 MAIN SECTIONS: GRID LAYOUT -->
+        <div class="grid grid-cols-1 xl:grid-cols-12 gap-8 items-start">
+          
+          <!-- ============================================================= -->
+          <!-- KHU VỰC 1: BẢNG DỮ LIỆU (DATA TABLE) & PHÂN TRANG (PAGINATION) -->
+          <!-- ============================================================= -->
+          <section class="xl:col-span-8 space-y-4">
+            <div class="glass-card rounded-2xl overflow-hidden border border-slate-800">
+              
+              <!-- Table Header & Controls Bar -->
+              <div class="p-5 border-b border-slate-800/80 bg-slate-900/40 space-y-4">
+                <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                  <div>
+                    <h2 class="text-lg font-bold text-white flex items-center gap-2">
+                      <i data-lucide="cpu" class="w-5 h-5 text-cyan-400"></i>
+                      <span>Danh Sách Thiết Bị Công Nghệ</span>
+                    </h2>
+                    <p class="text-xs text-slate-400 mt-0.5">Quản trị danh mục, tồn kho và theo dõi giá niêm yết</p>
+                  </div>
+
+                  <!-- Quick Stats pill -->
+                  <div class="text-xs font-mono px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 border border-slate-700">
+                    Trang <span class="text-cyan-400 font-bold"><%= pagination.page %></span> / <%= pagination.totalPages %> (Tổng <%= pagination.total %> mục)
+                  </div>
+                </div>
+
+                <!-- FILTER FORM -->
+                <form id="filterForm" method="GET" action="/admin/products" class="grid grid-cols-1 sm:grid-cols-12 gap-3 pt-2">
+                  <!-- Search bar (Name, Brand, SKU) -->
+                  <div class="sm:col-span-5 relative">
+                    <i data-lucide="search" class="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                    <input 
+                      type="text" 
+                      name="search" 
+                      id="searchInput"
+                      value="<%= filters.search %>"
+                      placeholder="Tìm theo tên, hãng (Asus, Apple...), SKU..."
+                      class="w-full pl-9 pr-3.5 py-2 text-xs bg-slate-800/80 border border-slate-700/80 rounded-xl text-slate-100 placeholder-slate-400 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-all"
+                    >
+                  </div>
+
+                  <!-- Category Filter -->
+                  <div class="sm:col-span-3">
+                    <select 
+                      name="category_id" 
+                      id="categoryFilter"
+                      onchange="this.form.submit()"
+                      class="w-full px-3 py-2 text-xs bg-slate-800/80 border border-slate-700/80 rounded-xl text-slate-100 focus:outline-none focus:border-cyan-500 transition-all cursor-pointer"
+                    >
+                      <option value="all">Tất cả danh mục</option>
+                      <% categories.forEach(cat => { %>
+                        <option value="<%= cat.id %>" <%= filters.category_id == cat.id ? 'selected' : '' %>>
+                          <%= cat.name %> (<%= cat.product_count %>)
+                        </option>
+                      <% }); %>
+                    </select>
+                  </div>
+
+                  <!-- Stock Filter -->
+                  <div class="sm:col-span-2">
+                    <select 
+                      name="stock_status" 
+                      id="stockFilter"
+                      onchange="this.form.submit()"
+                      class="w-full px-3 py-2 text-xs bg-slate-800/80 border border-slate-700/80 rounded-xl text-slate-100 focus:outline-none focus:border-cyan-500 transition-all cursor-pointer"
+                    >
+                      <option value="all" <%= filters.stock_status === 'all' ? 'selected' : '' %>>Tất cả tồn kho</option>
+                      <option value="in_stock" <%= filters.stock_status === 'in_stock' ? 'selected' : '' %>>Còn hàng (>0)</option>
+                      <option value="low_stock" <%= filters.stock_status === 'low_stock' ? 'selected' : '' %>>Sắp hết (≤5)</option>
+                      <option value="out_of_stock" <%= filters.stock_status === 'out_of_stock' ? 'selected' : '' %>>Hết hàng (=0)</option>
+                    </select>
+                  </div>
+
+                  <!-- Limit selector -->
+                  <div class="sm:col-span-2 flex gap-2">
+                    <select 
+                      name="limit" 
+                      id="limitFilter"
+                      onchange="this.form.submit()"
+                      class="w-full px-3 py-2 text-xs bg-slate-800/80 border border-slate-700/80 rounded-xl text-slate-100 focus:outline-none focus:border-cyan-500 transition-all cursor-pointer"
+                    >
+                      <option value="5" <%= filters.limit == 5 ? 'selected' : '' %>>5 / trang</option>
+                      <option value="10" <%= filters.limit == 10 ? 'selected' : '' %>>10 / trang</option>
+                      <option value="20" <%= filters.limit == 20 ? 'selected' : '' %>>20 / trang</option>
+                      <option value="50" <%= filters.limit == 50 ? 'selected' : '' %>>50 / trang</option>
+                    </select>
+                    <button type="submit" class="p-2 bg-cyan-500 hover:bg-cyan-400 text-slate-900 rounded-xl transition-all" title="Lọc">
+                      <i data-lucide="filter" class="w-4 h-4"></i>
+                    </button>
+                  </div>
+                </form>
+              </div>
+
+              <!-- DATA TABLE -->
+              <div class="overflow-x-auto custom-scrollbar">
+                <table class="w-full text-left text-xs border-collapse">
+                  <thead>
+                    <tr class="bg-slate-900/80 border-b border-slate-800 text-slate-400 font-semibold tracking-wider uppercase text-[11px]">
+                      <th class="py-3 px-4">SKU / Thiết Bị</th>
+                      <th class="py-3 px-4">Danh Mục</th>
+                      <th class="py-3 px-4">Giá Cơ Sở</th>
+                      <th class="py-3 px-4 text-center">Tồn Kho</th>
+                      <th class="py-3 px-4 text-center">Trạng Thái</th>
+                      <th class="py-3 px-4 text-right">Thao Tác</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-slate-800/60" id="productsTableBody">
+                    <% if (products.length === 0) { %>
+                      <tr>
+                        <td colspan="6" class="py-12 text-center text-slate-400">
+                          <div class="flex flex-col items-center justify-center gap-3">
+                            <div class="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center text-slate-500">
+                              <i data-lucide="inbox" class="w-6 h-6"></i>
+                            </div>
+                            <p class="font-medium">Không tìm thấy thiết bị nào phù hợp với bộ lọc.</p>
+                            <a href="/admin/products" class="text-xs text-cyan-400 hover:underline">Xóa bộ lọc để xem tất cả</a>
+                          </div>
+                        </td>
+                      </tr>
+                    <% } else { %>
+                      <% products.forEach(prod => { %>
+                        <tr class="hover:bg-slate-800/40 transition-colors group">
+                          <!-- SKU & Name -->
+                          <td class="py-3.5 px-4">
+                            <div class="flex items-center gap-3">
+                              <div class="w-9 h-9 rounded-lg bg-slate-800 border border-slate-700/60 flex items-center justify-center text-slate-300 font-mono text-xs font-semibold shrink-0 group-hover:border-cyan-500/50 transition-colors">
+                                <i data-lucide="hard-drive" class="w-4 h-4 text-cyan-400"></i>
+                              </div>
+                              <div class="min-w-0">
+                                <div class="flex items-center gap-2">
+                                  <span class="font-semibold text-slate-100 truncate max-w-[220px]" title="<%= prod.name %>"><%= prod.name %></span>
+                                </div>
+                                <div class="flex items-center gap-2 mt-0.5">
+                                  <span class="font-mono text-[11px] text-cyan-400 bg-cyan-950/60 px-1.5 py-0.5 rounded border border-cyan-800/40">
+                                    <%= prod.sku_code || 'N/A' %>
+                                  </span>
+                                  <span class="text-[11px] text-slate-400">• <%= prod.brand %></span>
+                                </div>
+                              </div>
+                            </div>
+                          </td>
+
+                          <!-- Category -->
+                          <td class="py-3.5 px-4 whitespace-nowrap">
+                            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium bg-slate-800/90 text-slate-200 border border-slate-700/60">
+                              <i data-lucide="tag" class="w-3 h-3 text-cyan-400"></i>
+                              <span><%= prod.category_name || 'Uncategorized' %></span>
+                            </span>
+                          </td>
+
+                          <!-- Base Price -->
+                          <td class="py-3.5 px-4 whitespace-nowrap">
+                            <span class="font-mono text-sm font-semibold text-slate-100">
+                              <%= Number(prod.base_price).toLocaleString('vi-VN') %> ₫
+                            </span>
+                          </td>
+
+                          <!-- Stock Badge -->
+                          <td class="py-3.5 px-4 text-center whitespace-nowrap">
+                            <% const stock = Number(prod.total_stock); %>
+                            <% if (stock === 0) { %>
+                              <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-rose-500/10 text-rose-400 border border-rose-500/30">
+                                <i data-lucide="x-circle" class="w-3 h-3"></i>
+                                <span>Hết hàng (0)</span>
+                              </span>
+                            <% } else if (stock <= 5) { %>
+                              <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/30">
+                                <i data-lucide="alert-circle" class="w-3 h-3"></i>
+                                <span>Sắp hết (<%= stock %>)</span>
+                              </span>
+                            <% } else { %>
+                              <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
+                                <i data-lucide="check" class="w-3 h-3"></i>
+                                <span>Còn <%= stock %> cái</span>
+                              </span>
+                            <% } %>
+                          </td>
+
+                          <!-- Status -->
+                          <td class="py-3.5 px-4 text-center whitespace-nowrap">
+                            <% if (prod.status === 'active') { %>
+                              <span class="px-2 py-0.5 rounded text-[10px] font-medium bg-emerald-950 text-emerald-300 border border-emerald-800/50">Active</span>
+                            <% } else if (prod.status === 'out_of_stock') { %>
+                              <span class="px-2 py-0.5 rounded text-[10px] font-medium bg-rose-950 text-rose-300 border border-rose-800/50">Hết hàng</span>
+                            <% } else { %>
+                              <span class="px-2 py-0.5 rounded text-[10px] font-medium bg-slate-800 text-slate-300"><%= prod.status %></span>
+                            <% } %>
+                          </td>
+
+                          <!-- Actions -->
+                          <td class="py-3.5 px-4 text-right whitespace-nowrap">
+                            <div class="inline-flex items-center gap-1.5">
+                              <!-- Edit Button (Populate to Form) -->
+                              <button 
+                                onclick="editProduct(<%= prod.id %>)" 
+                                class="p-1.5 rounded-lg bg-slate-800 hover:bg-cyan-500/20 text-slate-300 hover:text-cyan-400 border border-slate-700/60 hover:border-cyan-500/40 transition-all"
+                                title="Chỉnh sửa thiết bị (Transaction 2)"
+                              >
+                                <i data-lucide="edit-3" class="w-4 h-4"></i>
+                              </button>
+
+                              <!-- Quick Stock Adjust Button (TX 4) -->
+                              <button 
+                                onclick="quickAdjustStock(<%= prod.default_variant_id || prod.id %>, '<%= prod.sku_code %>', <%= prod.total_stock %>)" 
+                                class="p-1.5 rounded-lg bg-slate-800 hover:bg-violet-500/20 text-slate-300 hover:text-violet-400 border border-slate-700/60 hover:border-violet-500/40 transition-all"
+                                title="Điều chỉnh kho nhanh (Transaction 4)"
+                              >
+                                <i data-lucide="package-plus" class="w-4 h-4"></i>
+                              </button>
+
+                              <!-- Safe Delete Button (TX 3) -->
+                              <button 
+                                onclick="confirmDeleteProduct(<%= prod.id %>, '<%= prod.name.replace(/'/g, "\\'") %>', <%= prod.total_stock %>)" 
+                                class="p-1.5 rounded-lg bg-slate-800 hover:bg-rose-500/20 text-slate-300 hover:text-rose-400 border border-slate-700/60 hover:border-rose-500/40 transition-all"
+                                title="Xóa an toàn (Transaction 3: Kiểm tra tồn kho)"
+                              >
+                                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      <% }); %>
+                    <% } %>
+                  </tbody>
+                </table>
+              </div>
+
+              <!-- ======================================================= -->
+              <!-- PAGINATION CONTROLS (Next, Prev, Page numbers) -->
+              <!-- ======================================================= -->
+              <div class="p-4 border-t border-slate-800 bg-slate-900/60 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs">
+                <div class="text-slate-400">
+                  Hiển thị <span class="font-semibold text-slate-200"><%= pagination.startIndex %></span> - 
+                  <span class="font-semibold text-slate-200"><%= pagination.endIndex %></span> trên tổng số 
+                  <span class="font-semibold text-cyan-400"><%= pagination.total %></span> thiết bị
+                </div>
+
+                <div class="flex items-center gap-1.5">
+                  <!-- Previous Button -->
+                  <% if (pagination.hasPrev) { %>
+                    <a 
+                      href="/admin/products?page=<%= pagination.page - 1 %>&limit=<%= filters.limit %>&category_id=<%= filters.category_id %>&search=<%= encodeURIComponent(filters.search) %>&stock_status=<%= filters.stock_status %>"
+                      class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 font-medium flex items-center gap-1 border border-slate-700 transition-all"
+                    >
+                      <i data-lucide="chevron-left" class="w-4 h-4"></i>
+                      <span>Prev</span>
+                    </a>
+                  <% } else { %>
+                    <button disabled class="px-3 py-1.5 rounded-lg bg-slate-900 text-slate-600 font-medium flex items-center gap-1 border border-slate-800/80 cursor-not-allowed">
+                      <i data-lucide="chevron-left" class="w-4 h-4"></i>
+                      <span>Prev</span>
+                    </button>
+                  <% } %>
+
+                  <!-- Page Numbers -->
+                  <div class="flex items-center gap-1">
+                    <% 
+                      const cur = pagination.page;
+                      const tot = pagination.totalPages;
+                      let startPage = Math.max(1, cur - 2);
+                      let endPage = Math.min(tot, cur + 2);
+                      if (endPage - startPage < 4) {
+                        if (startPage === 1) endPage = Math.min(tot, startPage + 4);
+                        else if (endPage === tot) startPage = Math.max(1, endPage - 4);
+                      }
+                    %>
+                    <% for (let p = startPage; p <= endPage; p++) { %>
+                      <% if (p === cur) { %>
+                        <span class="w-8 h-8 rounded-lg bg-cyan-500 text-slate-950 font-bold flex items-center justify-center font-mono">
+                          <%= p %>
+                        </span>
+                      <% } else { %>
+                        <a 
+                          href="/admin/products?page=<%= p %>&limit=<%= filters.limit %>&category_id=<%= filters.category_id %>&search=<%= encodeURIComponent(filters.search) %>&stock_status=<%= filters.stock_status %>"
+                          class="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium flex items-center justify-center font-mono border border-slate-700 transition-all"
+                        >
+                          <%= p %>
+                        </a>
+                      <% } %>
+                    <% } %>
+                  </div>
+
+                  <!-- Next Button -->
+                  <% if (pagination.hasNext) { %>
+                    <a 
+                      href="/admin/products?page=<%= pagination.page + 1 %>&limit=<%= filters.limit %>&category_id=<%= filters.category_id %>&search=<%= encodeURIComponent(filters.search) %>&stock_status=<%= filters.stock_status %>"
+                      class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 font-medium flex items-center gap-1 border border-slate-700 transition-all"
+                    >
+                      <span>Next</span>
+                      <i data-lucide="chevron-right" class="w-4 h-4"></i>
+                    </a>
+                  <% } else { %>
+                    <button disabled class="px-3 py-1.5 rounded-lg bg-slate-900 text-slate-600 font-medium flex items-center gap-1 border border-slate-800/80 cursor-not-allowed">
+                      <span>Next</span>
+                      <i data-lucide="chevron-right" class="w-4 h-4"></i>
+                    </button>
+                  <% } %>
+                </div>
+              </div>
+
+            </div>
+          </section>
+
+          <!-- ============================================================= -->
+          <!-- KHU VỰC 2: FORM THÊM / CHỈNH SỬA THIẾT BỊ (ĐÚNG 7 FIELDS)     -->
+          <!-- ============================================================= -->
+          <section class="xl:col-span-4 sticky top-24">
+            <div class="glass-card rounded-2xl overflow-hidden border border-slate-800 glow-cyan">
+              
+              <!-- Form Header -->
+              <div class="p-5 border-b border-slate-800/80 bg-gradient-to-r from-slate-900/90 to-slate-900/40 flex items-center justify-between">
+                <div>
+                  <h3 id="formTitle" class="text-base font-bold text-white flex items-center gap-2">
+                    <i data-lucide="plus-circle" id="formHeaderIcon" class="w-5 h-5 text-cyan-400"></i>
+                    <span>Thêm Thiết Bị Công Nghệ</span>
+                  </h3>
+                  <p id="formSubtitle" class="text-xs text-slate-400 mt-0.5">Khởi tạo thiết bị kèm biến thể và nhập kho (TX-1)</p>
+                </div>
+                
+                <span id="formModeBadge" class="text-[10px] font-mono px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
+                  TẠO MỚI
+                </span>
+              </div>
+
+              <!-- THE 7-FIELD FORM -->
+              <form id="productForm" onsubmit="handleProductSubmit(event)" class="p-5 space-y-4">
+                <input type="hidden" id="editingProductId" value="">
+
+                <!-- Field 1: name (Text input) -->
+                <div>
+                  <label for="fieldName" class="block text-xs font-semibold text-slate-300 mb-1">
+                    1. Tên Thiết Bị Công Nghệ <span class="text-rose-400">*</span>
+                  </label>
+                  <input 
+                    type="text" 
+                    id="fieldName" 
+                    name="name" 
+                    required 
+                    placeholder="VD: Bàn phím cơ AKKO 3087, Laptop Dell XPS 13"
+                    class="w-full px-3.5 py-2 text-xs bg-slate-800/90 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 transition-all"
+                  >
+                </div>
+
+                <!-- Field 2: category_id (Dropdown Select) -->
+                <div>
+                  <label for="fieldCategoryId" class="block text-xs font-semibold text-slate-300 mb-1">
+                    2. Danh Mục Thiết Bị <span class="text-rose-400">*</span>
+                  </label>
+                  <select 
+                    id="fieldCategoryId" 
+                    name="category_id" 
+                    required
+                    class="w-full px-3.5 py-2 text-xs bg-slate-800/90 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 transition-all cursor-pointer"
+                  >
+                    <option value="">-- Chọn danh mục thiết bị --</option>
+                    <% categories.forEach(cat => { %>
+                      <option value="<%= cat.id %>"><%= cat.name %></option>
+                    <% }); %>
+                  </select>
+                </div>
+
+                <!-- Field 3: brand (Text input) -->
+                <div>
+                  <label for="fieldBrand" class="block text-xs font-semibold text-slate-300 mb-1">
+                    3. Thương Hiệu Sản Xuất <span class="text-rose-400">*</span>
+                  </label>
+                  <input 
+                    type="text" 
+                    id="fieldBrand" 
+                    name="brand" 
+                    required 
+                    placeholder="VD: Logitech, Apple, Asus, Razer, Corsair"
+                    class="w-full px-3.5 py-2 text-xs bg-slate-800/90 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 transition-all"
+                  >
+                </div>
+
+                <!-- 2-Column Row: Base Price & Initial Stock -->
+                <div class="grid grid-cols-2 gap-3">
+                  <!-- Field 4: base_price (Number input, min=0) -->
+                  <div>
+                    <label for="fieldBasePrice" class="block text-xs font-semibold text-slate-300 mb-1">
+                      4. Giá Niêm Yết (VNĐ) <span class="text-rose-400">*</span>
+                    </label>
+                    <input 
+                      type="number" 
+                      id="fieldBasePrice" 
+                      name="base_price" 
+                      min="0" 
+                      step="1000"
+                      required 
+                      placeholder="VD: 1500000"
+                      class="w-full px-3.5 py-2 text-xs bg-slate-800/90 border border-slate-700 rounded-xl text-white placeholder-slate-500 font-mono focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 transition-all"
+                    >
+                  </div>
+
+                  <!-- Field 5: initial_stock (Number input, min=0) -->
+                  <div>
+                    <label for="fieldInitialStock" class="block text-xs font-semibold text-slate-300 mb-1">
+                      5. Tồn Kho Ban Đầu <span class="text-rose-400">*</span>
+                    </label>
+                    <input 
+                      type="number" 
+                      id="fieldInitialStock" 
+                      name="initial_stock" 
+                      min="0" 
+                      step="1"
+                      required 
+                      placeholder="VD: 50"
+                      class="w-full px-3.5 py-2 text-xs bg-slate-800/90 border border-slate-700 rounded-xl text-white placeholder-slate-500 font-mono focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 transition-all"
+                    >
+                  </div>
+                </div>
+
+                <!-- Field 6: sku_code (Text input) with Auto-Generate Button -->
+                <div>
+                  <div class="flex items-center justify-between mb-1">
+                    <label for="fieldSkuCode" class="text-xs font-semibold text-slate-300">
+                      6. Mã SKU Quản Lý Kho <span class="text-rose-400">*</span>
+                    </label>
+                    <button 
+                      type="button" 
+                      onclick="generateQuickSku()" 
+                      class="text-[10px] text-cyan-400 hover:text-cyan-300 font-mono flex items-center gap-1 hover:underline"
+                    >
+                      <i data-lucide="sparkles" class="w-3 h-3"></i>
+                      <span>Tự sinh mã</span>
+                    </button>
+                  </div>
+                  <input 
+                    type="text" 
+                    id="fieldSkuCode" 
+                    name="sku_code" 
+                    required 
+                    placeholder="VD: KB-AKKO-01, LAPTOP-DELL-XPS13"
+                    class="w-full px-3.5 py-2 text-xs bg-slate-800/90 border border-slate-700 rounded-xl text-white placeholder-slate-500 font-mono uppercase focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 transition-all"
+                  >
+                </div>
+
+                <!-- Field 7: description (Textarea) -->
+                <div>
+                  <label for="fieldDescription" class="block text-xs font-semibold text-slate-300 mb-1">
+                    7. Mô Tả Chi Tiết & Tính Năng
+                  </label>
+                  <textarea 
+                    id="fieldDescription" 
+                    name="description" 
+                    rows="3" 
+                    placeholder="Mô tả thông số switch, layout bàn phím, cổng Thunderbolt 4, màn OLED 120Hz..."
+                    class="w-full px-3.5 py-2 text-xs bg-slate-800/90 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 transition-all resize-y"
+                  ></textarea>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="pt-2 flex items-center gap-2">
+                  <button 
+                    type="submit" 
+                    id="submitBtn"
+                    class="flex-1 py-2.5 px-4 bg-gradient-to-r from-cyan-500 to-cyan-600 hover:from-cyan-400 hover:to-cyan-500 text-slate-950 font-bold text-xs rounded-xl shadow-lg shadow-cyan-500/20 transition-all flex items-center justify-center gap-2"
+                  >
+                    <i data-lucide="check" class="w-4 h-4"></i>
+                    <span id="submitBtnText">Thêm Mới Thiết Bị (TX-1)</span>
+                  </button>
+
+                  <button 
+                    type="button" 
+                    onclick="resetProductForm()" 
+                    class="py-2.5 px-3 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs rounded-xl border border-slate-700 transition-all flex items-center justify-center"
+                    title="Làm mới form"
+                  >
+                    <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+                  </button>
+                </div>
+              </form>
+
+              <!-- Technical Notice / Transaction Info -->
+              <div class="p-3 bg-slate-900/80 border-t border-slate-800 text-[11px] text-slate-400 flex items-start gap-2">
+                <i data-lucide="shield-alert" class="w-3.5 h-3.5 text-cyan-400 shrink-0 mt-0.5"></i>
+                <span id="formHelpNotice">
+                  Hệ thống tự động kích hoạt <b>Transaction 1</b>: Thêm sản phẩm, sinh biến thể tiêu chuẩn và ghi nhật ký nhập kho atomic.
+                </span>
+              </div>
+            </div>
+          </section>
+
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- MODAL: ĐIỀU CHỈNH TỒN KHO HÀNG LOẠT (TRANSACTION 4: SELECT FOR UPDATE)  -->
+  <!-- ===================================================================== -->
+  <div id="batchStockModal" class="fixed inset-0 z-50 hidden bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="glass-card rounded-2xl w-full max-w-xl border border-slate-800 overflow-hidden shadow-2xl">
+      <div class="p-5 border-b border-slate-800 bg-slate-900/60 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-lg bg-violet-500/10 border border-violet-500/30 flex items-center justify-center text-violet-400">
+            <i data-lucide="boxes" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h3 class="text-base font-bold text-white">Điều Chỉnh Kho Hàng Loạt (Transaction 4)</h3>
+            <p class="text-xs text-slate-400">Khóa hàng dữ liệu bằng SELECT ... FOR UPDATE chống Race Condition</p>
+          </div>
+        </div>
+        <button onclick="closeBatchStockModal()" class="text-slate-400 hover:text-white p-1">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <form id="batchStockForm" onsubmit="handleBatchStockSubmit(event)" class="p-5 space-y-4">
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1">
+            Chọn biến thể thiết bị cần nhập / xuất kho:
+          </label>
+          <select id="batchVariantSelect" required class="w-full px-3.5 py-2 text-xs bg-slate-800 border border-slate-700 rounded-xl text-white cursor-pointer focus:outline-none focus:border-violet-500">
+            <% products.forEach(p => { %>
+              <option value="<%= p.default_variant_id || p.id %>" data-sku="<%= p.sku_code %>" data-stock="<%= p.total_stock %>">
+                [<%= p.sku_code %>] <%= p.name %> (Hiện có: <%= p.total_stock %>)
+              </option>
+            <% }); %>
+          </select>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">
+              Số lượng thay đổi (+/-)
+            </label>
+            <input 
+              type="number" 
+              id="batchQuantityChange" 
+              placeholder="+20 hoặc -5" 
+              class="w-full px-3.5 py-2 text-xs bg-slate-800 border border-slate-700 rounded-xl text-white font-mono focus:outline-none focus:border-violet-500"
+            >
+            <span class="text-[10px] text-slate-400">Dương (+) để nhập thêm, Âm (-) để trừ kho</span>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">
+              Hoặc Thiết lập số tồn mới
+            </label>
+            <input 
+              type="number" 
+              id="batchNewStock" 
+              min="0" 
+              placeholder="VD: 100" 
+              class="w-full px-3.5 py-2 text-xs bg-slate-800 border border-slate-700 rounded-xl text-white font-mono focus:outline-none focus:border-violet-500"
+            >
+            <span class="text-[10px] text-slate-400">Ghi đè trực tiếp tồn kho mới</span>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1">Ghi chú điều chỉnh</label>
+          <input 
+            type="text" 
+            id="batchStockNote" 
+            placeholder="VD: Nhập thêm lô hàng tháng 10 / Kiểm kê thực tế kho..." 
+            class="w-full px-3.5 py-2 text-xs bg-slate-800 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-violet-500"
+          >
+        </div>
+
+        <div class="pt-3 flex items-center justify-end gap-2 border-t border-slate-800">
+          <button type="button" onclick="closeBatchStockModal()" class="px-4 py-2 text-xs rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium">
+            Hủy
+          </button>
+          <button type="submit" class="px-5 py-2 text-xs rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-bold flex items-center gap-2 shadow-lg shadow-violet-600/30">
+            <i data-lucide="check" class="w-4 h-4"></i>
+            <span>Xác Nhận Cập Nhật Kho (TX-4)</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- MODAL: QUẢN LÝ DANH MỤC & CASCADE REASSIGNMENT (TRANSACTION 5)         -->
+  <!-- ===================================================================== -->
+  <div id="categoryModal" class="fixed inset-0 z-50 hidden bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="glass-card rounded-2xl w-full max-w-2xl border border-slate-800 overflow-hidden shadow-2xl">
+      <div class="p-5 border-b border-slate-800 bg-slate-900/60 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-lg bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
+            <i data-lucide="folder-tree" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h3 class="text-base font-bold text-white">Quản Lý Danh Mục & Chuyển Giao (Transaction 5)</h3>
+            <p class="text-xs text-slate-400">Xóa an toàn danh mục và tự động chuyển giao sản phẩm sang danh mục mặc định</p>
+          </div>
+        </div>
+        <button onclick="closeCategoryModal()" class="text-slate-400 hover:text-white p-1">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div class="p-5 space-y-5">
+        <!-- Create Category Form -->
+        <form onsubmit="handleCreateCategory(event)" class="p-3.5 bg-slate-900/60 rounded-xl border border-slate-800 flex flex-col sm:flex-row gap-2">
+          <input 
+            type="text" 
+            id="newCatName" 
+            required 
+            placeholder="Tên danh mục mới (VD: Tai nghe Gaming)..." 
+            class="flex-1 px-3 py-1.5 text-xs bg-slate-800 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-emerald-500"
+          >
+          <button type="submit" class="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-lg transition-all flex items-center justify-center gap-1.5 shrink-0">
+            <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+            <span>Thêm Danh Mục</span>
+          </button>
+        </form>
+
+        <!-- Category List -->
+        <div class="space-y-2 max-h-72 overflow-y-auto custom-scrollbar">
+          <p class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Danh mục hiện có:</p>
+          <div class="space-y-1.5">
+            <% categories.forEach(cat => { %>
+              <div class="p-3 bg-slate-800/40 rounded-xl border border-slate-800 flex items-center justify-between gap-3 hover:border-slate-700 transition-colors">
+                <div class="flex items-center gap-3">
+                  <span class="w-6 h-6 rounded-md bg-slate-800 flex items-center justify-center text-[10px] font-mono text-slate-400 border border-slate-700">
+                    #<%= cat.id %>
+                  </span>
+                  <div>
+                    <h4 class="text-xs font-semibold text-slate-200"><%= cat.name %></h4>
+                    <p class="text-[11px] text-slate-400 font-mono">slug: <%= cat.slug %></p>
+                  </div>
+                </div>
+
+                <div class="flex items-center gap-2">
+                  <span class="text-[11px] font-mono px-2 py-0.5 rounded-full bg-slate-800 text-slate-300">
+                    <%= cat.product_count %> thiết bị
+                  </span>
+
+                  <% if (cat.id !== 1 && cat.slug !== 'uncategorized') { %>
+                    <button 
+                      onclick="confirmDeleteCategory(<%= cat.id %>, '<%= cat.name.replace(/'/g, "\\'") %>', <%= cat.product_count %>)" 
+                      class="px-2.5 py-1 text-xs rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 transition-all flex items-center gap-1"
+                      title="Xóa danh mục và chuyển giao sản phẩm sang Uncategorized (TX-5)"
+                    >
+                      <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                      <span>Xóa (TX-5)</span>
+                    </button>
+                  <% } else { %>
+                    <span class="text-[10px] px-2 py-0.5 rounded bg-cyan-950 text-cyan-400 border border-cyan-800/50">Mặc định</span>
+                  <% } %>
+                </div>
+              </div>
+            <% }); %>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- MODAL: NHẬT KÝ & AUDIT LOGS                                          -->
+  <!-- ===================================================================== -->
+  <div id="logsModal" class="fixed inset-0 z-50 hidden bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="glass-card rounded-2xl w-full max-w-3xl border border-slate-800 overflow-hidden shadow-2xl flex flex-col max-h-[85vh]">
+      <div class="p-5 border-b border-slate-800 bg-slate-900/60 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-lg bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400">
+            <i data-lucide="history" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h3 id="logsModalTitle" class="text-base font-bold text-white">Nhật Ký Biến Động</h3>
+            <p class="text-xs text-slate-400">Theo dõi toàn bộ lịch sử biến động kho (TX-1, TX-4) và kiểm toán (TX-2)</p>
+          </div>
+        </div>
+        <button onclick="closeLogsModal()" class="text-slate-400 hover:text-white p-1">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div class="p-4 border-b border-slate-800 flex gap-2">
+        <button id="tabInvLogs" onclick="switchLogsTab('inventory')" class="px-3.5 py-1.5 text-xs rounded-lg font-medium bg-cyan-500/20 text-cyan-300 border border-cyan-500/40">
+          Nhật ký kho (inventory_logs)
+        </button>
+        <button id="tabAuditLogs" onclick="switchLogsTab('audit')" class="px-3.5 py-1.5 text-xs rounded-lg font-medium bg-slate-800 text-slate-400 hover:text-white">
+          Kiểm toán cập nhật (audit_logs)
+        </button>
+      </div>
+
+      <div id="logsContent" class="flex-1 p-5 overflow-y-auto custom-scrollbar text-xs space-y-2">
+        <!-- Rendered dynamically via JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- JAVASCRIPT LOGIC -->
+  <script>
+    // Initialize Lucide Icons
+    lucide.createIcons();
+
+    // TOAST NOTIFICATION HELPER
+    function showToast(message, type = 'success') {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      
+      const isSuccess = type === 'success';
+      const isError = type === 'error';
+      const isWarning = type === 'warning';
+
+      let bgClass = 'bg-slate-900 border-slate-700 text-slate-100';
+      let icon = 'check-circle';
+      let iconColor = 'text-cyan-400';
+
+      if (isSuccess) {
+        bgClass = 'bg-slate-900/95 border-cyan-500/40 text-cyan-100 shadow-cyan-500/10';
+        iconColor = 'text-cyan-400';
+      } else if (isError) {
+        bgClass = 'bg-slate-900/95 border-rose-500/50 text-rose-100 shadow-rose-500/10';
+        icon = 'alert-triangle';
+        iconColor = 'text-rose-400';
+      } else if (isWarning) {
+        bgClass = 'bg-slate-900/95 border-amber-500/50 text-amber-100 shadow-amber-500/10';
+        icon = 'alert-circle';
+        iconColor = 'text-amber-400';
+      }
+
+      toast.className = `pointer-events-auto flex items-center gap-3 px-4 py-3 rounded-xl border ${bgClass} shadow-xl transform transition-all duration-300 translate-y-2 opacity-0 text-xs font-medium max-w-md`;
+      toast.innerHTML = `
+        <i data-lucide="${icon}" class="w-4 h-4 ${iconColor} shrink-0"></i>
+        <div class="flex-1">${message}</div>
+        <button onclick="this.parentElement.remove()" class="text-slate-400 hover:text-white ml-2">
+          <i data-lucide="x" class="w-3.5 h-3.5"></i>
+        </button>
+      `;
+
+      container.appendChild(toast);
+      lucide.createIcons({ root: toast });
+
+      requestAnimationFrame(() => {
+        toast.classList.remove('translate-y-2', 'opacity-0');
+      });
+
+      setTimeout(() => {
+        toast.classList.add('opacity-0', 'translate-x-full');
+        setTimeout(() => toast.remove(), 300);
+      }, 4500);
+    }
+
+    // AUTO-GENERATE RANDOM SKU HELPER
+    function generateQuickSku() {
+      const brand = document.getElementById('fieldBrand').value.trim() || 'TECH';
+      const prefix = brand.substring(0, 4).toUpperCase();
+      const rand = Math.floor(1000 + Math.random() * 9000);
+      const sku = `${prefix}-${rand}`;
+      document.getElementById('fieldSkuCode').value = sku;
+      showToast(`Đã tự tạo SKU: ${sku}`, 'success');
+    }
+
+    // RESET PRODUCT FORM (SWITCH TO CREATE MODE - TRANSACTION 1)
+    function resetProductForm() {
+      document.getElementById('productForm').reset();
+      document.getElementById('editingProductId').value = '';
+      
+      document.getElementById('formTitle').innerHTML = `
+        <i data-lucide="plus-circle" class="w-5 h-5 text-cyan-400"></i>
+        <span>Thêm Thiết Bị Công Nghệ</span>
+      `;
+      document.getElementById('formSubtitle').innerText = 'Khởi tạo thiết bị kèm biến thể và nhập kho (TX-1)';
+      document.getElementById('formModeBadge').innerText = 'TẠO MỚI';
+      document.getElementById('formModeBadge').className = 'text-[10px] font-mono px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/30';
+      
+      document.getElementById('submitBtnText').innerText = 'Thêm Mới Thiết Bị (TX-1)';
+      document.getElementById('formHelpNotice').innerHTML = 'Hệ thống tự động kích hoạt <b>Transaction 1</b>: Thêm sản phẩm, sinh biến thể tiêu chuẩn và ghi nhật ký nhập kho atomic.';
+      
+      // Initial stock field enabled for creation
+      document.getElementById('fieldInitialStock').disabled = false;
+      document.getElementById('fieldInitialStock').parentElement.classList.remove('opacity-50');
+
+      lucide.createIcons();
+    }
+
+    // POPULATE PRODUCT INTO FORM (SWITCH TO EDIT MODE - TRANSACTION 2)
+    async function editProduct(id) {
+      try {
+        const response = await fetch(`/api/products/${id}`);
+        const data = await response.json();
+
+        if (!data.success) {
+          showToast(data.message || 'Lỗi khi tải thông tin thiết bị', 'error');
+          return;
+        }
+
+        const prod = data.data;
+
+        // Fill form fields
+        document.getElementById('editingProductId').value = prod.id;
+        document.getElementById('fieldName').value = prod.name;
+        document.getElementById('fieldCategoryId').value = prod.category_id;
+        document.getElementById('fieldBrand').value = prod.brand;
+        document.getElementById('fieldBasePrice').value = Math.round(prod.base_price);
+        document.getElementById('fieldInitialStock').value = prod.total_stock;
+        document.getElementById('fieldSkuCode').value = prod.sku_code || (prod.default_variant ? prod.default_variant.sku : '');
+        document.getElementById('fieldDescription').value = prod.description || '';
+
+        // Switch UI to Edit Mode (TX-2)
+        document.getElementById('formTitle').innerHTML = `
+          <i data-lucide="edit" class="w-5 h-5 text-amber-400"></i>
+          <span>Chỉnh Sửa Thiết Bị #${prod.id}</span>
+        `;
+        document.getElementById('formSubtitle').innerText = 'Cập nhật thông tin cơ bản & đồng bộ giá biến thể (TX-2)';
+        document.getElementById('formModeBadge').innerText = 'CHẾ ĐỘ SỬA';
+        document.getElementById('formModeBadge').className = 'text-[10px] font-mono px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30';
+        
+        document.getElementById('submitBtnText').innerText = 'Lưu Thay Đổi & Đồng Bộ (TX-2)';
+        document.getElementById('formHelpNotice').innerHTML = 'Hệ thống sẽ thực hiện <b>Transaction 2</b>: Cập nhật thông tin, đồng bộ giá sang biến thể và ghi Audit Log.';
+
+        // In edit mode, disable direct initial stock editing (stock must be adjusted via TX-4)
+        document.getElementById('fieldInitialStock').disabled = true;
+        document.getElementById('fieldInitialStock').parentElement.classList.add('opacity-50');
+
+        lucide.createIcons();
+
+        // Scroll smooth to form
+        document.getElementById('productForm').scrollIntoView({ behavior: 'smooth', block: 'center' });
+        showToast(`Đang chỉnh sửa: ${prod.name}`, 'warning');
+      } catch (err) {
+        showToast('Lỗi kết nối máy chủ: ' + err.message, 'error');
+      }
+    }
+
+    // FORM SUBMIT HANDLER: DISPATCH TRANSACTION 1 OR 2
+    async function handleProductSubmit(e) {
+      e.preventDefault();
+
+      const editId = document.getElementById('editingProductId').value;
+      const isEditing = Boolean(editId);
+
+      const payload = {
+        name: document.getElementById('fieldName').value.trim(),
+        category_id: document.getElementById('fieldCategoryId').value,
+        brand: document.getElementById('fieldBrand').value.trim(),
+        base_price: parseFloat(document.getElementById('fieldBasePrice').value),
+        initial_stock: parseInt(document.getElementById('fieldInitialStock').value, 10),
+        sku_code: document.getElementById('fieldSkuCode').value.trim(),
+        description: document.getElementById('fieldDescription').value.trim()
+      };
+
+      const url = isEditing ? `/api/products/${editId}` : '/api/products';
+      const method = isEditing ? 'PUT' : 'POST';
+
+      try {
+        const res = await fetch(url, {
+          method,
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await res.json();
+
+        if (res.ok && data.success) {
+          showToast(data.message, 'success');
+          setTimeout(() => {
+            window.location.reload();
+          }, 800);
+        } else {
+          showToast(data.message || 'Thao tác thất bại', 'error');
+        }
+      } catch (err) {
+        showToast('Lỗi gửi yêu cầu: ' + err.message, 'error');
+      }
+    }
+
+    // TRANSACTION 3: SAFE DELETE PRODUCT
+    async function confirmDeleteProduct(id, name, totalStock) {
+      // Client-side quick check
+      if (totalStock > 0) {
+        const msg = `TỪ CHỐI XÓA (Transaction 3 Constraint): Thiết bị "${name}" hiện vẫn còn ${totalStock} sản phẩm trong kho! Vui lòng điều chỉnh tồn kho về 0 trước khi xóa an toàn.`;
+        alert(msg);
+        showToast(msg, 'error');
+        return;
+      }
+
+      if (!confirm(`Bạn có chắc chắn muốn XÓA VĨNH VIỄN thiết bị "${name}" (ID: ${id})?\n(Tồn kho hiện tại = 0, đủ điều kiện thực thi Transaction 3 Safe Delete).`)) {
+        return;
+      }
+
+      try {
+        const res = await fetch(`/api/products/${id}`, {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' }
+        });
+
+        const data = await res.json();
+
+        if (res.ok && data.success) {
+          showToast(data.message, 'success');
+          setTimeout(() => window.location.reload(), 800);
+        } else {
+          showToast(data.message || 'Xóa thất bại', 'error');
+        }
+      } catch (err) {
+        showToast('Lỗi mạng: ' + err.message, 'error');
+      }
+    }
+
+    // TRANSACTION 4: QUICK / BATCH ADJUST STOCK
+    function openBatchStockModal() {
+      document.getElementById('batchStockModal').classList.remove('hidden');
+    }
+
+    function closeBatchStockModal() {
+      document.getElementById('batchStockModal').classList.add('hidden');
+    }
+
+    function quickAdjustStock(variantId, sku, currentStock) {
+      openBatchStockModal();
+      const select = document.getElementById('batchVariantSelect');
+      select.value = variantId;
+      document.getElementById('batchStockNote').value = `Điều chỉnh tồn kho cho SKU ${sku}`;
+      document.getElementById('batchQuantityChange').focus();
+    }
+
+    async function handleBatchStockSubmit(e) {
+      e.preventDefault();
+
+      const variantId = document.getElementById('batchVariantSelect').value;
+      const quantityChange = document.getElementById('batchQuantityChange').value;
+      const newStock = document.getElementById('batchNewStock').value;
+      const note = document.getElementById('batchStockNote').value.trim();
+
+      const item = { variant_id: variantId, note };
+      if (newStock !== '') {
+        item.new_stock = parseInt(newStock, 10);
+      } else if (quantityChange !== '') {
+        item.quantity_change = parseInt(quantityChange, 10);
+      } else {
+        showToast('Vui lòng nhập "Số lượng thay đổi" hoặc "Số tồn mới"', 'warning');
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/products/batch-stock', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ items: [item] })
+        });
+
+        const data = await res.json();
+
+        if (res.ok && data.success) {
+          showToast(data.message, 'success');
+          closeBatchStockModal();
+          setTimeout(() => window.location.reload(), 800);
+        } else {
+          showToast(data.message || 'Lỗi điều chỉnh tồn kho', 'error');
+        }
+      } catch (err) {
+        showToast('Lỗi mạng: ' + err.message, 'error');
+      }
+    }
+
+    // TRANSACTION 5: CATEGORY CASCADE REASSIGNMENT & DELETE
+    function openCategoryModal() {
+      document.getElementById('categoryModal').classList.remove('hidden');
+    }
+
+    function closeCategoryModal() {
+      document.getElementById('categoryModal').classList.add('hidden');
+    }
+
+    async function handleCreateCategory(e) {
+      e.preventDefault();
+      const name = document.getElementById('newCatName').value.trim();
+      if (!name) return;
+
+      try {
+        const res = await fetch('/api/categories', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name })
+        });
+        const data = await res.json();
+
+        if (res.ok && data.success) {
+          showToast(data.message, 'success');
+          setTimeout(() => window.location.reload(), 800);
+        } else {
+          showToast(data.message || 'Lỗi thêm danh mục', 'error');
+        }
+      } catch (err) {
+        showToast('Lỗi mạng: ' + err.message, 'error');
+      }
+    }
+
+    async function confirmDeleteCategory(id, name, productCount) {
+      const confirmText = `Bạn có chắc chắn muốn xóa danh mục "${name}" (ID: ${id})?\n\n` +
+        `• Theo TRANSACTION 5: Toàn bộ ${productCount} thiết bị trong danh mục này sẽ được tự động chuyển giao an toàn sang danh mục mặc định "Uncategorized" (ID: 1).\n` +
+        `• Sau đó danh mục "${name}" mới được xóa.`;
+
+      if (!confirm(confirmText)) return;
+
+      try {
+        const res = await fetch(`/api/categories/${id}`, {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ target_category_id: 1 })
+        });
+
+        const data = await res.json();
+
+        if (res.ok && data.success) {
+          showToast(data.message, 'success');
+          setTimeout(() => window.location.reload(), 800);
+        } else {
+          showToast(data.message || 'Lỗi xóa danh mục', 'error');
+        }
+      } catch (err) {
+        showToast('Lỗi mạng: ' + err.message, 'error');
+      }
+    }
+
+    // LOGS & AUDIT MODAL
+    let currentLogsTab = 'inventory';
+
+    function openLogsModal(tab = 'inventory') {
+      document.getElementById('logsModal').classList.remove('hidden');
+      switchLogsTab(tab);
+    }
+
+    function closeLogsModal() {
+      document.getElementById('logsModal').classList.add('hidden');
+    }
+
+    async function switchLogsTab(tab) {
+      currentLogsTab = tab;
+      const content = document.getElementById('logsContent');
+      const tabInv = document.getElementById('tabInvLogs');
+      const tabAudit = document.getElementById('tabAuditLogs');
+
+      if (tab === 'inventory') {
+        tabInv.className = 'px-3.5 py-1.5 text-xs rounded-lg font-medium bg-cyan-500/20 text-cyan-300 border border-cyan-500/40';
+        tabAudit.className = 'px-3.5 py-1.5 text-xs rounded-lg font-medium bg-slate-800 text-slate-400 hover:text-white';
+        content.innerHTML = '<div class="py-10 text-center text-slate-400">Đang tải lịch sử nhập xuất kho...</div>';
+
+        try {
+          const res = await fetch('/api/logs/inventory?limit=40');
+          const data = await res.json();
+
+          if (!data.data || data.data.length === 0) {
+            content.innerHTML = '<div class="py-10 text-center text-slate-500">Chưa có bản ghi nhập kho nào.</div>';
+            return;
+          }
+
+          content.innerHTML = data.data.map(log => `
+            <div class="p-3 bg-slate-800/60 rounded-xl border border-slate-700/60 flex items-center justify-between gap-3">
+              <div>
+                <div class="flex items-center gap-2">
+                  <span class="font-mono text-cyan-400 font-bold">[${log.sku}]</span>
+                  <span class="text-slate-200 font-medium">${log.product_name}</span>
+                </div>
+                <div class="text-[11px] text-slate-400 mt-1">
+                  ${log.note || 'Không có ghi chú'}
+                </div>
+              </div>
+              <div class="text-right">
+                <div class="font-mono font-bold ${log.quantity_changed >= 0 ? 'text-emerald-400' : 'text-rose-400'}">
+                  ${log.quantity_changed >= 0 ? '+' : ''}${log.quantity_changed} cái
+                </div>
+                <div class="text-[10px] text-slate-400 font-mono">
+                  Tồn sau: ${log.stock_after} | ${log.created_at}
+                </div>
+              </div>
+            </div>
+          `).join('');
+        } catch (e) {
+          content.innerHTML = `<div class="text-rose-400 text-center py-5">Lỗi tải dữ liệu: ${e.message}</div>`;
+        }
+      } else {
+        tabAudit.className = 'px-3.5 py-1.5 text-xs rounded-lg font-medium bg-cyan-500/20 text-cyan-300 border border-cyan-500/40';
+        tabInv.className = 'px-3.5 py-1.5 text-xs rounded-lg font-medium bg-slate-800 text-slate-400 hover:text-white';
+        content.innerHTML = '<div class="py-10 text-center text-slate-400">Đang tải Audit Logs...</div>';
+
+        try {
+          const res = await fetch('/api/logs/audit?limit=40');
+          const data = await res.json();
+
+          if (!data.data || data.data.length === 0) {
+            content.innerHTML = '<div class="py-10 text-center text-slate-500">Chưa có nhật ký kiểm toán nào.</div>';
+            return;
+          }
+
+          content.innerHTML = data.data.map(log => `
+            <div class="p-3 bg-slate-800/60 rounded-xl border border-slate-700/60 space-y-1.5">
+              <div class="flex items-center justify-between">
+                <span class="font-mono text-xs px-2 py-0.5 rounded bg-amber-500/10 text-amber-300 border border-amber-500/30">
+                  ${log.action}
+                </span>
+                <span class="text-[10px] text-slate-400 font-mono">${log.created_at}</span>
+              </div>
+              <div class="text-[11px] text-slate-300">
+                Thực hiện bởi: <b class="text-slate-100">${log.changed_by}</b> trên Thiết bị ID: #${log.entity_id}
+              </div>
+            </div>
+          `).join('');
+        } catch (e) {
+          content.innerHTML = `<div class="text-rose-400 text-center py-5">Lỗi tải dữ liệu: ${e.message}</div>`;
+        }
+      }
+    }
+  </script>
+</body>
+</html>

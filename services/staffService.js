@@ -263,6 +263,86 @@ class StaffService {
       message: `Đã xóa nhân viên "${staff.full_name}" (${staff.staff_code}) khỏi danh sách cấp dưới.`
     };
   }
+
+  // =========================================================================
+  // STAFF TASKS (Assign Tasks)
+  // =========================================================================
+
+  static async getTasks(filters = {}) {
+    return await StaffRepository.findTasks(filters);
+  }
+
+  static async assignTask(data) {
+    if (!data.staff_id) throw new Error('Cần chọn nhân viên để giao nhiệm vụ');
+    if (!data.title || !data.title.trim()) throw new Error('Tiêu đề nhiệm vụ không được để trống');
+
+    const staff = await StaffRepository.findById(data.staff_id);
+    if (!staff) throw new Error('Không tìm thấy nhân viên được chỉ định');
+
+    const taskId = await StaffRepository.createTask({
+      staff_id: data.staff_id,
+      manager_id: data.manager_id || 1,
+      title: data.title.trim(),
+      description: data.description || null,
+      priority: data.priority || 'medium',
+      due_date: data.due_date || null
+    });
+
+    return {
+      taskId,
+      message: `Đã giao nhiệm vụ "${data.title.trim()}" cho nhân viên ${staff.full_name}`
+    };
+  }
+
+  static async updateTaskStatus(taskId, status) {
+    const validStatuses = ['todo', 'in_progress', 'completed', 'cancelled'];
+    if (!validStatuses.includes(status)) {
+      throw new Error(`Trạng thái không hợp lệ: ${status}`);
+    }
+    await StaffRepository.updateTaskStatus(taskId, status);
+    return { success: true, message: 'Đã cập nhật trạng thái nhiệm vụ' };
+  }
+
+  static async deleteTask(taskId) {
+    await StaffRepository.deleteTask(taskId);
+    return { success: true, message: 'Đã xóa nhiệm vụ' };
+  }
+
+  // =========================================================================
+  // WORKING SCHEDULES (View Working Schedule)
+  // =========================================================================
+
+  static async getSchedules(filters = {}) {
+    return await StaffRepository.findSchedules(filters);
+  }
+
+  static async createSchedule(data) {
+    if (!data.staff_id) throw new Error('Cần chọn nhân viên trực ca');
+    if (!data.work_date) throw new Error('Ngày trực ca là bắt buộc');
+    if (!data.shift) throw new Error('Ca làm việc là bắt buộc (morning, afternoon, evening)');
+
+    const schedId = await StaffRepository.createSchedule({
+      staff_id: data.staff_id,
+      work_date: data.work_date,
+      shift: data.shift,
+      note: data.note || null
+    });
+
+    return { schedId, message: 'Đã xếp lịch làm việc thành công' };
+  }
+
+  static async deleteSchedule(scheduleId) {
+    await StaffRepository.deleteSchedule(scheduleId);
+    return { success: true, message: 'Đã xóa lịch làm việc' };
+  }
+
+  // =========================================================================
+  // STAFF PERFORMANCE (View Staff Performance)
+  // =========================================================================
+
+  static async getPerformance() {
+    return await StaffRepository.getStaffPerformance();
+  }
 }
 
 module.exports = StaffService;

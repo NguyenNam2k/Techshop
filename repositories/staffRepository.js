@@ -204,6 +204,191 @@ class StaffRepository extends BaseRepository {
     );
     return result.affectedRows > 0;
   }
+
+  // =========================================================================
+  // STAFF TASKS (Assign Tasks Use Case)
+  // =========================================================================
+
+  /**
+   * Find tasks with optional staff filter
+   */
+  static async findTasks({ staff_id = null, status = 'all' } = {}) {
+    let query = `
+      SELECT 
+        t.*,
+        s.full_name AS staff_name,
+        s.department AS staff_department,
+        s.staff_code
+      FROM staff_tasks t
+      JOIN staffs s ON t.staff_id = s.id
+      WHERE 1=1
+    `;
+    const params = [];
+
+    if (staff_id) {
+      query += ` AND t.staff_id = ?`;
+      params.push(parseInt(staff_id, 10));
+    }
+
+    if (status !== 'all') {
+      query += ` AND t.status = ?`;
+      params.push(status);
+    }
+
+    query += ` ORDER BY FIELD(t.priority, 'urgent', 'high', 'medium', 'low'), t.due_date ASC, t.id DESC`;
+
+    const [rows] = await pool.query(query, params);
+    return rows;
+  }
+
+  /**
+   * Create new assigned task
+   */
+  static async createTask({ staff_id, manager_id = 1, title, description, priority = 'medium', due_date = null }) {
+    const [result] = await pool.query(
+      `INSERT INTO staff_tasks (staff_id, manager_id, title, description, priority, status, due_date)
+       VALUES (?, ?, ?, ?, ?, 'todo', ?)`,
+      [
+        parseInt(staff_id, 10),
+        parseInt(manager_id, 10) || 1,
+        title.trim(),
+        description || null,
+        priority || 'medium',
+        due_date || null
+      ]
+    );
+    return result.insertId;
+  }
+
+  /**
+   * Update task status (todo -> in_progress -> completed -> cancelled)
+   */
+  static async updateTaskStatus(taskId, status) {
+    const [result] = await pool.query(
+      `UPDATE staff_tasks SET status = ?, updated_at = NOW() WHERE id = ?`,
+      [status, parseInt(taskId, 10)]
+    );
+    return result.affectedRows > 0;
+  }
+
+  /**
+   * Delete assigned task
+   */
+  static async deleteTask(taskId) {
+    const [result] = await pool.query(
+      `DELETE FROM staff_tasks WHERE id = ?`,
+      [parseInt(taskId, 10)]
+    );
+    return result.affectedRows > 0;
+  }
+
+  // =========================================================================
+  // WORKING SCHEDULE (View Working Schedule Use Case)
+  // =========================================================================
+
+  /**
+   * Find schedules with optional date or staff filter
+   */
+  static async findSchedules({ work_date = null, staff_id = null } = {}) {
+    let query = `
+      SELECT 
+        sc.*,
+        s.full_name AS staff_name,
+        s.staff_code,
+        s.department
+      FROM staff_schedules sc
+      JOIN staffs s ON sc.staff_id = s.id
+      WHERE 1=1
+    `;
+    const params = [];
+
+    if (work_date) {
+      query += ` AND sc.work_date = ?`;
+      params.push(work_date);
+    }
+
+    if (staff_id) {
+      query += ` AND sc.staff_id = ?`;
+      params.push(parseInt(staff_id, 10));
+    }
+
+    query += ` ORDER BY sc.work_date ASC, FIELD(sc.shift, 'morning', 'afternoon', 'evening')`;
+
+    const [rows] = await pool.query(query, params);
+    return rows;
+  }
+
+  /**
+   * Create work shift schedule
+   */
+  static async createSchedule({ staff_id, work_date, shift, note }) {
+    const [result] = await pool.query(
+      `INSERT INTO staff_schedules (staff_id, work_date, shift, note)
+       VALUES (?, ?, ?, ?)`,
+      [
+        parseInt(staff_id, 10),
+        work_date,
+        shift,
+        note || null
+      ]
+    );
+    return result.insertId;
+  }
+
+  /**
+   * Delete schedule
+   */
+  static async deleteSchedule(scheduleId) {
+    const [result] = await pool.query(
+      `DELETE FROM staff_schedules WHERE id = ?`,
+      [parseInt(scheduleId, 10)]
+    );
+    return result.affectedRows > 0;
+  }
+
+  // =========================================================================
+  // STAFF PERFORMANCE (View Staff Performance Use Case)
+  // =========================================================================
+
+  /**
+   * Calculate staff performance & KPI metrics
+   */
+  static async getStaffPerformance() {
+    const [rows] = await pool.query(`
+      SELECT 
+        s.id,
+        s.staff_code,
+        s.full_name,
+        s.department,
+        s.status,
+        COUNT(t.id) AS total_tasks,
+        SUM(CASE WHEN t.status = 'completed' THEN 1 ELSE 0 END) AS completed_tasks,
+        SUM(CASE WHEN t.status = 'in_progress' THEN 1 ELSE 0 END) AS in_progress_tasks,
+        SUM(CASE WHEN t.status = 'todo' THEN 1 ELSE 0 END) AS todo_tasks,
+        SUM(CASE WHEN t.status = 'cancelled' THEN 1 ELSE 0 END) AS cancelled_tasks
+      FROM staffs s
+      LEFT JOIN staff_tasks t ON s.id = t.staff_id
+      GROUP BY s.id, s.staff_code, s.full_name, s.department, s.status
+      ORDER BY completed_tasks DESC, s.id ASC
+    `);
+
+    return rows.map(r => {
+      const total = parseInt(r.total_tasks, 10) || 0;
+      const completed = parseInt(r.completed_tasks, 10) || 0;
+      const rate = total > 0 ? Math.round((completed / total) * 100) : 100;
+      let rating = 'Xuất sắc';
+      if (rate < 60) rating = 'Cần cải thiện';
+      else if (rate < 80) rating = 'Khá';
+      else if (rate < 90) rating = 'Tốt';
+
+      return {
+        ...r,
+        completion_rate: rate,
+        kpi_score: Math.min(100, Math.round(rate * 0.9 + (completed > 0 ? 10 : 0))),
+        rating
+      };
+    });
+  }
 }
 
 module.exports = StaffRepository;

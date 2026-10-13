@@ -7,6 +7,8 @@ const { testConnection } = require('./config/database');
 const categoryRoutes = require('./routes/categoryRoutes');
 const productRoutes = require('./routes/productRoutes');
 const staffRoutes = require('./routes/staffRoutes');
+const couponRoutes = require('./routes/couponRoutes');
+const reportRoutes = require('./routes/reportRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -25,6 +27,13 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use(productRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/staffs', staffRoutes);
+app.use('/api/coupons', couponRoutes);
+app.use('/api/reports', reportRoutes);
+
+// Logout Route (Use Case: Logout)
+app.get('/logout', (req, res) => {
+  res.redirect('/manager/products?msg=Đã+đăng+xuất+phiên+làm+việc+thành+công&msgType=success');
+});
 
 // Root redirect to Manager Portal
 app.get('/', (req, res) => {

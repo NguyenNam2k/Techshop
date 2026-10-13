@@ -185,6 +185,96 @@ class StaffController {
       next(error);
     }
   }
+
+  // =========================================================================
+  // TASK ASSIGNMENT HANDLERS (Assign Tasks)
+  // =========================================================================
+
+  static async getTasks(req, res, next) {
+    try {
+      const { staff_id, status } = req.query;
+      const tasks = await StaffService.getTasks({ staff_id, status });
+      return res.status(200).json({ success: true, data: tasks });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async assignTask(req, res, next) {
+    try {
+      const result = await StaffService.assignTask(req.body);
+      return res.status(201).json({ success: true, ...result });
+    } catch (error) {
+      return res.status(400).json({ success: false, message: error.message });
+    }
+  }
+
+  static async updateTaskStatus(req, res, next) {
+    try {
+      const { id } = req.params;
+      const { status } = req.body;
+      const result = await StaffService.updateTaskStatus(id, status);
+      return res.status(200).json(result);
+    } catch (error) {
+      return res.status(400).json({ success: false, message: error.message });
+    }
+  }
+
+  static async deleteTask(req, res, next) {
+    try {
+      const { id } = req.params;
+      const result = await StaffService.deleteTask(id);
+      return res.status(200).json(result);
+    } catch (error) {
+      return res.status(400).json({ success: false, message: error.message });
+    }
+  }
+
+  // =========================================================================
+  // WORKING SCHEDULE HANDLERS (View Working Schedule)
+  // =========================================================================
+
+  static async getSchedules(req, res, next) {
+    try {
+      const { work_date, staff_id } = req.query;
+      const schedules = await StaffService.getSchedules({ work_date, staff_id });
+      return res.status(200).json({ success: true, data: schedules });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async createSchedule(req, res, next) {
+    try {
+      const result = await StaffService.createSchedule(req.body);
+      return res.status(201).json({ success: true, ...result });
+    } catch (error) {
+      return res.status(400).json({ success: false, message: error.message });
+    }
+  }
+
+  static async deleteSchedule(req, res, next) {
+    try {
+      const { id } = req.params;
+      const result = await StaffService.deleteSchedule(id);
+      return res.status(200).json(result);
+    } catch (error) {
+      return res.status(400).json({ success: false, message: error.message });
+    }
+  }
+
+  // =========================================================================
+  // STAFF PERFORMANCE HANDLERS (View Staff Performance)
+  // =========================================================================
+
+  static async getPerformance(req, res, next) {
+    try {
+      const performance = await StaffService.getPerformance();
+      return res.status(200).json({ success: true, data: performance });
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 module.exports = StaffController;

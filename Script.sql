@@ -4,6 +4,10 @@ COLLATE utf8mb4_unicode_ci;
 
 USE `techshop_db`;
 
+DROP TABLE IF EXISTS `staff_schedules`;
+DROP TABLE IF EXISTS `staff_tasks`;
+DROP TABLE IF EXISTS `coupons`;
+DROP TABLE IF EXISTS `audit_logs`;
 DROP TABLE IF EXISTS `inventory_logs`;
 DROP TABLE IF EXISTS `order_items`;
 DROP TABLE IF EXISTS `orders`;
@@ -91,6 +95,7 @@ CREATE TABLE `staffs` (
     `phone` VARCHAR(20) NULL,
     `avatar_url` VARCHAR(500) NULL,
     `department` ENUM('Warehouse', 'Sales', 'Customer Support') NOT NULL DEFAULT 'Warehouse',
+    `permissions` JSON NULL,
     `status` ENUM('active', 'inactive') NOT NULL DEFAULT 'active',
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -302,3 +307,71 @@ CREATE TABLE `inventory_logs` (
         FOREIGN KEY (`order_id`) REFERENCES `orders` (`id`) 
         ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE `audit_logs` (
+    `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    `entity_type` VARCHAR(50) NOT NULL,
+    `entity_id` INT UNSIGNED NOT NULL,
+    `action` VARCHAR(50) NOT NULL,
+    `old_data` JSON NULL,
+    `new_data` JSON NULL,
+    `changed_by` VARCHAR(100) NOT NULL DEFAULT 'Admin',
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    INDEX `idx_audit_entity` (`entity_type`, `entity_id`),
+    INDEX `idx_audit_action` (`action`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE `coupons` (
+    `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    `code` VARCHAR(50) NOT NULL UNIQUE,
+    `description` VARCHAR(255) NULL,
+    `discount_type` ENUM('percentage', 'fixed') NOT NULL DEFAULT 'percentage',
+    `discount_value` DECIMAL(12, 2) NOT NULL,
+    `min_order_value` DECIMAL(12, 2) NOT NULL DEFAULT 0.00,
+    `max_discount_amount` DECIMAL(12, 2) NULL,
+    `usage_limit` INT UNSIGNED NOT NULL DEFAULT 100,
+    `used_count` INT UNSIGNED NOT NULL DEFAULT 0,
+    `start_date` DATE NOT NULL,
+    `end_date` DATE NOT NULL,
+    `is_active` TINYINT(1) NOT NULL DEFAULT 1,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX `idx_coupon_code` (`code`),
+    INDEX `idx_coupon_active` (`is_active`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE `staff_tasks` (
+    `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    `staff_id` INT UNSIGNED NOT NULL,
+    `manager_id` INT UNSIGNED NOT NULL DEFAULT 1,
+    `title` VARCHAR(255) NOT NULL,
+    `description` TEXT NULL,
+    `priority` ENUM('low', 'medium', 'high', 'urgent') NOT NULL DEFAULT 'medium',
+    `status` ENUM('todo', 'in_progress', 'completed', 'cancelled') NOT NULL DEFAULT 'todo',
+    `due_date` DATE NULL,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT `fk_tasks_staff` 
+        FOREIGN KEY (`staff_id`) REFERENCES `staffs` (`id`) 
+        ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT `fk_tasks_manager` 
+        FOREIGN KEY (`manager_id`) REFERENCES `managers` (`id`) 
+        ON DELETE CASCADE ON UPDATE CASCADE,
+    INDEX `idx_task_staff` (`staff_id`),
+    INDEX `idx_task_status` (`status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE `staff_schedules` (
+    `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    `staff_id` INT UNSIGNED NOT NULL,
+    `work_date` DATE NOT NULL,
+    `shift` ENUM('morning', 'afternoon', 'evening') NOT NULL,
+    `note` VARCHAR(255) NULL,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT `fk_schedules_staff` 
+        FOREIGN KEY (`staff_id`) REFERENCES `staffs` (`id`) 
+        ON DELETE CASCADE ON UPDATE CASCADE,
+    INDEX `idx_schedule_date` (`work_date`),
+    INDEX `idx_schedule_staff` (`staff_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+

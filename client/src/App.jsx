@@ -3,7 +3,7 @@ import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
-import DashboardPage from './pages/DashboardPage';
+import CatalogPage from './pages/CatalogPage';
 
 // Admin pages
 import AdminLayout from './pages/admin/AdminLayout';
@@ -15,19 +15,17 @@ function App() {
     <AuthProvider>
       <BrowserRouter>
         <Routes>
-          {/* Public routes */}
+          {/* Public Storefront & Catalog routes */}
+          <Route path="/" element={<CatalogPage />} />
+          <Route path="/catalog" element={<CatalogPage />} />
+          <Route path="/products" element={<CatalogPage />} />
+
+          {/* Public auth routes */}
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
 
-          {/* Protected routes - yêu cầu đăng nhập */}
-          <Route
-            path="/dashboard"
-            element={
-              <ProtectedRoute>
-                <DashboardPage />
-              </ProtectedRoute>
-            }
-          />
+          {/* Redirect /dashboard cũ về /catalog */}
+          <Route path="/dashboard" element={<Navigate to="/catalog" replace />} />
 
           {/* Admin routes - yêu cầu đăng nhập + role admin */}
           <Route
@@ -42,9 +40,8 @@ function App() {
             <Route path="users" element={<UserManagement />} />
           </Route>
 
-          {/* Redirect mặc định */}
-          <Route path="/" element={<Navigate to="/dashboard" replace />} />
-          <Route path="*" element={<Navigate to="/login" replace />} />
+          {/* Route 404 - Redirect mặc định */}
+          <Route path="*" element={<Navigate to="/catalog" replace />} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>

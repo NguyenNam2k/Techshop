@@ -18,9 +18,11 @@ app.use(express.static(path.join(__dirname, '../public')));
 // Khai báo Routes API
 const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
+const catalogRoutes = require('./routes/catalogRoutes');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/catalog', catalogRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

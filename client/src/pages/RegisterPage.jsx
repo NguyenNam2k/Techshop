@@ -110,7 +110,7 @@ function RegisterPage() {
 
       if (res.data.success) {
         login(res.data.token, res.data.user);
-        navigate('/dashboard', { replace: true });
+        navigate('/catalog', { replace: true });
       }
     } catch (err) {
       const msg = err.response?.data?.message || 'Đăng ký thất bại, vui lòng thử lại!';
@@ -132,7 +132,7 @@ function RegisterPage() {
         });
         if (res.data.success) {
           login(res.data.token, res.data.user);
-          navigate('/dashboard', { replace: true });
+          navigate('/catalog', { replace: true });
         }
       } catch (err) {
         setApiError(err.response?.data?.message || 'Đăng ký Google thất bại!');

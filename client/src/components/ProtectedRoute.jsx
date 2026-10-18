@@ -48,9 +48,9 @@ function ProtectedRoute({ children, requiredRole }) {
     return <Navigate to="/login" replace />;
   }
 
-  // Đã đăng nhập nhưng không đủ quyền → về dashboard
+  // Đã đăng nhập nhưng không đủ quyền → về catalog
   if (requiredRole && user.role !== requiredRole) {
-    return <Navigate to="/dashboard" replace />;
+    return <Navigate to="/catalog" replace />;
   }
 
   // Hợp lệ → render component con

@@ -45,7 +45,7 @@ function LoginPage() {
 
       if (res.data.success) {
         login(res.data.token, res.data.user);
-        const redirectUrl = res.data.user?.role === 'admin' ? '/admin' : '/dashboard';
+        const redirectUrl = res.data.user?.role === 'admin' ? '/admin' : '/catalog';
         navigate(redirectUrl, { replace: true });
       }
     } catch (err) {
@@ -70,7 +70,7 @@ function LoginPage() {
         });
         if (res.data.success) {
           login(res.data.token, res.data.user);
-          const redirectUrl = res.data.user?.role === 'admin' ? '/admin' : '/dashboard';
+          const redirectUrl = res.data.user?.role === 'admin' ? '/admin' : '/catalog';
           navigate(redirectUrl, { replace: true });
         }
       } catch (err) {

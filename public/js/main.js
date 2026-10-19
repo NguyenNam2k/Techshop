@@ -105,6 +105,17 @@ async function handleLogin(e) {
       localStorage.setItem('techshop_user', JSON.stringify(data.user));
 
       showToast(data.message || 'Đăng nhập thành công!', 'success');
+
+      // Chuyển hướng tự động theo Role
+      const role = (data.user?.role || '').toLowerCase();
+      if (role === 'manager') {
+        showToast('Đang chuyển hướng tới Trang Quản Lý (Manager)...', 'info');
+        setTimeout(() => {
+          window.location.href = '/manager/products';
+        }, 600);
+        return;
+      }
+
       renderUserDashboard(data.user, data.token);
     } else {
       showToast(data.message || 'Đăng nhập thất bại!', 'error');
@@ -289,6 +300,27 @@ function renderUserDashboard(user, token) {
   roleBadge.innerText = (user.role || 'customer').toUpperCase();
 
   document.getElementById('dash-jwt-token').value = token;
+
+  // Cập nhật nút điều hướng Portal theo Role
+  const portalBtn = document.getElementById('dash-portal-btn');
+  const portalText = document.getElementById('dash-portal-btn-text');
+  const userRole = (user.role || '').toLowerCase();
+
+  if (portalBtn && portalText) {
+    if (userRole === 'manager' || userRole === 'admin') {
+      portalBtn.href = '/manager/products';
+      portalText.innerText = 'Vào Trang Quản Lý (Manager Portal)';
+      portalBtn.style.display = 'flex';
+    } else if (userRole === 'customer') {
+      portalBtn.href = '/catalog';
+      portalText.innerText = 'Đến Cửa Hàng Mua Sắm (Catalog)';
+      portalBtn.style.display = 'flex';
+    } else {
+      portalBtn.href = '/manager/products';
+      portalText.innerText = 'Vào Hệ Thống Quản Lý';
+      portalBtn.style.display = 'flex';
+    }
+  }
 }
 
 /**

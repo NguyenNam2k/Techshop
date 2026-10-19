@@ -45,8 +45,16 @@ function LoginPage() {
 
       if (res.data.success) {
         login(res.data.token, res.data.user);
-        const redirectUrl = res.data.user?.role === 'admin' ? '/admin' : '/catalog';
-        navigate(redirectUrl, { replace: true });
+        const role = (res.data.user?.role || '').toLowerCase();
+        if (role === 'manager') {
+          window.location.href = '/manager/products';
+          return;
+        }
+        if (role === 'admin') {
+          navigate('/admin', { replace: true });
+          return;
+        }
+        navigate('/catalog', { replace: true });
       }
     } catch (err) {
       const msg = err.response?.data?.message || 'Đăng nhập thất bại, vui lòng thử lại!';
@@ -70,8 +78,16 @@ function LoginPage() {
         });
         if (res.data.success) {
           login(res.data.token, res.data.user);
-          const redirectUrl = res.data.user?.role === 'admin' ? '/admin' : '/catalog';
-          navigate(redirectUrl, { replace: true });
+          const role = (res.data.user?.role || '').toLowerCase();
+          if (role === 'manager') {
+            window.location.href = '/manager/products';
+            return;
+          }
+          if (role === 'admin') {
+            navigate('/admin', { replace: true });
+            return;
+          }
+          navigate('/catalog', { replace: true });
         }
       } catch (err) {
         setApiError(err.response?.data?.message || 'Đăng nhập Google thất bại!');

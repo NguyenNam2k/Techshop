@@ -15,6 +15,11 @@ export default defineConfig({
         target: 'http://localhost:5000',
         changeOrigin: true,
       },
+      // Chuyển tiếp các request /manager/* sang backend Express (port 5000)
+      '/manager': {
+        target: 'http://localhost:5000',
+        changeOrigin: true,
+      },
     },
   },
 })

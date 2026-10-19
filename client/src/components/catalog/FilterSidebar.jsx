@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 function FilterSidebar({
   metadata,
@@ -8,6 +8,33 @@ function FilterSidebar({
   onCloseMobile
 }) {
   const [brandSearch, setBrandSearch] = useState('');
+  const [localMinPrice, setLocalMinPrice] = useState(filters.minPrice || '');
+  const [localMaxPrice, setLocalMaxPrice] = useState(filters.maxPrice || '');
+
+  // Đồng bộ khi URL filters thay đổi từ bên ngoài (ví dụ reset toàn bộ)
+  useEffect(() => {
+    setLocalMinPrice(filters.minPrice || '');
+  }, [filters.minPrice]);
+
+  useEffect(() => {
+    setLocalMaxPrice(filters.maxPrice || '');
+  }, [filters.maxPrice]);
+
+  // Áp dụng khoảng giá khi bấm nút hoặc ấn Enter
+  const handleApplyPrice = (e) => {
+    if (e) e.preventDefault();
+    onFilterChange({
+      minPrice: localMinPrice ? String(localMinPrice).trim() : '',
+      maxPrice: localMaxPrice ? String(localMaxPrice).trim() : ''
+    });
+  };
+
+  // Xóa riêng khoảng giá
+  const handleClearPrice = () => {
+    setLocalMinPrice('');
+    setLocalMaxPrice('');
+    onFilterChange({ minPrice: '', maxPrice: '' });
+  };
 
   const { categories = [], brands = [], priceRange = { min: 0, max: 100000000 } } = metadata || {};
 
@@ -147,35 +174,56 @@ function FilterSidebar({
 
       {/* 3. Lọc theo Khoảng Giá (Min / Max Price) */}
       <div className="pt-4 border-t border-slate-700/60">
-        <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2.5">
-          Khoảng Giá (VNĐ)
-        </h3>
-        <div className="grid grid-cols-2 gap-2 mb-3">
-          <div>
-            <label className="text-[10px] text-slate-400 block mb-1">Từ</label>
-            <input
-              type="number"
-              value={filters.minPrice || ''}
-              onChange={(e) => onFilterChange('minPrice', e.target.value)}
-              placeholder="0"
-              step="500000"
-              min="0"
-              className="w-full bg-slate-900 text-white text-xs rounded-lg px-2.5 py-1.5 border border-slate-700 focus:border-blue-500 outline-none"
-            />
-          </div>
-          <div>
-            <label className="text-[10px] text-slate-400 block mb-1">Đến</label>
-            <input
-              type="number"
-              value={filters.maxPrice || ''}
-              onChange={(e) => onFilterChange('maxPrice', e.target.value)}
-              placeholder="Tối đa"
-              step="500000"
-              min="0"
-              className="w-full bg-slate-900 text-white text-xs rounded-lg px-2.5 py-1.5 border border-slate-700 focus:border-blue-500 outline-none"
-            />
-          </div>
+        <div className="flex items-center justify-between mb-2.5">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400">
+            Khoảng Giá (VNĐ)
+          </h3>
+          {(filters.minPrice || filters.maxPrice) && (
+            <button
+              type="button"
+              onClick={handleClearPrice}
+              className="text-[11px] text-blue-400 hover:text-blue-300 font-normal lowercase"
+            >
+              xóa giá
+            </button>
+          )}
         </div>
+
+        <form onSubmit={handleApplyPrice} className="space-y-2 mb-3">
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className="text-[10px] text-slate-400 block mb-1">Từ</label>
+              <input
+                type="text"
+                inputMode="numeric"
+                value={localMinPrice}
+                onChange={(e) => setLocalMinPrice(e.target.value.replace(/\D/g, ''))}
+                onKeyDown={(e) => { if (e.key === 'Enter') handleApplyPrice(e); }}
+                placeholder="0"
+                className="w-full bg-slate-900 text-white text-xs rounded-lg px-2.5 py-1.5 border border-slate-700 focus:border-blue-500 outline-none font-mono"
+              />
+            </div>
+            <div>
+              <label className="text-[10px] text-slate-400 block mb-1">Đến</label>
+              <input
+                type="text"
+                inputMode="numeric"
+                value={localMaxPrice}
+                onChange={(e) => setLocalMaxPrice(e.target.value.replace(/\D/g, ''))}
+                onKeyDown={(e) => { if (e.key === 'Enter') handleApplyPrice(e); }}
+                placeholder="Tối đa"
+                className="w-full bg-slate-900 text-white text-xs rounded-lg px-2.5 py-1.5 border border-slate-700 focus:border-blue-500 outline-none font-mono"
+              />
+            </div>
+          </div>
+
+          <button
+            type="submit"
+            className="w-full py-1.5 bg-blue-600 hover:bg-blue-500 active:scale-98 text-white rounded-lg text-xs font-semibold transition shadow-sm cursor-pointer"
+          >
+            Áp dụng khoảng giá
+          </button>
+        </form>
 
         {/* Quick price presets */}
         <div className="flex flex-wrap gap-1.5">
@@ -184,19 +232,30 @@ function FilterSidebar({
             { label: '5 - 15 triệu', min: '5000000', max: '15000000' },
             { label: '15 - 30 triệu', min: '15000000', max: '30000000' },
             { label: '> 30 triệu', min: '30000000', max: '' }
-          ].map((preset) => (
-            <button
-              key={preset.label}
-              type="button"
-              onClick={() => {
-                onFilterChange('minPrice', preset.min);
-                onFilterChange('maxPrice', preset.max);
-              }}
-              className="text-[10px] bg-slate-900/80 hover:bg-slate-700 px-2 py-1 rounded-md text-slate-300 border border-slate-700"
-            >
-              {preset.label}
-            </button>
-          ))}
+          ].map((preset) => {
+            const isSelected = filters.minPrice === preset.min && filters.maxPrice === preset.max;
+            return (
+              <button
+                key={preset.label}
+                type="button"
+                onClick={() => {
+                  setLocalMinPrice(preset.min);
+                  setLocalMaxPrice(preset.max);
+                  onFilterChange({
+                    minPrice: preset.min,
+                    maxPrice: preset.max
+                  });
+                }}
+                className={`text-[10px] px-2 py-1 rounded-md transition cursor-pointer border ${
+                  isSelected
+                    ? 'bg-blue-600/30 text-blue-300 border-blue-500/50 font-semibold'
+                    : 'bg-slate-900/80 hover:bg-slate-700 text-slate-300 border-slate-700'
+                }`}
+              >
+                {preset.label}
+              </button>
+            );
+          })}
         </div>
       </div>
 

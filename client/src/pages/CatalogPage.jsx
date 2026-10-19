@@ -87,17 +87,27 @@ function CatalogPage() {
     fetchProducts();
   }, [fetchProducts]);
 
-  // Cập nhật URL Query Params
-  const updateQueryParam = (key, value) => {
+  // Cập nhật URL Query Params (hỗ trợ 1 key hoặc batch nhiều key cùng lúc)
+  const updateQueryParam = (keyOrUpdates, value) => {
     const newParams = new URLSearchParams(searchParams);
-    if (value !== undefined && value !== null && value !== '') {
-      newParams.set(key, value);
-    } else {
-      newParams.delete(key);
-    }
-    // Khi thay đổi bất kỳ filter nào thì reset về trang 1
-    if (key !== 'page') {
+    if (typeof keyOrUpdates === 'object' && keyOrUpdates !== null) {
+      Object.entries(keyOrUpdates).forEach(([k, v]) => {
+        if (v !== undefined && v !== null && v !== '') {
+          newParams.set(k, v);
+        } else {
+          newParams.delete(k);
+        }
+      });
       newParams.delete('page');
+    } else {
+      if (value !== undefined && value !== null && value !== '') {
+        newParams.set(keyOrUpdates, value);
+      } else {
+        newParams.delete(keyOrUpdates);
+      }
+      if (keyOrUpdates !== 'page') {
+        newParams.delete('page');
+      }
     }
     setSearchParams(newParams);
   };

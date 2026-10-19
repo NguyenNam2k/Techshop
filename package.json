@@ -2,12 +2,14 @@
   "name": "techshop-api",
   "version": "1.0.0",
   "description": "Techshop Backend Authentication API with Node.js, Express, MySQL, bcrypt, and JWT",
-  "main": "src/server.js",
+  "main": "Backend/server.js",
   "scripts": {
-    "start": "node src/server.js",
-    "dev": "node --watch src/server.js",
-    "build:client": "npm --prefix client run build",
-    "client": "npm --prefix client run dev",
+    "start": "node Backend/server.js",
+    "dev": "node --watch Backend/server.js",
+    "build:frontend": "npm --prefix Frontend run build",
+    "build:client": "npm --prefix Frontend run build",
+    "frontend": "npm --prefix Frontend run dev",
+    "client": "npm --prefix Frontend run dev",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [

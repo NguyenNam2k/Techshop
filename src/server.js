@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const fs = require('fs');
 require('dotenv').config();
 
 // Khởi tạo Express app
@@ -16,8 +17,18 @@ app.use(express.urlencoded({ extended: true }));
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, '../views'));
 
-// Phục vụ Giao diện Front-end Tĩnh từ thư mục public
-app.use(express.static(path.join(__dirname, '../public')));
+// Đường dẫn tài nguyên tĩnh
+const clientDistPath = path.join(__dirname, '../client/dist');
+const legacyPublicPath = path.join(__dirname, '../public');
+
+// 1. Ưu tiên phục vụ Giao diện Khách hàng Storefront (React SPA) từ client/dist
+if (fs.existsSync(clientDistPath)) {
+  app.use(express.static(clientDistPath));
+}
+
+// 2. Phục vụ static legacy public và demo xác thực
+app.use('/auth-demo', express.static(legacyPublicPath));
+app.use(express.static(legacyPublicPath));
 
 // Khai báo Routes
 const authRoutes = require('./routes/authRoutes');
@@ -58,12 +69,18 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// Route mặc định điều hướng tới Giao diện Khách hàng (SPA)
+// Điều hướng /dashboard về Storefront
+app.get('/dashboard', (req, res) => res.redirect('/'));
+
+// Route mặc định điều hướng tới Giao diện Khách hàng (SPA React Catalog)
 app.get('*', (req, res) => {
   if (req.path.startsWith('/api') || req.path.startsWith('/manager')) {
     return res.status(404).json({ success: false, message: 'Resource not found' });
   }
-  res.sendFile(path.join(__dirname, '../public/index.html'));
+  if (fs.existsSync(path.join(clientDistPath, 'index.html'))) {
+    return res.sendFile(path.join(clientDistPath, 'index.html'));
+  }
+  res.sendFile(path.join(legacyPublicPath, 'index.html'));
 });
 
 // Khởi chạy HTTP Server & Kiểm tra cơ sở dữ liệu

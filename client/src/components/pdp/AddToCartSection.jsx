@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { ShoppingCart, Zap, Minus, Plus, AlertCircle, Headphones } from 'lucide-react';
+import { ShoppingCart, Zap, Minus, Plus, AlertCircle, Headphones, Lock } from 'lucide-react';
 
-const AddToCartSection = ({ variant, onAddToCart, onBuyNow }) => {
+const AddToCartSection = ({ variant, onAddToCart, onBuyNow, user, onRequireLogin }) => {
   const [quantity, setQuantity] = useState(1);
   const maxStock = variant?.stock || 0;
   const isOutOfStock = maxStock === 0;
   const isLowStock = maxStock > 0 && maxStock <= 5;
+  const isLoggedIn = Boolean(user);
 
   const handleQuantityChange = (change) => {
     const newQuantity = quantity + change;
@@ -14,8 +15,39 @@ const AddToCartSection = ({ variant, onAddToCart, onBuyNow }) => {
     }
   };
 
+  const handleAddToCartClick = () => {
+    if (!isLoggedIn) {
+      if (onRequireLogin) onRequireLogin('add_to_cart');
+      return;
+    }
+    if (onAddToCart) onAddToCart(quantity);
+  };
+
+  const handleBuyNowClick = () => {
+    if (!isLoggedIn) {
+      if (onRequireLogin) onRequireLogin('buy_now');
+      return;
+    }
+    if (onBuyNow) onBuyNow(quantity);
+  };
+
   return (
     <div className="space-y-4">
+      {/* Thông báo chế độ khách xem hàng */}
+      {!isLoggedIn && (
+        <div className="flex items-start gap-2.5 p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs shadow-sm">
+          <Lock className="w-4 h-4 flex-shrink-0 text-amber-400 mt-0.5" />
+          <div className="space-y-1">
+            <span className="font-bold text-amber-200">
+              Chế độ duyệt sản phẩm (Chưa đăng nhập)
+            </span>
+            <p className="text-slate-300 text-[11px] leading-relaxed">
+              Bạn đang xem chi tiết thông số và bảng giá. Vui lòng đăng nhập tài khoản Khách hàng để thêm vào giỏ và đặt mua sản phẩm này.
+            </p>
+          </div>
+        </div>
+      )}
+
       {isLowStock && (
         <div className="flex items-center gap-2 p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs animate-pulse">
           <AlertCircle className="w-4 h-4 flex-shrink-0 text-amber-400" />
@@ -54,8 +86,9 @@ const AddToCartSection = ({ variant, onAddToCart, onBuyNow }) => {
 
       <div className="space-y-3 pt-1">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {/* Nút 1: Thêm vào giỏ */}
           <button
-            onClick={() => onAddToCart && onAddToCart(quantity)}
+            onClick={handleAddToCartClick}
             disabled={isOutOfStock || quantity > maxStock}
             className={`py-3.5 px-4 rounded-2xl border-2 border-sky-500 hover:bg-sky-500/10 text-sky-400 font-extrabold text-xs uppercase tracking-wider transition flex items-center justify-center gap-2 cursor-pointer shadow-sm ${
               isOutOfStock || quantity > maxStock ? 'opacity-40 cursor-not-allowed filter grayscale' : ''
@@ -65,15 +98,29 @@ const AddToCartSection = ({ variant, onAddToCart, onBuyNow }) => {
             <span>{isOutOfStock ? 'TẠM HẾT HÀNG' : 'Thêm Vào Giỏ Hàng'}</span>
           </button>
 
+          {/* Nút 2: Mua ngay / Đăng nhập để mua */}
           <button
-            onClick={() => onBuyNow && onBuyNow(quantity)}
+            onClick={handleBuyNowClick}
             disabled={isOutOfStock || quantity > maxStock}
-            className={`py-3.5 px-4 rounded-2xl bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-400 hover:to-blue-500 text-white font-extrabold text-xs uppercase tracking-wider shadow-lg shadow-sky-500/20 transition flex items-center justify-center gap-2 cursor-pointer ${
-              isOutOfStock || quantity > maxStock ? 'opacity-40 cursor-not-allowed filter grayscale' : ''
+            className={`py-3.5 px-4 rounded-2xl font-extrabold text-xs uppercase tracking-wider transition flex items-center justify-center gap-2 cursor-pointer shadow-lg ${
+              isOutOfStock || quantity > maxStock
+                ? 'opacity-40 cursor-not-allowed filter grayscale bg-slate-800 text-slate-500'
+                : isLoggedIn
+                ? 'bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-400 hover:to-blue-500 text-white shadow-sky-500/20'
+                : 'bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-amber-500/20 font-black'
             }`}
           >
-            <Zap className="w-4 h-4 fill-white" />
-            <span>{isOutOfStock ? 'ĐĂNG KÝ KHI CÓ HÀNG' : 'Mua Ngay'}</span>
+            {isLoggedIn ? (
+              <>
+                <Zap className="w-4 h-4 fill-white" />
+                <span>{isOutOfStock ? 'ĐĂNG KÝ KHI CÓ HÀNG' : 'Mua Ngay'}</span>
+              </>
+            ) : (
+              <>
+                <Lock className="w-4 h-4" />
+                <span>Đăng Nhập Để Mua Ngay</span>
+              </>
+            )}
           </button>
         </div>
       </div>

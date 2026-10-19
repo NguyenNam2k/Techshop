@@ -1,11 +1,12 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useGoogleLogin } from '@react-oauth/google';
 import axiosInstance from '../api/axiosInstance';
 import { useAuth } from '../context/AuthContext';
 
 function LoginPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { login } = useAuth();
 
   const [form, setForm] = useState({ account: '', password: '' });
@@ -14,6 +15,8 @@ function LoginPage() {
   const [googleLoading, setGoogleLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [apiError, setApiError] = useState('');
+
+  const returnTarget = location.state?.from || '/catalog';
 
   // Cập nhật field khi nhập
   const handleChange = (e) => {
@@ -54,7 +57,7 @@ function LoginPage() {
           navigate('/admin', { replace: true });
           return;
         }
-        navigate('/catalog', { replace: true });
+        navigate(returnTarget, { replace: true });
       }
     } catch (err) {
       const msg = err.response?.data?.message || 'Đăng nhập thất bại, vui lòng thử lại!';
@@ -87,7 +90,7 @@ function LoginPage() {
             navigate('/admin', { replace: true });
             return;
           }
-          navigate('/catalog', { replace: true });
+          navigate(returnTarget, { replace: true });
         }
       } catch (err) {
         setApiError(err.response?.data?.message || 'Đăng nhập Google thất bại!');

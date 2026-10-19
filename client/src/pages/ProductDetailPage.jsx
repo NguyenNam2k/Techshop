@@ -6,23 +6,28 @@ import {
   CheckCircle2, ChevronRight, Home 
 } from 'lucide-react';
 import { useCart } from '../context/CartContext';
+import { useAuth } from '../context/AuthContext';
 import Header from '../components/common/Header';
 import ProductGallery from '../components/pdp/ProductGallery';
 import VariantSelector from '../components/pdp/VariantSelector';
 import ProductSpecsTable from '../components/pdp/ProductSpecsTable';
 import AddToCartSection from '../components/pdp/AddToCartSection';
 import SimilarProductsSlider from '../components/pdp/SimilarProductsSlider';
+import AuthRequiredModal from '../components/common/AuthRequiredModal';
+import CartDrawer from '../components/common/CartDrawer';
 
 const ProductDetailPage = () => {
   const { id } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { addToCart, setIsCartOpen } = useCart();
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedVariant, setSelectedVariant] = useState(null);
   const [toastMessage, setToastMessage] = useState('');
+  const [showAuthModal, setShowAuthModal] = useState(false);
 
   const queryParams = new URLSearchParams(location.search);
   const queryId = queryParams.get('id') || queryParams.get('slug');
@@ -221,6 +226,8 @@ const ProductDetailPage = () => {
             {/* Số lượng + Nút Thêm Giỏ Hàng & Mua Ngay */}
             <AddToCartSection
               variant={selectedVariant}
+              user={user}
+              onRequireLogin={() => setShowAuthModal(true)}
               onAddToCart={(qty) => {
                 addToCart(product, selectedVariant, qty);
                 showToast(`Đã thêm ${qty}x "${product.name}" vào giỏ hàng!`);
@@ -255,6 +262,13 @@ const ProductDetailPage = () => {
         {/* Sản phẩm cùng danh mục */}
         <SimilarProductsSlider id={product.id} currentProductId={product.id} />
       </div>
+
+      {/* Modal yêu cầu đăng nhập khi khách click mua hàng */}
+      <AuthRequiredModal
+        isOpen={showAuthModal}
+        onClose={() => setShowAuthModal(false)}
+        productName={product?.name}
+      />
     </div>
   );
 };

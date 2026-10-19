@@ -1,10 +1,14 @@
 import { useState, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { ShoppingCart } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { useCart } from '../../context/CartContext';
+import CartDrawer from './CartDrawer';
 
 function Header({ initialSearch = '', onSearchSubmit }) {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
+  const { cartCount, setIsCartOpen } = useCart();
 
   const [searchText, setSearchText] = useState(initialSearch);
   const [selectedImage, setSelectedImage] = useState(null);
@@ -134,6 +138,21 @@ function Header({ initialSearch = '', onSearchSubmit }) {
             Sản phẩm
           </Link>
 
+          {/* Cart Drawer Trigger */}
+          <button
+            type="button"
+            onClick={() => setIsCartOpen(true)}
+            className="relative p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition cursor-pointer flex items-center justify-center"
+            title="Xem giỏ hàng"
+          >
+            <ShoppingCart className="w-4 h-4 text-sky-400" />
+            {cartCount > 0 && (
+              <span className="absolute -top-1.5 -right-1.5 bg-sky-500 text-white text-[10px] font-extrabold w-4 h-4 rounded-full flex items-center justify-center border border-slate-900 shadow">
+                {cartCount > 9 ? '9+' : cartCount}
+              </span>
+            )}
+          </button>
+
           {user ? (
             <div className="flex items-center gap-2">
               <Link
@@ -222,6 +241,9 @@ function Header({ initialSearch = '', onSearchSubmit }) {
           </div>
         </div>
       )}
+
+      {/* Giỏ hàng Drawer */}
+      <CartDrawer />
     </header>
   );
 }

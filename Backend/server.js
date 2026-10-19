@@ -18,12 +18,12 @@ app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, '../views'));
 
 // Đường dẫn tài nguyên tĩnh
-const frontendDistPath = path.join(__dirname, '../Frontend/dist');
+const clientDistPath = path.join(__dirname, '../client/dist');
 const legacyPublicPath = path.join(__dirname, '../public');
 
-// 1. Ưu tiên phục vụ Giao diện Khách hàng Storefront (React SPA) từ Frontend/dist
-if (fs.existsSync(frontendDistPath)) {
-  app.use(express.static(frontendDistPath));
+// 1. Ưu tiên phục vụ Giao diện Khách hàng Storefront (React SPA) từ client/dist
+if (fs.existsSync(clientDistPath)) {
+  app.use(express.static(clientDistPath));
 }
 
 // 2. Phục vụ static legacy public và demo xác thực
@@ -77,8 +77,8 @@ app.get('*', (req, res) => {
   if (req.path.startsWith('/api') || req.path.startsWith('/manager')) {
     return res.status(404).json({ success: false, message: 'Resource not found' });
   }
-  if (fs.existsSync(path.join(frontendDistPath, 'index.html'))) {
-    return res.sendFile(path.join(frontendDistPath, 'index.html'));
+  if (fs.existsSync(path.join(clientDistPath, 'index.html'))) {
+    return res.sendFile(path.join(clientDistPath, 'index.html'));
   }
   res.sendFile(path.join(legacyPublicPath, 'index.html'));
 });

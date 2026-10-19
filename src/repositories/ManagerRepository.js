@@ -15,7 +15,7 @@ const ManagerRepository = {
   },
 
   findByIdForProfile: async (id) => {
-    const [rows] = await db.query('SELECT id, username, email, status, created_at, full_name as name, phone, avatar_url FROM managers WHERE id = ?', [id]);
+    const [rows] = await db.query('SELECT id, username, email, status, created_at, full_name as name, phone, NULL as avatar_url FROM managers WHERE id = ?', [id]);
     return rows[0] || null;
   },
 

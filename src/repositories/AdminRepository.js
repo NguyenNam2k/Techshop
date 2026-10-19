@@ -15,7 +15,7 @@ const AdminRepository = {
   },
 
   findByIdForProfile: async (id) => {
-    const [rows] = await db.query('SELECT id, username, email, status, created_at, full_name as name, phone, avatar_url FROM admins WHERE id = ?', [id]);
+    const [rows] = await db.query('SELECT id, username, email, status, created_at, full_name as name, phone, NULL as avatar_url FROM admins WHERE id = ?', [id]);
     return rows[0] || null;
   },
 

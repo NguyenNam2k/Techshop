@@ -19,10 +19,12 @@ app.use(express.static(path.join(__dirname, '../public')));
 const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
 const catalogRoutes = require('./routes/catalogRoutes');
+const productRoutes = require('./routes/productRoutes');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/catalog', catalogRoutes);
+app.use('/api/products', productRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

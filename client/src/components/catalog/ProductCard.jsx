@@ -1,3 +1,5 @@
+import { Link } from 'react-router-dom';
+
 function formatVND(amount) {
   if (!amount && amount !== 0) return '0 ₫';
   return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
@@ -5,6 +7,7 @@ function formatVND(amount) {
 
 function ProductCard({ product }) {
   const {
+    id,
     name,
     brand,
     thumbnail_url,
@@ -14,7 +17,10 @@ function ProductCard({ product }) {
   } = product;
 
   return (
-    <div className="group bg-slate-800 rounded-2xl border border-slate-700/80 hover:border-blue-500/50 hover:shadow-xl hover:shadow-blue-500/10 transition-all duration-300 flex flex-col overflow-hidden relative">
+    <Link
+      to={`/products/${id}`}
+      className="group bg-slate-800 rounded-2xl border border-slate-700/80 hover:border-blue-500/50 hover:shadow-xl hover:shadow-blue-500/10 transition-all duration-300 flex flex-col overflow-hidden relative cursor-pointer"
+    >
       {/* Discount Badge */}
       {pricing?.discount_percent > 0 && (
         <span className="absolute top-3 left-3 z-10 bg-red-500 text-white text-[11px] font-bold px-2 py-0.5 rounded-full shadow-md">
@@ -79,16 +85,15 @@ function ProductCard({ product }) {
           </div>
 
           {/* Action button */}
-          <button
-            type="button"
-            className="w-9 h-9 rounded-xl bg-blue-600/20 hover:bg-blue-600 text-blue-400 hover:text-white flex items-center justify-center transition-all cursor-pointer shadow-sm group-hover:scale-105"
+          <div
+            className="w-9 h-9 rounded-xl bg-blue-600/20 group-hover:bg-blue-600 text-blue-400 group-hover:text-white flex items-center justify-center transition-all shadow-sm group-hover:scale-105"
             title="Xem chi tiết"
           >
             ➔
-          </button>
+          </div>
         </div>
       </div>
-    </div>
+    </Link>
   );
 }
 

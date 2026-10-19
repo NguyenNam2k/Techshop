@@ -1,9 +1,11 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
+import { CartProvider } from './context/CartContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import CatalogPage from './pages/CatalogPage';
+import ProductDetailPage from './pages/ProductDetailPage';
 
 // Admin pages
 import AdminLayout from './pages/admin/AdminLayout';
@@ -13,12 +15,14 @@ import UserManagement from './pages/admin/UserManagement';
 function App() {
   return (
     <AuthProvider>
-      <BrowserRouter>
-        <Routes>
-          {/* Public Storefront & Catalog routes */}
-          <Route path="/" element={<CatalogPage />} />
-          <Route path="/catalog" element={<CatalogPage />} />
-          <Route path="/products" element={<CatalogPage />} />
+      <CartProvider>
+        <BrowserRouter>
+          <Routes>
+            {/* Public Storefront & Catalog routes */}
+            <Route path="/" element={<CatalogPage />} />
+            <Route path="/catalog" element={<CatalogPage />} />
+            <Route path="/products" element={<CatalogPage />} />
+            <Route path="/products/:id" element={<ProductDetailPage />} />
 
           {/* Public auth routes */}
           <Route path="/login" element={<LoginPage />} />
@@ -44,6 +48,7 @@ function App() {
           <Route path="*" element={<Navigate to="/catalog" replace />} />
         </Routes>
       </BrowserRouter>
+      </CartProvider>
     </AuthProvider>
   );
 }

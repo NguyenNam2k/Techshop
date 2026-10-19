@@ -1,4 +1,4 @@
-const StaffRepository = require('../repositories/staffRepository');
+const StaffRepository = require('../repositories/StaffRepository');
 
 /**
  * Staff Service

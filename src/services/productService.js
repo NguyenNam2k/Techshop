@@ -1,4 +1,4 @@
-const ProductRepository = require('../repositories/productRepository');
+const ProductRepository = require('../repositories/ProductRepository');
 const CategoryRepository = require('../repositories/categoryRepository');
 const LogRepository = require('../repositories/logRepository');
 const BaseRepository = require('../repositories/baseRepository');

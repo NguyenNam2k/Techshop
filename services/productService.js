@@ -84,6 +84,8 @@ class ProductService {
     initial_stock,
     sku_code,
     description,
+    thumbnail_url = null,
+    images = [],
     manager_id = null
   }) {
     // 1. Validation logic
@@ -125,6 +127,8 @@ class ProductService {
       // 1.3. Generate unique slug
       const uniqueSlug = await this.generateUniqueSlug(cleanName, null, connection);
 
+      const cleanThumbnail = thumbnail_url && thumbnail_url.trim() ? thumbnail_url.trim() : null;
+
       // 1.4. Insert into products
       const productStatus = stockNum > 0 ? 'active' : 'out_of_stock';
       const productId = await ProductRepository.insertProduct({
@@ -136,6 +140,7 @@ class ProductService {
         model_code: cleanSku,
         base_price: priceNum,
         description: cleanDesc,
+        thumbnail_url: cleanThumbnail,
         warranty_months: 12,
         status: productStatus
       }, connection);
@@ -153,7 +158,37 @@ class ProductService {
         status: variantStatus
       }, connection);
 
-      // 1.6. Insert initial inventory log
+      // 1.6. Insert primary image into product_images if thumbnail is provided
+      if (cleanThumbnail) {
+        await ProductRepository.insertProductImage({
+          product_id: productId,
+          variant_id: variantId,
+          image_url: cleanThumbnail,
+          angle_label: 'Ảnh đại diện chính',
+          is_primary: true,
+          sort_order: 0
+        }, connection);
+      }
+
+      // 1.7. Insert additional gallery images if provided
+      if (Array.isArray(images) && images.length > 0) {
+        for (let i = 0; i < images.length; i++) {
+          const item = images[i];
+          const imgUrl = typeof item === 'string' ? item.trim() : (item.image_url ? item.image_url.trim() : '');
+          if (imgUrl && imgUrl !== cleanThumbnail) {
+            await ProductRepository.insertProductImage({
+              product_id: productId,
+              variant_id: variantId,
+              image_url: imgUrl,
+              angle_label: (typeof item === 'object' && item.angle_label) ? item.angle_label : `Góc nhìn phụ ${i + 1}`,
+              is_primary: false,
+              sort_order: i + 1
+            }, connection);
+          }
+        }
+      }
+
+      // 1.8. Insert initial inventory log
       await LogRepository.insertInventoryLog({
         variant_id: variantId,
         manager_id,
@@ -204,6 +239,7 @@ class ProductService {
     base_price,
     sku_code,
     description,
+    thumbnail_url,
     changed_by = 'Manager'
   }) {
     const prodId = parseInt(productId, 10);
@@ -254,6 +290,7 @@ class ProductService {
       }
 
       // 2.5. Update product
+      const cleanThumbnail = thumbnail_url !== undefined && thumbnail_url !== null ? thumbnail_url.trim() : undefined;
       await ProductRepository.updateProduct(prodId, {
         name: cleanName,
         slug: newSlug,
@@ -261,8 +298,27 @@ class ProductService {
         brand: cleanBrand,
         base_price: priceNum,
         description: cleanDesc,
+        thumbnail_url: cleanThumbnail,
         model_code: cleanSku
       }, connection);
+
+      // 2.5.1. Sync primary image if thumbnail_url changed
+      if (cleanThumbnail) {
+        const existingImages = await ProductRepository.findImagesByProductId(prodId, connection);
+        const match = existingImages.find(img => img.image_url === cleanThumbnail);
+        if (match) {
+          await ProductRepository.setPrimaryImage(prodId, match.id, connection);
+        } else {
+          await ProductRepository.insertProductImage({
+            product_id: prodId,
+            variant_id: defaultVariant ? defaultVariant.id : null,
+            image_url: cleanThumbnail,
+            angle_label: 'Ảnh đại diện chính',
+            is_primary: true,
+            sort_order: 0
+          }, connection);
+        }
+      }
 
       // 2.6. Sync price and SKU to default variant
       if (defaultVariant) {
@@ -511,6 +567,76 @@ class ProductService {
    */
   static async getAuditLogs(options = {}) {
     return await LogRepository.getAuditLogs(options);
+  }
+
+  /**
+   * Get all images of a product
+   */
+  static async getProductImages(productId) {
+    const prodId = parseInt(productId, 10);
+    if (!prodId) throw new Error('ID thiết bị không hợp lệ.');
+    return await ProductRepository.findImagesByProductId(prodId);
+  }
+
+  /**
+   * Add image to product gallery
+   */
+  static async addProductImage(productId, { image_url, angle_label = 'Góc nhìn khác', is_primary = false, variant_id = null }) {
+    const prodId = parseInt(productId, 10);
+    if (!prodId) throw new Error('ID thiết bị không hợp lệ.');
+    if (!image_url || !image_url.trim()) throw new Error('Đường dẫn hình ảnh không được để trống.');
+
+    const cleanUrl = image_url.trim();
+    const imageId = await ProductRepository.insertProductImage({
+      product_id: prodId,
+      variant_id,
+      image_url: cleanUrl,
+      angle_label: angle_label.trim(),
+      is_primary: Boolean(is_primary)
+    });
+
+    if (is_primary) {
+      await ProductRepository.updateThumbnail(prodId, cleanUrl);
+    }
+
+    return {
+      success: true,
+      imageId,
+      image_url: cleanUrl,
+      message: 'Thêm hình ảnh cho sản phẩm thành công!'
+    };
+  }
+
+  /**
+   * Delete product image
+   */
+  static async deleteProductImage(productId, imageId) {
+    const prodId = parseInt(productId, 10);
+    const imgId = parseInt(imageId, 10);
+    if (!prodId || !imgId) throw new Error('Tham số không hợp lệ.');
+
+    const deleted = await ProductRepository.deleteProductImage(imgId);
+    if (!deleted) throw new Error('Không tìm thấy hình ảnh để xóa.');
+
+    return {
+      success: true,
+      message: 'Đã xóa hình ảnh thành công.'
+    };
+  }
+
+  /**
+   * Set primary image for product
+   */
+  static async setPrimaryImage(productId, imageId) {
+    const prodId = parseInt(productId, 10);
+    const imgId = parseInt(imageId, 10);
+    if (!prodId || !imgId) throw new Error('Tham số không hợp lệ.');
+
+    await ProductRepository.setPrimaryImage(prodId, imgId);
+    return {
+      success: true,
+      message: 'Đã đặt làm ảnh đại diện chính của sản phẩm!'
+    };
   }
 }
 

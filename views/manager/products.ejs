@@ -445,9 +445,28 @@
                             <!-- SKU & Name -->
                             <td class="py-3.5 px-4">
                               <div class="flex items-center gap-3">
-                                <div
-                                  class="w-9 h-9 rounded-lg bg-slate-800 border border-slate-700/60 flex items-center justify-center text-slate-300 font-mono text-xs font-semibold shrink-0 group-hover:border-cyan-500/50 transition-colors">
-                                  <i data-lucide="hard-drive" class="w-4 h-4 text-cyan-400"></i>
+                                <!-- Interactive Product Image Thumbnail -->
+                                <div class="relative w-12 h-12 rounded-xl bg-slate-800 border border-slate-700/80 overflow-hidden shrink-0 group-hover:border-cyan-400/60 shadow-md transition-all cursor-pointer"
+                                  onclick="openImageViewer(this.dataset.thumb, this.dataset.pname)"
+                                  data-thumb="<%= prod.thumbnail_url || '' %>"
+                                  data-pname="<%= prod.name %>"
+                                  title="Nhấn để xem ảnh lớn">
+                                  <% if (prod.thumbnail_url) { %>
+                                    <img 
+                                      src="<%= prod.thumbnail_url %>" 
+                                      alt="<%= prod.name %>" 
+                                      class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                                      loading="lazy"
+                                      onerror="this.style.display='none'; this.nextElementSibling.classList.remove('hidden');"
+                                    >
+                                    <div class="hidden w-full h-full flex items-center justify-center bg-slate-800 text-cyan-400 font-bold">
+                                      <i data-lucide="hard-drive" class="w-5 h-5"></i>
+                                    </div>
+                                  <% } else { %>
+                                    <div class="w-full h-full flex items-center justify-center bg-slate-800 text-slate-500 group-hover:text-cyan-400 transition-colors">
+                                      <i data-lucide="image" class="w-5 h-5"></i>
+                                    </div>
+                                  <% } %>
                                 </div>
                                 <div class="min-w-0">
                                   <div class="flex items-center gap-2">
@@ -528,7 +547,14 @@
 
                             <!-- Actions -->
                             <td class="py-3.5 px-4 text-right whitespace-nowrap">
-                              <div class="inline-flex items-center gap-1.5">
+                                <!-- Gallery Modal Button -->
+                                <button onclick="openGalleryModal(<%= prod.id %>, this.dataset.pname)"
+                                  data-pname="<%= prod.name %>"
+                                  class="p-1.5 rounded-lg bg-slate-800 hover:bg-emerald-500/20 text-slate-300 hover:text-emerald-400 border border-slate-700/60 hover:border-emerald-500/40 transition-all"
+                                  title="Bộ sưu tập ảnh thiết bị">
+                                  <i data-lucide="images" class="w-4 h-4"></i>
+                                </button>
+
                                 <!-- Edit Button (Populate to Form) -->
                                 <button onclick="editProduct(<%= prod.id %>)"
                                   class="p-1.5 rounded-lg bg-slate-800 hover:bg-cyan-500/20 text-slate-300 hover:text-cyan-400 border border-slate-700/60 hover:border-cyan-500/40 transition-all"
@@ -748,6 +774,97 @@
                   <textarea id="fieldDescription" name="description" rows="3"
                     placeholder="Mô tả thông số switch, layout bàn phím, cổng Thunderbolt 4, màn OLED 120Hz..."
                     class="w-full px-3.5 py-2 text-xs bg-slate-800/90 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 transition-all resize-y"></textarea>
+                </div>
+
+                <!-- Field 8: Hình ảnh thiết bị (Thumbnail & Upload) -->
+                <div class="border-t border-slate-800/80 pt-3">
+                  <div class="flex items-center justify-between mb-1.5">
+                    <label for="fieldThumbnailUrl" class="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
+                      <i data-lucide="image" class="w-3.5 h-3.5 text-cyan-400"></i>
+                      <span>8. Hình Ảnh Đại Diện (Thumbnail)</span>
+                    </label>
+                    <div class="flex items-center gap-1.5">
+                      <button type="button" onclick="switchImageInputMode('url')" id="btnModeUrl" 
+                        class="text-[10px] font-medium px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 transition-all">
+                        Link URL
+                      </button>
+                      <button type="button" onclick="switchImageInputMode('upload')" id="btnModeUpload" 
+                        class="text-[10px] font-medium px-2 py-0.5 rounded bg-slate-800 text-slate-400 hover:text-white border border-slate-700 transition-all">
+                        Tải Tệp Lên
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- Tab 1: Image URL Input -->
+                  <div id="imageInputUrlSection" class="space-y-1.5">
+                    <div class="relative">
+                      <input type="url" id="fieldThumbnailUrl" name="thumbnail_url" 
+                        oninput="handleThumbnailUrlChange(this.value)"
+                        placeholder="https://images.unsplash.com/... hoặc /uploads/products/..."
+                        class="w-full pl-3.5 pr-8 py-2 text-xs bg-slate-800/90 border border-slate-700 rounded-xl text-white placeholder-slate-500 font-mono focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 transition-all">
+                      <button type="button" onclick="clearThumbnailImage()" id="btnClearThumbnail" 
+                        class="hidden absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-rose-400 p-0.5">
+                        <i data-lucide="x" class="w-3.5 h-3.5"></i>
+                      </button>
+                    </div>
+
+                    <!-- Quick image sample presets for easy testing -->
+                    <div class="flex items-center gap-1 flex-wrap text-[10px] text-slate-400 pt-0.5">
+                      <span class="text-slate-500 font-mono">Gợi ý mẫu:</span>
+                      <button type="button" onclick="applyImagePreset('keyboard')" class="px-1.5 py-0.5 rounded bg-slate-800 hover:bg-cyan-950 text-slate-300 hover:text-cyan-300 border border-slate-700/60 transition-all">Bàn phím</button>
+                      <button type="button" onclick="applyImagePreset('mouse')" class="px-1.5 py-0.5 rounded bg-slate-800 hover:bg-cyan-950 text-slate-300 hover:text-cyan-300 border border-slate-700/60 transition-all">Chuột</button>
+                      <button type="button" onclick="applyImagePreset('laptop')" class="px-1.5 py-0.5 rounded bg-slate-800 hover:bg-cyan-950 text-slate-300 hover:text-cyan-300 border border-slate-700/60 transition-all">Laptop</button>
+                      <button type="button" onclick="applyImagePreset('monitor')" class="px-1.5 py-0.5 rounded bg-slate-800 hover:bg-cyan-950 text-slate-300 hover:text-cyan-300 border border-slate-700/60 transition-all">Màn hình</button>
+                      <button type="button" onclick="applyImagePreset('gpu')" class="px-1.5 py-0.5 rounded bg-slate-800 hover:bg-cyan-950 text-slate-300 hover:text-cyan-300 border border-slate-700/60 transition-all">Card GPU</button>
+                    </div>
+                  </div>
+
+                  <!-- Tab 2: Local File Upload -->
+                  <div id="imageInputUploadSection" class="hidden space-y-1.5">
+                    <div class="relative border-2 border-dashed border-slate-700 hover:border-cyan-500/50 rounded-xl p-3.5 text-center cursor-pointer transition-all bg-slate-800/40" 
+                      onclick="document.getElementById('fileUploadInput').click()">
+                      <input type="file" id="fileUploadInput" accept="image/*" class="hidden" onchange="handleFileUpload(event)">
+                      <div id="uploadPlaceholder" class="flex flex-col items-center justify-center gap-1 text-slate-400">
+                        <i data-lucide="upload-cloud" class="w-6 h-6 text-cyan-400 mb-0.5"></i>
+                        <span class="text-xs font-medium text-slate-200">Nhấn để chọn ảnh từ máy tính</span>
+                        <span class="text-[10px] text-slate-500">Tự động lưu vào /public/uploads/products/ (Max: 10MB)</span>
+                      </div>
+                      <div id="uploadingSpinner" class="hidden flex items-center justify-center gap-2 text-cyan-400 text-xs py-2">
+                        <i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i>
+                        <span>Đang tải ảnh lên hệ thống...</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Live Image Preview Box -->
+                  <div id="thumbnailPreviewContainer" class="mt-2.5 hidden">
+                    <div class="p-2.5 bg-slate-900/90 rounded-xl border border-slate-700/80 flex items-center gap-3">
+                      <div class="relative w-14 h-14 rounded-lg bg-slate-800 border border-slate-700 overflow-hidden shrink-0 shadow-md cursor-pointer"
+                        onclick="previewLargeImage(document.getElementById('fieldThumbnailUrl').value)">
+                        <img id="thumbnailPreviewImg" src="" alt="Xem trước ảnh" class="w-full h-full object-cover">
+                      </div>
+                      <div class="min-w-0 flex-1">
+                        <div class="flex items-center gap-1.5 text-xs font-semibold text-emerald-400">
+                          <i data-lucide="check-circle" class="w-3.5 h-3.5"></i>
+                          <span>Ảnh hiển thị hợp lệ</span>
+                        </div>
+                        <p id="thumbnailPreviewUrlText" class="text-[10px] text-slate-400 font-mono truncate mt-0.5"></p>
+                        <div class="flex items-center gap-2 mt-1">
+                          <button type="button" onclick="previewLargeImage(document.getElementById('fieldThumbnailUrl').value)" 
+                            class="text-[10px] text-cyan-400 hover:underline flex items-center gap-1">
+                            <i data-lucide="maximize-2" class="w-3 h-3"></i>
+                            <span>Phóng to</span>
+                          </button>
+                          <span class="text-slate-600">•</span>
+                          <button type="button" onclick="clearThumbnailImage()" 
+                            class="text-[10px] text-rose-400 hover:underline flex items-center gap-1">
+                            <i data-lucide="trash-2" class="w-3 h-3"></i>
+                            <span>Gỡ bỏ</span>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
                 <!-- Action Buttons -->
@@ -1340,6 +1457,98 @@
   </div>
 
   <!-- ===================================================================== -->
+  <!-- MODAL: BỘ SƯU TẬP ẢNH THIẾT BỊ (PRODUCT IMAGE GALLERY)                -->
+  <!-- ===================================================================== -->
+  <div id="galleryModal"
+    class="fixed inset-0 z-50 hidden bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+    <div
+      class="glass-card rounded-2xl w-full max-w-4xl border border-slate-800 overflow-hidden shadow-2xl flex flex-col max-h-[92vh]">
+      <!-- Header -->
+      <div class="p-5 border-b border-slate-800 bg-slate-900/80 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div
+            class="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400">
+            <i data-lucide="images" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h3 class="text-base font-bold text-white flex items-center gap-2">
+              <span>Bộ Sưu Tập Hình Ảnh Thiết Bị</span>
+              <span id="galleryProductBadge" class="text-xs px-2 py-0.5 rounded-full bg-cyan-950 text-cyan-300 font-normal border border-cyan-800/50"></span>
+            </h3>
+            <p id="galleryProductName" class="text-xs text-slate-400">Quản lý góc chụp, ảnh chính & tải thêm hình ảnh chi tiết</p>
+          </div>
+        </div>
+        <button onclick="closeGalleryModal()" class="text-slate-400 hover:text-white p-1">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- Add Image Form Section -->
+      <div class="p-4 border-b border-slate-800/80 bg-slate-900/50">
+        <form onsubmit="handleAddGalleryImage(event)" class="space-y-3">
+          <div class="grid grid-cols-1 sm:grid-cols-12 gap-3">
+            <div class="sm:col-span-5">
+              <label class="block text-[11px] font-semibold text-slate-300 mb-1">
+                Link URL ảnh mới
+              </label>
+              <input type="url" id="galleryNewImageUrl" placeholder="https://... hoặc dùng nút tải bên dưới"
+                class="w-full px-3 py-1.5 text-xs bg-slate-800 border border-slate-700 rounded-lg text-white font-mono focus:outline-none focus:border-cyan-400">
+            </div>
+
+            <div class="sm:col-span-4">
+              <label class="block text-[11px] font-semibold text-slate-300 mb-1">
+                Nhãn góc chụp / Mô tả ảnh
+              </label>
+              <input type="text" id="galleryNewAngleLabel" placeholder="VD: Góc nghiêng 45°, Cổng kết nối..."
+                value="Góc nhìn chi tiết"
+                class="w-full px-3 py-1.5 text-xs bg-slate-800 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-cyan-400">
+            </div>
+
+            <div class="sm:col-span-3 flex items-end gap-2">
+              <button type="submit"
+                class="flex-1 py-1.5 px-3 bg-cyan-600 hover:bg-cyan-500 text-slate-950 font-bold text-xs rounded-lg shadow-md transition-all flex items-center justify-center gap-1.5">
+                <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+                <span>Thêm Ảnh</span>
+              </button>
+              
+              <button type="button" onclick="document.getElementById('galleryFileInput').click()"
+                class="py-1.5 px-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-lg text-xs"
+                title="Tải ảnh từ máy tính">
+                <i data-lucide="upload" class="w-3.5 h-3.5"></i>
+              </button>
+              <input type="file" id="galleryFileInput" accept="image/*" class="hidden" onchange="handleGalleryFileUpload(event)">
+            </div>
+          </div>
+        </form>
+      </div>
+
+      <!-- Gallery Grid Container -->
+      <div class="flex-1 overflow-y-auto custom-scrollbar p-5">
+        <div id="galleryGridContainer" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+          <div class="col-span-full text-center py-12 text-slate-400">Đang tải bộ sưu tập ảnh...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- MODAL: PHÓNG TO XEM ẢNH FULLSCREEN (LIGHTBOX IMAGE VIEWER)            -->
+  <!-- ===================================================================== -->
+  <div id="imageViewerModal"
+    class="fixed inset-0 z-50 hidden bg-black/85 backdrop-blur-md flex items-center justify-center p-4"
+    onclick="closeImageViewer()">
+    <div class="relative max-w-4xl max-h-[90vh] flex flex-col items-center" onclick="event.stopPropagation()">
+      <div class="absolute -top-10 right-0 flex items-center gap-3">
+        <span id="imageViewerCaption" class="text-xs text-slate-300 font-medium"></span>
+        <button onclick="closeImageViewer()" class="p-1.5 rounded-full bg-slate-800/80 hover:bg-rose-500/80 text-white transition-all">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      <img id="imageViewerImg" src="" alt="Full view" class="max-w-full max-h-[82vh] object-contain rounded-2xl shadow-2xl border border-slate-700/60">
+    </div>
+  </div>
+
+  <!-- ===================================================================== -->
   <!-- MODAL: QUẢN LÝ MÃ GIẢM GIÁ (COUPONS)                                  -->
   <!-- ===================================================================== -->
   <div id="couponModal"
@@ -1647,10 +1856,342 @@
       showToast(`Đã tự tạo SKU: ${sku}`, 'success');
     }
 
+    // =========================================================================
+    // IMAGE HANDLING LOGIC (URL, UPLOAD, PREVIEW, LIGHTBOX, GALLERY)
+    // =========================================================================
+    const IMAGE_PRESETS = {
+      keyboard: 'https://images.unsplash.com/photo-1587829741301-dc798b83add3?auto=format&fit=crop&w=600&q=80',
+      mouse: 'https://images.unsplash.com/photo-1615663245857-ac93bb7c39e7?auto=format&fit=crop&w=600&q=80',
+      laptop: 'https://images.unsplash.com/photo-1593642632823-8f785ba67e45?auto=format&fit=crop&w=600&q=80',
+      monitor: 'https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?auto=format&fit=crop&w=600&q=80',
+      gpu: 'https://images.unsplash.com/photo-1591799264318-7e6ef8ddb7ea?auto=format&fit=crop&w=600&q=80'
+    };
+
+    function switchImageInputMode(mode) {
+      const urlSec = document.getElementById('imageInputUrlSection');
+      const uploadSec = document.getElementById('imageInputUploadSection');
+      const btnUrl = document.getElementById('btnModeUrl');
+      const btnUpload = document.getElementById('btnModeUpload');
+
+      if (mode === 'url') {
+        urlSec.classList.remove('hidden');
+        uploadSec.classList.add('hidden');
+        btnUrl.className = 'text-[10px] font-medium px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 transition-all';
+        btnUpload.className = 'text-[10px] font-medium px-2 py-0.5 rounded bg-slate-800 text-slate-400 hover:text-white border border-slate-700 transition-all';
+      } else {
+        urlSec.classList.add('hidden');
+        uploadSec.classList.remove('hidden');
+        btnUpload.className = 'text-[10px] font-medium px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 transition-all';
+        btnUrl.className = 'text-[10px] font-medium px-2 py-0.5 rounded bg-slate-800 text-slate-400 hover:text-white border border-slate-700 transition-all';
+      }
+    }
+
+    function handleThumbnailUrlChange(url) {
+      const cleanUrl = url ? url.trim() : '';
+      const container = document.getElementById('thumbnailPreviewContainer');
+      const previewImg = document.getElementById('thumbnailPreviewImg');
+      const previewText = document.getElementById('thumbnailPreviewUrlText');
+      const btnClear = document.getElementById('btnClearThumbnail');
+
+      if (cleanUrl) {
+        previewImg.src = cleanUrl;
+        previewText.innerText = cleanUrl;
+        container.classList.remove('hidden');
+        if (btnClear) btnClear.classList.remove('hidden');
+
+        previewImg.onerror = () => {
+          container.classList.add('hidden');
+          showToast('Không thể tải trước hình ảnh từ link này', 'warning');
+        };
+        previewImg.onload = () => {
+          container.classList.remove('hidden');
+        };
+      } else {
+        container.classList.add('hidden');
+        if (btnClear) btnClear.classList.add('hidden');
+      }
+    }
+
+    function clearThumbnailImage() {
+      document.getElementById('fieldThumbnailUrl').value = '';
+      const fileInput = document.getElementById('fileUploadInput');
+      if (fileInput) fileInput.value = '';
+      handleThumbnailUrlChange('');
+      showToast('Đã xóa hình ảnh đại diện', 'warning');
+    }
+
+    function applyImagePreset(type) {
+      const url = IMAGE_PRESETS[type];
+      if (url) {
+        document.getElementById('fieldThumbnailUrl').value = url;
+        handleThumbnailUrlChange(url);
+        switchImageInputMode('url');
+        showToast(`Đã áp dụng ảnh mẫu [${type.toUpperCase()}]`, 'success');
+      }
+    }
+
+    async function handleFileUpload(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const placeholder = document.getElementById('uploadPlaceholder');
+      const spinner = document.getElementById('uploadingSpinner');
+
+      placeholder.classList.add('hidden');
+      spinner.classList.remove('hidden');
+
+      const formData = new FormData();
+      formData.append('image', file);
+
+      try {
+        const res = await fetch('/api/products/upload-image', {
+          method: 'POST',
+          body: formData
+        });
+        const data = await res.json();
+
+        if (res.ok && data.success) {
+          document.getElementById('fieldThumbnailUrl').value = data.url;
+          handleThumbnailUrlChange(data.url);
+          showToast('Tải ảnh lên thành công!', 'success');
+        } else {
+          showToast(data.message || 'Lỗi khi tải ảnh lên', 'error');
+        }
+      } catch (err) {
+        showToast('Lỗi mạng: ' + err.message, 'error');
+      } finally {
+        placeholder.classList.remove('hidden');
+        spinner.classList.add('hidden');
+      }
+    }
+
+    // LIGHTBOX FULLSCREEN IMAGE VIEWER
+    function openImageViewer(url, caption = '') {
+      if (!url) {
+        showToast('Thiết bị chưa được cấu hình hình ảnh đại diện', 'warning');
+        return;
+      }
+      const modal = document.getElementById('imageViewerModal');
+      const img = document.getElementById('imageViewerImg');
+      const cap = document.getElementById('imageViewerCaption');
+
+      img.src = url;
+      cap.innerText = caption || 'Hình ảnh thiết bị công nghệ';
+      modal.classList.remove('hidden');
+    }
+
+    function closeImageViewer() {
+      const modal = document.getElementById('imageViewerModal');
+      if (modal) modal.classList.add('hidden');
+    }
+
+    function previewLargeImage(url) {
+      const name = document.getElementById('fieldName').value.trim() || 'Xem trước ảnh sản phẩm';
+      openImageViewer(url, name);
+    }
+
+    // GALLERY MODAL (MULTIPLE IMAGES PER PRODUCT)
+    let currentGalleryProductId = null;
+
+    async function openGalleryModal(productId, productName) {
+      currentGalleryProductId = productId;
+      document.getElementById('galleryModal').classList.remove('hidden');
+      document.getElementById('galleryProductBadge').innerText = `ID: #${productId}`;
+      document.getElementById('galleryProductName').innerText = productName;
+      document.getElementById('galleryNewImageUrl').value = '';
+
+      await loadProductGallery(productId);
+    }
+
+    function closeGalleryModal() {
+      document.getElementById('galleryModal').classList.add('hidden');
+      currentGalleryProductId = null;
+    }
+
+    async function loadProductGallery(productId) {
+      const container = document.getElementById('galleryGridContainer');
+      container.innerHTML = '<div class="col-span-full text-center py-10 text-slate-400">Đang tải bộ sưu tập ảnh...</div>';
+
+      try {
+        const res = await fetch(`/api/products/${productId}/images`);
+        const data = await res.json();
+
+        if (!data.success || !data.data || data.data.length === 0) {
+          container.innerHTML = `
+            <div class="col-span-full text-center py-12 bg-slate-900/40 rounded-2xl border border-slate-800">
+              <i data-lucide="image-off" class="w-8 h-8 text-slate-600 mx-auto mb-2"></i>
+              <p class="text-sm font-semibold text-slate-300">Chưa có hình ảnh nào trong bộ sưu tập</p>
+              <p class="text-xs text-slate-500 mt-1">Dán liên kết URL hoặc nhấn nút tải ảnh phía trên để bổ sung ảnh.</p>
+            </div>
+          `;
+          lucide.createIcons();
+          return;
+        }
+
+        renderGalleryCards(data.data);
+      } catch (err) {
+        container.innerHTML = `<div class="col-span-full text-center py-6 text-rose-400">Lỗi kết nối: ${err.message}</div>`;
+      }
+    }
+
+    function renderGalleryCards(images) {
+      const container = document.getElementById('galleryGridContainer');
+      container.innerHTML = images.map(img => `
+        <div class="relative group bg-slate-900/90 rounded-2xl border ${img.is_primary ? 'border-cyan-500 shadow-lg shadow-cyan-500/10' : 'border-slate-800 hover:border-slate-700'} overflow-hidden flex flex-col transition-all">
+          <div class="relative w-full aspect-square bg-slate-950 overflow-hidden cursor-pointer" onclick="openImageViewer('${img.image_url}', '${img.angle_label || 'Ảnh chi tiết'}')">
+            <img src="${img.image_url}" alt="${img.angle_label}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300">
+            ${img.is_primary ? `
+              <span class="absolute top-2 left-2 px-2 py-0.5 rounded-full text-[10px] font-bold bg-cyan-500 text-slate-950 shadow-md flex items-center gap-1">
+                <i data-lucide="star" class="w-3 h-3 fill-slate-950"></i>
+                <span>Ảnh Chính</span>
+              </span>
+            ` : ''}
+          </div>
+
+          <div class="p-3 flex-1 flex flex-col justify-between gap-2 border-t border-slate-800">
+            <div>
+              <p class="font-semibold text-slate-200 text-xs truncate" title="${img.angle_label}">${img.angle_label || 'Góc nhìn'}</p>
+              <p class="text-[10px] text-slate-500 font-mono truncate mt-0.5">${img.image_url}</p>
+            </div>
+
+            <div class="flex items-center gap-1.5 pt-1">
+              ${!img.is_primary ? `
+                <button onclick="setPrimaryGalleryImage(${currentGalleryProductId}, ${img.id})" 
+                  class="flex-1 py-1 px-2 rounded-lg bg-slate-800 hover:bg-cyan-500/20 text-slate-300 hover:text-cyan-300 text-[10px] font-medium border border-slate-700 transition-all flex items-center justify-center gap-1"
+                  title="Đặt làm ảnh đại diện chính">
+                  <i data-lucide="check" class="w-3 h-3"></i>
+                  <span>Chọn ảnh chính</span>
+                </button>
+              ` : `
+                <span class="flex-1 text-center py-1 text-[10px] text-cyan-400 font-semibold font-mono">Đang là ảnh chính</span>
+              `}
+
+              <button onclick="deleteGalleryImage(${currentGalleryProductId}, ${img.id})" 
+                class="p-1 rounded-lg bg-slate-800 hover:bg-rose-500/20 text-slate-400 hover:text-rose-400 border border-slate-700 transition-all"
+                title="Xóa ảnh này">
+                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      `).join('');
+
+      lucide.createIcons();
+    }
+
+    async function handleAddGalleryImage(e) {
+      e.preventDefault();
+      if (!currentGalleryProductId) return;
+
+      const url = document.getElementById('galleryNewImageUrl').value.trim();
+      const angle = document.getElementById('galleryNewAngleLabel').value.trim() || 'Góc nhìn chi tiết';
+
+      if (!url) {
+        showToast('Vui lòng nhập đường dẫn hình ảnh URL', 'warning');
+        return;
+      }
+
+      try {
+        const res = await fetch(`/api/products/${currentGalleryProductId}/images`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ image_url: url, angle_label: angle })
+        });
+        const data = await res.json();
+
+        if (res.ok && data.success) {
+          showToast(data.message, 'success');
+          document.getElementById('galleryNewImageUrl').value = '';
+          loadProductGallery(currentGalleryProductId);
+        } else {
+          showToast(data.message || 'Lỗi thêm ảnh', 'error');
+        }
+      } catch (err) {
+        showToast('Lỗi mạng: ' + err.message, 'error');
+      }
+    }
+
+    async function handleGalleryFileUpload(e) {
+      const file = e.target.files[0];
+      if (!file || !currentGalleryProductId) return;
+
+      const formData = new FormData();
+      formData.append('image', file);
+
+      try {
+        const upRes = await fetch('/api/products/upload-image', {
+          method: 'POST',
+          body: formData
+        });
+        const upData = await upRes.json();
+
+        if (upRes.ok && upData.success) {
+          // Add into gallery
+          const addRes = await fetch(`/api/products/${currentGalleryProductId}/images`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+              image_url: upData.url, 
+              angle_label: `Ảnh chụp tệp (${file.name})` 
+            })
+          });
+          const addData = await addRes.json();
+
+          if (addRes.ok && addData.success) {
+            showToast('Tải ảnh và thêm vào bộ sưu tập thành công!', 'success');
+            loadProductGallery(currentGalleryProductId);
+          } else {
+            showToast(addData.message || 'Lỗi thêm vào bộ sưu tập', 'error');
+          }
+        } else {
+          showToast(upData.message || 'Lỗi tải ảnh', 'error');
+        }
+      } catch (err) {
+        showToast('Lỗi: ' + err.message, 'error');
+      }
+    }
+
+    async function setPrimaryGalleryImage(productId, imageId) {
+      try {
+        const res = await fetch(`/api/products/${productId}/images/${imageId}/primary`, {
+          method: 'PATCH'
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+          showToast(data.message, 'success');
+          loadProductGallery(productId);
+          setTimeout(() => window.location.reload(), 900);
+        } else {
+          showToast(data.message || 'Lỗi đặt ảnh chính', 'error');
+        }
+      } catch (err) {
+        showToast('Lỗi mạng: ' + err.message, 'error');
+      }
+    }
+
+    async function deleteGalleryImage(productId, imageId) {
+      if (!confirm('Bạn có chắc chắn muốn xóa ảnh này khỏi bộ sưu tập?')) return;
+      try {
+        const res = await fetch(`/api/products/${productId}/images/${imageId}`, {
+          method: 'DELETE'
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+          showToast(data.message, 'success');
+          loadProductGallery(productId);
+        } else {
+          showToast(data.message || 'Lỗi xóa ảnh', 'error');
+        }
+      } catch (err) {
+        showToast('Lỗi mạng: ' + err.message, 'error');
+      }
+    }
+
     // RESET PRODUCT FORM (SWITCH TO CREATE MODE)
     function resetProductForm() {
       document.getElementById('productForm').reset();
       document.getElementById('editingProductId').value = '';
+      clearThumbnailImage();
 
       document.getElementById('formTitle').innerHTML = `
         <i data-lucide="plus-circle" class="w-5 h-5 text-cyan-400"></i>
@@ -1692,6 +2233,11 @@
         document.getElementById('fieldSkuCode').value = prod.sku_code || (prod.default_variant ? prod.default_variant.sku : '');
         document.getElementById('fieldDescription').value = prod.description || '';
 
+        // Fill Thumbnail Image
+        const thumbUrl = prod.thumbnail_url || '';
+        document.getElementById('fieldThumbnailUrl').value = thumbUrl;
+        handleThumbnailUrlChange(thumbUrl);
+
         // Switch UI to Edit Mode
         document.getElementById('formTitle').innerHTML = `
           <i data-lucide="edit" class="w-5 h-5 text-amber-400"></i>
@@ -1731,7 +2277,8 @@
         base_price: parseFloat(document.getElementById('fieldBasePrice').value),
         initial_stock: parseInt(document.getElementById('fieldInitialStock').value, 10),
         sku_code: document.getElementById('fieldSkuCode').value.trim(),
-        description: document.getElementById('fieldDescription').value.trim()
+        description: document.getElementById('fieldDescription').value.trim(),
+        thumbnail_url: document.getElementById('fieldThumbnailUrl').value.trim() || null
       };
 
       const url = isEditing ? `/api/products/${editId}` : '/api/products';

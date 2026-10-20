@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const ProductController = require('../controllers/productController');
+const upload = require('../middlewares/uploadMiddleware');
 
 /**
  * Product & Manager Catalog Routes
@@ -22,10 +23,13 @@ router.get('/api/products', ProductController.getProductsJson);
 // GET /api/products/stats - Thống kê KPI tổng quan catalog
 router.get('/api/products/stats', ProductController.getCatalogStats);
 
+// POST /api/products/upload-image - Upload hình ảnh từ máy tính (Multer)
+router.post('/api/products/upload-image', upload.single('image'), ProductController.uploadImage);
+
 // GET /api/products/:id - Lấy thông tin chi tiết thiết bị để điền vào form chỉnh sửa
 router.get('/api/products/:id', ProductController.getProductJson);
 
-// POST /api/products - Thêm mới thiết bị với 7 trường & tạo tồn kho ban đầu (TX 1)
+// POST /api/products - Thêm mới thiết bị & tạo tồn kho ban đầu (TX 1)
 router.post('/api/products', ProductController.createProduct);
 
 // PUT /api/products/:id - Cập nhật thiết bị, đồng bộ giá biến thể & ghi audit log (TX 2)
@@ -33,6 +37,12 @@ router.put('/api/products/:id', ProductController.updateProduct);
 
 // DELETE /api/products/:id - Xóa an toàn thiết bị với ràng buộc tồn kho = 0 (TX 3)
 router.delete('/api/products/:id', ProductController.deleteProduct);
+
+// Product Image Gallery APIs
+router.get('/api/products/:id/images', ProductController.getProductImages);
+router.post('/api/products/:id/images', ProductController.addProductImage);
+router.delete('/api/products/:id/images/:imageId', ProductController.deleteProductImage);
+router.patch('/api/products/:id/images/:imageId/primary', ProductController.setPrimaryImage);
 
 // POST /api/products/batch-stock - Khóa hàng & Cập nhật tồn kho hàng loạt (TX 4)
 router.post('/api/products/batch-stock', ProductController.batchAdjustStock);

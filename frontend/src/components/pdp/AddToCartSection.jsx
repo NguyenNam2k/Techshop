@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { ShoppingCart, Zap, Minus, Plus, AlertCircle, Headphones } from 'lucide-react';
 
 const AddToCartSection = ({ variant, onAddToCart, onBuyNow }) => {
@@ -73,7 +73,7 @@ const AddToCartSection = ({ variant, onAddToCart, onBuyNow }) => {
             }`}
           >
             <Zap className="w-4 h-4 fill-white" />
-            <span>{isOutOfStock ? 'ĐĂNG KÝ KHI CÓ HÀNG' : 'Mua Ngay VietQR'}</span>
+            <span>{isOutOfStock ? 'ĐĂNG KÝ KHI CÓ HÀNG' : 'Mua Ngay'}</span>
           </button>
         </div>
       </div>

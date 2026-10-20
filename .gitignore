@@ -148,14 +148,12 @@ vite.config.ts.timestamp-*
 *.sqlite3
 *.db
 *.dump
-
-# Mock & Seeding scripts
-backend/scripts/
-**/mock_*
-**/*_mock.js
-**/*_seed*
-**/seed_*
-
+!backend/database/migrations/20261011_guest_checkout.sql
+!backend/database/migrations/20261018_customer_profile_settings.sql
+!backend/database/migrations/20261018_order_cancellation_requests.sql
+!backend/database/migrations/20261018_search_popularity_categories.sql
+!backend/database/migrations/20261019_coupon_terms_and_conditions.sql
+!backend/database/migrations/20261019_order_shipping_quotes.sql
 
 # Local preview & scratch files
 product_detail_preview.html

@@ -14,7 +14,7 @@ export default function Footer() {
             </div>
             <div>
               <h4 className="font-bold text-white text-sm">Giao Hàng Hỏa Tốc 2H</h4>
-              <p className="text-slate-400 mt-0.5">Nhận hàng tận tay trong 2 giờ tại Hà Nội & TP.HCM</p>
+              <p className="text-slate-400 mt-0.5">Hỏa tốc 2H trong phạm vi gần showroom; khu vực xa giao thường và tính phí theo phường/xã.</p>
             </div>
           </div>
 
@@ -59,7 +59,7 @@ export default function Footer() {
             <span className="text-lg font-extrabold text-white font-mono">TECHSHOP STORE</span>
           </Link>
           <p className="text-slate-400 leading-relaxed">
-            Hệ thống bán lẻ máy tính cao cấp, linh kiện PC Gaming, Laptop & Gear chính hàng đầu Việt Nam. Tích hợp thanh toán VietQR tự động.
+            Hệ thống bán lẻ máy tính cao cấp, linh kiện PC Gaming, Laptop & Gear chính hàng đầu Việt Nam.
           </p>
           <div className="space-y-1 text-slate-400">
             <p className="flex items-center gap-2"><MapPin className="w-3.5 h-3.5 text-sky-400" /> Showroom 1: 123 Cầu Giấy, Hà Nội</p>

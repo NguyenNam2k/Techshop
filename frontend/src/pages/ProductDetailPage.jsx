@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useLocation, useNavigate } from 'react-router-dom';
-import axios from 'axios';
-import { 
-  Star, ShieldCheck, Truck, RotateCcw, 
-  CheckCircle2, ChevronRight, Home 
+import { api } from '../services/api';
+import {
+  Star, ShieldCheck, Truck, RotateCcw,
+  CheckCircle2, ChevronRight, Home
 } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import ProductGallery from '../components/pdp/ProductGallery.jsx';
@@ -11,6 +11,7 @@ import VariantSelector from '../components/pdp/VariantSelector.jsx';
 import ProductSpecsTable from '../components/pdp/ProductSpecsTable.jsx';
 import AddToCartSection from '../components/pdp/AddToCartSection.jsx';
 import SimilarProductsSlider from '../components/pdp/SimilarProductsSlider.jsx';
+import ProductReviewsSection from '../components/pdp/ProductReviewsSection.jsx';
 
 const ProductDetailPage = () => {
   const { id } = useParams();
@@ -21,12 +22,8 @@ const ProductDetailPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedVariant, setSelectedVariant] = useState(null);
-
-  // Support query params e.g. /products?id=1 or /products?slug=abc
   const queryParams = new URLSearchParams(location.search);
   const queryId = queryParams.get('id') || queryParams.get('slug');
-
-  // Target identifier prioritized: ?id= query param -> :id path param -> state -> fallback
   const targetId = queryId || id || location.state?.productId || '1';
 
   useEffect(() => {
@@ -38,14 +35,12 @@ const ProductDetailPage = () => {
       try {
         setLoading(true);
         if (targetId) {
-          const res = await axios.get(`/api/products/${targetId}`);
-          if (res.data.success && res.data.data) {
-            const productData = res.data.data;
+          const productData = await api.getProductById(targetId);
+          if (productData) {
             setProduct(productData);
             if (productData.variants && productData.variants.length > 0) {
               setSelectedVariant(productData.variants[0]);
             }
-            // Canonicalize URL to SEO slug if accessed via /products?id=... or /products/:id
             if (productData.slug && (id !== productData.slug || queryId)) {
               navigate(`/products/${productData.slug}`, {
                 replace: true,
@@ -151,19 +146,16 @@ const ProductDetailPage = () => {
 
       <div className="max-w-7xl mx-auto px-4 py-8 space-y-10">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
-          
           <div className="lg:col-span-7 space-y-8">
             <ProductGallery
               product={product}
               selectedVariant={selectedVariant}
               onVariantSelect={setSelectedVariant}
             />
-
             <ProductSpecsTable specifications={product.specifications} />
           </div>
 
           <div className="lg:col-span-5 space-y-6">
-            
             <div>
               <div className="flex items-center gap-2 text-xs font-mono text-slate-400 dark:text-slate-500 mb-1">
                 <span className="font-bold text-sky-600 dark:text-sky-400 uppercase">{product.brand}</span>
@@ -178,13 +170,13 @@ const ProductDetailPage = () => {
               <div className="flex items-center gap-3 mt-3">
                 <div className="flex items-center gap-1 text-xs">
                   <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
-                  <span className="font-bold text-slate-800 dark:text-slate-200">4.9</span>
-                  <span className="text-slate-400 dark:text-slate-500 text-xs">(128 Đánh giá)</span>
+                  <span className="font-bold text-slate-800 dark:text-slate-200">{Number(product.rating || 5.0).toFixed(1)}</span>
+                  <span className="text-slate-400 dark:text-slate-500 text-xs">({product.reviewCount || product.reviews?.length || 0} Đánh giá)</span>
                 </div>
                 <span className="text-slate-300 dark:text-slate-700">|</span>
                 {selectedVariant && selectedVariant.stock > 0 ? (
                   <span className="text-xs text-emerald-600 dark:text-emerald-400 font-bold flex items-center gap-1">
-                    <CheckCircle2 className="w-3.5 h-3.5" /> 🟢 Còn hàng ({selectedVariant.stock} chiếc sẵn sàng)
+                    <CheckCircle2 className="w-3.5 h-3.5" /> Còn hàng 
                   </span>
                 ) : (
                   <span className="text-xs text-rose-600 dark:text-rose-400 font-bold flex items-center gap-1">
@@ -212,7 +204,6 @@ const ProductDetailPage = () => {
                 Đã bao gồm VAT & Bảo hành chính hãng {product.warranty_months || 36} tháng
               </p>
             </div>
-
             <VariantSelector
               variants={product.variants}
               selectedVariant={selectedVariant}
@@ -220,23 +211,23 @@ const ProductDetailPage = () => {
               categorySlug={product.category_slug}
               categoryName={product.category_name}
             />
-
             <AddToCartSection
               variant={selectedVariant}
               onAddToCart={(qty) => {
-                addToCart(product, selectedVariant, qty);
-                alert(`Đã thêm ${qty}x "${product.name}" vào giỏ hàng!`);
+                addToCart(product, selectedVariant, qty).then((added) => {
+                  if (added) alert(`Đã thêm ${qty}x "${product.name}" vào giỏ hàng!`);
+                });
               }}
               onBuyNow={(qty) => {
-                addToCart(product, selectedVariant, qty);
-                setIsCartOpen(true);
-                alert(`Tiến hành thanh toán VietQR cho ${qty}x "${product.name}"!`);
+                addToCart(product, selectedVariant, qty).then((added) => {
+                  if (added) navigate('/checkout');
+                });
               }}
             />
             <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-3 text-xs shadow-sm transition-colors">
               <div className="flex items-center gap-3 text-slate-700 dark:text-slate-300">
                 <Truck className="w-4 h-4 text-sky-600 dark:text-sky-400 flex-shrink-0" />
-                <span>Giao hàng Hỏa Tốc 2H trong nội thành Hà Nội & TP.HCM</span>
+                <span>Hỏa tốc 2H trong phạm vi phục vụ gần showroom Hà Nội & TP.HCM</span>
               </div>
               <div className="flex items-center gap-3 text-slate-700 dark:text-slate-300">
                 <RotateCcw className="w-4 h-4 text-indigo-600 dark:text-indigo-400 flex-shrink-0" />
@@ -251,6 +242,18 @@ const ProductDetailPage = () => {
           </div>
 
         </div>
+        <ProductReviewsSection
+          product={product}
+          onReviewAdded={(newReviews) => {
+            const avg = Number((newReviews.reduce((sum, r) => sum + Number(r.rating), 0) / newReviews.length).toFixed(1));
+            setProduct(prev => ({
+              ...prev,
+              reviews: newReviews,
+              reviewCount: newReviews.length,
+              rating: avg
+            }));
+          }}
+        />
         <SimilarProductsSlider id={product.id} currentProductId={product.id} />
       </div>
     </div>

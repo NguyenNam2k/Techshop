@@ -1,23 +1,10 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, ShieldCheck, Zap, RotateCcw } from 'lucide-react';
 
 const ProductGallery = ({ product, selectedVariant, onVariantSelect }) => {
   const [mainImageIndex, setMainImageIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const [isHovering, setIsHovering] = useState(false);
-  const [lensData, setLensData] = useState({
-    lensX: 0,
-    lensY: 0,
-    bgX: 0,
-    bgY: 0,
-    containerW: 0,
-    containerH: 0
-  });
-  const containerRef = useRef(null);
-
-  const LENS_WIDTH = 220;
-  const LENS_HEIGHT = 145;
-  const SCALE = 2.5;
 
   const variantImages = selectedVariant?.image_url
     ? [{ image_url: selectedVariant.image_url, angle_label: selectedVariant.color ? `Bản ${selectedVariant.color}` : 'Góc chính', is_primary: true, sort_order: 0 }]
@@ -62,37 +49,6 @@ const ProductGallery = ({ product, selectedVariant, onVariantSelect }) => {
     setMainImageIndex((prevIndex) => (prevIndex + 1) % imagesToShow.length);
   };
 
-  const handleMouseMove = (e) => {
-    if (e.target.closest('button') || e.target.closest('.no-magnify')) {
-      if (isHovering) setIsHovering(false);
-      return;
-    }
-
-    if (!isHovering) {
-      setIsHovering(true);
-    }
-
-    if (!containerRef.current) return;
-    const rect = containerRef.current.getBoundingClientRect();
-    const pixelX = e.clientX - rect.left;
-    const pixelY = e.clientY - rect.top;
-    const halfW = LENS_WIDTH / 2;
-    const halfH = LENS_HEIGHT / 2;
-    const clampedLensX = Math.max(halfW, Math.min(rect.width - halfW, pixelX));
-    const clampedLensY = Math.max(halfH, Math.min(rect.height - halfH, pixelY));
-    const bgX = halfW - pixelX * SCALE;
-    const bgY = halfH - pixelY * SCALE;
-
-    setLensData({
-      lensX: clampedLensX,
-      lensY: clampedLensY,
-      bgX,
-      bgY,
-      containerW: rect.width,
-      containerH: rect.height
-    });
-  };
-
   const handleMouseEnter = (e) => {
     setIsPaused(true);
     if (!e.target.closest('button')) {
@@ -105,17 +61,13 @@ const ProductGallery = ({ product, selectedVariant, onVariantSelect }) => {
     setIsPaused(false);
   };
 
-  const currentImageUrl = imagesToShow[mainImageIndex]?.image_url;
-
   return (
     <div className="space-y-4 select-none">
   
       <div 
-        ref={containerRef}
-        className="relative group rounded-3xl border border-slate-200 dark:border-slate-800 bg-[#F1F5F9] dark:bg-slate-900 shadow-inner overflow-hidden flex items-center justify-center p-6 cursor-crosshair h-96 sm:h-[420px] transition-colors"
+        className="relative group rounded-3xl border border-slate-200 dark:border-slate-800 bg-[#F1F5F9] dark:bg-slate-900 shadow-inner overflow-hidden flex items-center justify-center p-6 cursor-default h-96 sm:h-[420px] transition-colors"
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
-        onMouseMove={handleMouseMove}
       >
         <div 
           className="flex transition-transform duration-500 ease-out h-full w-full"
@@ -135,28 +87,7 @@ const ProductGallery = ({ product, selectedVariant, onVariantSelect }) => {
             </div>
           ))}
         </div>
-        {isHovering && currentImageUrl && lensData.containerW > 0 && (
-          <div
-            className="pointer-events-none absolute z-30 w-[220px] h-[145px] rounded-2xl border-2 border-sky-500 bg-white dark:bg-slate-950 shadow-2xl overflow-hidden hidden md:block"
-            style={{
-              left: `${lensData.lensX}px`,
-              top: `${lensData.lensY}px`,
-              transform: 'translate(-50%, -50%)',
-            }}
-          >
-            <div
-              className="w-full h-full bg-no-repeat"
-              style={{
-                backgroundImage: `url(${currentImageUrl})`,
-                backgroundSize: `${lensData.containerW * SCALE}px ${lensData.containerH * SCALE}px`,
-                backgroundPosition: `${lensData.bgX}px ${lensData.bgY}px`,
-                backgroundColor: 'transparent'
-              }}
-            />
-          </div>
-        )}
-
-        <div className="no-magnify absolute top-3 right-3 z-20 flex items-center gap-1.5 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border border-slate-200 dark:border-slate-700 px-2.5 py-1 rounded-full text-xs font-mono text-slate-700 dark:text-slate-300 shadow-sm pointer-events-none">
+        <div className="absolute top-3 right-3 z-20 flex items-center gap-1.5 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border border-slate-200 dark:border-slate-700 px-2.5 py-1 rounded-full text-xs font-mono text-slate-700 dark:text-slate-300 shadow-sm pointer-events-none">
           <span>{mainImageIndex + 1} / {imagesToShow.length}</span>
         </div>
 
@@ -248,8 +179,8 @@ const ProductGallery = ({ product, selectedVariant, onVariantSelect }) => {
             <Zap className="w-4 h-4" />
           </div>
           <div>
-            <div className="text-xs font-bold text-slate-800 dark:text-slate-200">Giao Hỏa Tốc 2H</div>
-            <div className="text-[11px] text-slate-500 dark:text-slate-400">Nội thành an toàn</div>
+            <div className="text-xs font-bold text-slate-800 dark:text-slate-200">Hỏa tốc 2H gần showroom</div>
+            <div className="text-[11px] text-slate-500 dark:text-slate-400">Khu vực xa giao thường</div>
           </div>
         </div>
 

@@ -1,64 +1,79 @@
-import React from 'react';
+import React, { lazy, Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
 import { ThemeProvider } from './context/ThemeContext';
 import { CartProvider } from './context/CartContext';
 import { AuthProvider } from './context/AuthContext';
 import Header from './components/common/Header.jsx';
 import Footer from './components/common/Footer.jsx';
-import ProductDetailPage from './pages/ProductDetailPage.jsx';
+const HomePage = lazy(() => import('./pages/HomePage.jsx'));
+const ProductDetailPage = lazy(() => import('./pages/ProductDetailPage.jsx'));
+const CartPage = lazy(() => import('./pages/CartPage.jsx'));
+const CheckoutPage = lazy(() => import('./pages/CheckoutPage.jsx'));
+const ManagerPage = lazy(() => import('./pages/ManagerPage.jsx'));
+const PCBuilderPage = lazy(() => import('./pages/PCBuilderPage.jsx'));
+const CustomerDashboard = lazy(() => import('./pages/CustomerDashboard.jsx'));
+const ProfilePage = lazy(() => import('./pages/ProfilePage.jsx'));
+const LegacyProfileRedirect = lazy(() => import('./pages/ProfilePage.jsx').then((module) => ({ default: module.LegacyProfileRedirect })));
+const StaffDashboard = lazy(() => import('./pages/StaffDashboard.jsx'));
+const ManagerDashboard = lazy(() => import('./pages/ManagerDashboard.jsx'));
+const AdminDashboard = lazy(() => import('./pages/AdminDashboard.jsx'));
+const CatalogView = lazy(() => import('./pages/CatalogPage.jsx'));
 
 function App() {
   return (
     <ThemeProvider>
-      <AuthProvider>
-        <CartProvider>
-          <Router>
-            <div className="min-h-screen bg-white dark:bg-[#0B0F17] text-slate-900 dark:text-slate-100 flex flex-col justify-between transition-colors">
+      <Router>
+        <AuthProvider>
+          <CartProvider>
+            <div className="min-h-screen bg-[#F8FAFC] dark:bg-[#07090E] text-slate-900 dark:text-slate-100 flex flex-col justify-between transition-colors font-sans">
               <Header />
 
               <main className="flex-grow">
-                <Routes>
-                  <Route path="/products/:id" element={<ProductDetailPage />} />
-                  <Route path="/products" element={<ProductDetailPage />} />
-                  <Route path="/" element={
-                    <div className="text-center py-20 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 transition-colors">
-                      <h1 className="text-3xl font-extrabold text-slate-900 dark:text-white mb-4">
-                        Chào Mừng Đến Với TECHSHOP 
-                      </h1>
-                      <p className="text-slate-500 dark:text-slate-400 mb-6 max-w-xl mx-auto text-sm">
-                        Hệ sinh thái phân phối linh kiện máy tính cao cấp, card đồ họa RTX 50 Series, bo mạch chủ và gaming gear chính hãng hàng đầu Việt Nam.
-                      </p>
-                      <Link
-                        to="/products"
-                        className="inline-flex items-center px-6 py-3 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-bold text-sm shadow-md transition-all cursor-pointer"
-                      >
-                        Khám Phá Sản Phẩm Nổi Bật →
-                      </Link>
+                <Suspense
+                  fallback={
+                    <div className="mx-auto flex min-h-[40vh] max-w-7xl items-center justify-center px-4">
+                      <div className="h-8 w-8 animate-spin rounded-full border-4 border-slate-200 border-t-sky-600 dark:border-slate-700 dark:border-t-sky-400" />
                     </div>
-                  } />
-                  <Route
-                    path="*"
-                    element={
-                      <div className="text-center py-24">
-                        <h1 className="text-2xl font-bold text-slate-900 dark:text-white">404 - Không Tìm Thấy Trang</h1>
-                        <p className="text-slate-500 dark:text-slate-400 mt-2 text-sm">Đường dẫn bạn truy cập không tồn tại hoặc đã thay đổi.</p>
-                        <Link
-                          to="/products"
-                          className="inline-block mt-4 text-xs font-semibold text-sky-600 dark:text-sky-400 hover:underline"
-                        >
-                          Quay lại trang sản phẩm →
-                        </Link>
-                      </div>
-                    }
-                  />
-                </Routes>
+                  }
+                >
+                  <Routes>
+                    <Route path="/" element={<HomePage />} />
+                    <Route path="/search" element={<CatalogView />} />
+                    <Route path="/products/:id" element={<ProductDetailPage />} />
+                    <Route path="/products" element={<HomePage />} />
+                    <Route path="/cart" element={<CartPage />} />
+                    <Route path="/checkout" element={<CheckoutPage />} />
+                    <Route path="/manager" element={<ManagerPage />} />
+                    <Route path="/admin" element={<ManagerPage />} />
+                    <Route path="/build-pc" element={<PCBuilderPage />} />
+                    <Route path="/profile" element={<ProfilePage />} />
+                    <Route path="/profile/*" element={<ProfilePage />} />
+                    <Route path="/profiles" element={<LegacyProfileRedirect />} />
+                    <Route path="/profiles/*" element={<LegacyProfileRedirect />} />
+                    <Route
+                      path="*"
+                      element={
+                        <div className="text-center py-24 space-y-4">
+                          <h1 className="text-3xl font-extrabold text-slate-900 dark:text-white">404 - Không Tìm Thấy Trang</h1>
+                          <p className="text-slate-500 dark:text-slate-400 text-sm">Đường dẫn bạn truy cập không tồn tại hoặc đã thay đổi.</p>
+                          <Link
+                            to="/"
+                            className="inline-flex items-center gap-1.5 px-5 py-2.5 bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs rounded-xl shadow transition"
+                          >
+                            ← Về Trang Chủ TechShop
+                          </Link>
+                        </div>
+                      }
+                    />
+                  </Routes>
+                </Suspense>
               </main>
 
               <Footer />
             </div>
-          </Router>
-        </CartProvider>
-      </AuthProvider>
+          </CartProvider>
+        </AuthProvider>
+      </Router>
     </ThemeProvider>
   );
 }

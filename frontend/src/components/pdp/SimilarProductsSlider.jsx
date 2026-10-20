@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import axios from 'axios';
+import { api } from '../../services/api';
 import { ChevronLeft, ChevronRight, ArrowRight } from 'lucide-react';
 
 const SimilarProductsSlider = ({ id, currentProductId }) => {
@@ -16,9 +16,9 @@ const SimilarProductsSlider = ({ id, currentProductId }) => {
     const fetchSimilar = async () => {
       try {
         setLoading(true);
-        const res = await axios.get(`/api/products/${targetLookup}/similar?limit=8`);
-        if (res.data.success && Array.isArray(res.data.data)) {
-          setProducts(res.data.data);
+        const res = await api.getSimilarProducts(targetLookup, 8);
+        if (res.success && Array.isArray(res.data)) {
+          setProducts(res.data);
         }
       } catch (err) {
         console.error('Error fetching similar products:', err);
@@ -64,7 +64,7 @@ const SimilarProductsSlider = ({ id, currentProductId }) => {
 
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-bold text-slate-900 dark:text-white">Sản Phẩm Cùng Danh Mục</h2>
+          <h2 className="text-xl font-bold text-slate-900 dark:text-white">Sản Phẩm Tương Tự</h2>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Gợi ý sản phẩm tương thích hoặc cùng dòng sản phẩm</p>
         </div>
 

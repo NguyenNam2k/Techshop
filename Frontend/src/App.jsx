@@ -12,6 +12,9 @@ import AdminLayout from './pages/admin/AdminLayout';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import UserManagement from './pages/admin/UserManagement';
 
+// Manager pages
+import ManagerProductsPage from './pages/manager/ManagerProductsPage';
+
 function App() {
   return (
     <AuthProvider>
@@ -30,6 +33,17 @@ function App() {
 
           {/* Redirect /dashboard cũ về /catalog */}
           <Route path="/dashboard" element={<Navigate to="/catalog" replace />} />
+
+          {/* Manager routes - cho phép manager và admin */}
+          <Route path="/manager" element={<Navigate to="/manager/products" replace />} />
+          <Route
+            path="/manager/products"
+            element={
+              <ProtectedRoute allowedRoles={['manager', 'admin']}>
+                <ManagerProductsPage />
+              </ProtectedRoute>
+            }
+          />
 
           {/* Admin routes - yêu cầu đăng nhập + role admin */}
           <Route

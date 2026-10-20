@@ -28,7 +28,7 @@ import { useAuth } from '../context/AuthContext';
  * @param {React.ReactNode} children  - Component cần bảo vệ
  * @param {string} [requiredRole]     - Nếu truyền vào, kiểm tra thêm role của user
  */
-function ProtectedRoute({ children, requiredRole }) {
+function ProtectedRoute({ children, requiredRole, allowedRoles }) {
   const { user, isLoading } = useAuth();
 
   // Đang restore session → hiển thị spinner, chờ xác thực xong
@@ -50,6 +50,10 @@ function ProtectedRoute({ children, requiredRole }) {
 
   // Đã đăng nhập nhưng không đủ quyền → về catalog
   if (requiredRole && user.role !== requiredRole) {
+    return <Navigate to="/catalog" replace />;
+  }
+
+  if (allowedRoles && allowedRoles.length > 0 && !allowedRoles.includes(user.role)) {
     return <Navigate to="/catalog" replace />;
   }
 

@@ -10,6 +10,7 @@
     "build:client": "npm --prefix Frontend run build",
     "frontend": "npm --prefix Frontend run dev",
     "client": "npm --prefix Frontend run dev",
+    "kill:ports": "powershell -NoProfile -Command \"Get-NetTCPConnection -LocalPort 3000,5000,5173 -ErrorAction SilentlyContinue | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue }\"",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
@@ -30,5 +31,8 @@
     "google-auth-library": "^11.1.0",
     "jsonwebtoken": "^9.0.2",
     "mysql2": "^3.9.7"
+  },
+  "devDependencies": {
+    "concurrently": "^10.0.5"
   }
 }

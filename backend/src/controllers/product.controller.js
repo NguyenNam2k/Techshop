@@ -2,9 +2,8 @@ const productService = require('../services/product.service');
 
 async function getProducts(req, res) {
   try {
-    const { id, slug, category, search, brand, sort, limit, page } = req.query;
+    const { id, slug, category, category_id, search, brand, sort, limit, page } = req.query;
 
-    // If id or slug is specifically requested in query, return detail
     if (id || slug) {
       const productData = await productService.getProductById(id || slug);
       if (!productData) {
@@ -14,7 +13,7 @@ async function getProducts(req, res) {
     }
 
     const result = await productService.getProductsList({
-      category,
+      category: category || category_id,
       search,
       brand,
       sort,
@@ -22,16 +21,22 @@ async function getProducts(req, res) {
       page
     });
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       total: result.total,
       page: result.page,
       limit: result.limit,
-      data: result.products
+      data: result.products,
+      pagination: {
+        page: result.page,
+        limit: result.limit,
+        total: result.total,
+        totalPages: Math.ceil(result.total / result.limit) || 1
+      }
     });
   } catch (error) {
     console.error('Error in getProducts controller:', error);
-    res.status(500).json({ success: false, message: 'Internal server error' });
+    return res.status(500).json({ success: false, message: 'Internal server error' });
   }
 }
 
@@ -49,13 +54,13 @@ async function getProductDetail(req, res) {
       });
     }
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       data: productData
     });
   } catch (error) {
     console.error('Error in getProductDetail controller:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: 'Internal server error'
     });
@@ -74,13 +79,13 @@ async function getProductVariants(req, res) {
       });
     }
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       data: variantsData
     });
   } catch (error) {
     console.error('Error in getProductVariants controller:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: 'Internal server error'
     });
@@ -93,14 +98,14 @@ async function getSimilarProducts(req, res) {
     const limit = parseInt(req.query.limit, 10) || 8;
     const similarProducts = await productService.getSimilarProducts(id, limit);
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       count: similarProducts.length,
       data: similarProducts
     });
   } catch (error) {
     console.error('Error in getSimilarProducts controller:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: 'Internal server error'
     });
@@ -110,54 +115,45 @@ async function getSimilarProducts(req, res) {
 async function getCategories(req, res) {
   try {
     const categories = await productService.getAllCategories();
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       data: categories
     });
   } catch (error) {
     console.error('Error in getCategories controller:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: 'Internal server error'
     });
   }
 }
 
-async function getProductReviews(req, res) {
+async function reverseImageSearch(req, res) {
   try {
-    const { id } = req.params;
-    const data = await productService.getProductReviews(id);
-    res.status(200).json({
-      success: true,
-      data
-    });
-  } catch (error) {
-    console.error('Error in getProductReviews controller:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Lỗi tải đánh giá sản phẩm'
-    });
-  }
-}
+    const {
+      imageUrl,
+      imageName,
+      detectedKeywords,
+      category,
+      brand,
+      limit
+    } = req.method === 'POST' ? req.body : req.query;
 
-async function createProductReview(req, res) {
-  try {
-    const { id } = req.params;
-    const { customer_name, rating, comment } = req.body;
-    if (!rating) {
-      return res.status(400).json({ success: false, message: 'Vui lòng chọn số sao đánh giá' });
-    }
-    const review = await productService.addProductReview(id, { customer_name, rating, comment });
-    res.status(201).json({
-      success: true,
-      message: 'Cảm ơn bạn đã gửi đánh giá!',
-      data: review
+    const result = await productService.reverseImageSearch({
+      imageUrl,
+      imageName,
+      detectedKeywords,
+      category,
+      brand,
+      limit: parseInt(limit, 10) || 8
     });
+
+    return res.status(200).json(result);
   } catch (error) {
-    console.error('Error in createProductReview controller:', error);
-    res.status(500).json({
+    console.error('Error in reverseImageSearch controller:', error);
+    return res.status(500).json({
       success: false,
-      message: error.message || 'Lỗi gửi đánh giá sản phẩm'
+      message: 'Lỗi máy chủ khi tìm kiếm bằng hình ảnh'
     });
   }
 }
@@ -168,6 +164,5 @@ module.exports = {
   getProductVariants,
   getSimilarProducts,
   getCategories,
-  getProductReviews,
-  createProductReview
+  reverseImageSearch
 };

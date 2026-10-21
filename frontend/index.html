@@ -7,10 +7,14 @@
     <title>TechGear</title>
     <script>
       try {
-        if (localStorage.getItem('techshop_theme') === 'dark') {
-          document.documentElement.classList.add('dark');
-        } else {
+        var t = localStorage.getItem('techshop_theme') === 'light' ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', t);
+        if (t === 'light') {
           document.documentElement.classList.remove('dark');
+          document.documentElement.classList.add('light');
+        } else {
+          document.documentElement.classList.add('dark');
+          document.documentElement.classList.remove('light');
         }
       } catch (_) {}
     </script>

@@ -4,7 +4,7 @@ import { Cpu, ShieldCheck, Truck, CreditCard, Headphones, MapPin, Mail, PhoneCal
 
 export default function Footer() {
   return (
-    <footer className="bg-slate-900 text-slate-300 text-xs border-t border-slate-800">
+    <footer className="dark dark-locked bg-slate-900 text-slate-300 text-xs border-t border-slate-800">
       
       <div className="border-b border-slate-800 py-8 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6">

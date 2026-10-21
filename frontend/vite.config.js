@@ -3,16 +3,26 @@ import react from '@vitejs/plugin-react';
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
+  const target = env.VITE_DEV_API_TARGET || 'http://localhost:3000';
 
   return {
     plugins: [react()],
+    build: {
+      // Giữ nguyên :is() trong CSS (nếu hạ cấp, các selector theme sẽ bị khai triển thành hàng MB)
+      cssTarget: 'chrome111'
+    },
     server: {
       port: 5173,
       proxy: {
         '/api': {
-          target: env.VITE_DEV_API_TARGET || 'http://localhost:3000',
+          target,
           changeOrigin: true,
-          secure: false,
+          secure: false
+        },
+        '/uploads': {
+          target,
+          changeOrigin: true,
+          secure: false
         }
       }
     }

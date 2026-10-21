@@ -1,0 +1,70 @@
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider } from './context/AuthContext';
+import { CartProvider } from './context/CartContext';
+import ProtectedRoute from './components/ProtectedRoute';
+import LoginPage from './pages/auth/LoginPage';
+import RegisterPage from './pages/auth/RegisterPage';
+import CatalogPage from './pages/customer/CatalogPage';
+import ProductDetailPage from './pages/customer/ProductDetailPage';
+
+// Admin pages
+import AdminLayout from './pages/admin/AdminLayout';
+import AdminDashboard from './pages/admin/AdminDashboard';
+import UserManagement from './pages/admin/UserManagement';
+
+// Manager pages
+import ManagerProductsPage from './pages/manager/ManagerProductsPage';
+
+function App() {
+  return (
+    <AuthProvider>
+      <CartProvider>
+        <BrowserRouter>
+          <Routes>
+            {/* Public Storefront & Catalog routes */}
+            <Route path="/" element={<CatalogPage />} />
+            <Route path="/catalog" element={<CatalogPage />} />
+            <Route path="/products" element={<CatalogPage />} />
+            <Route path="/products/:id" element={<ProductDetailPage />} />
+
+          {/* Public auth routes */}
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
+
+          {/* Redirect /dashboard cũ về /catalog */}
+          <Route path="/dashboard" element={<Navigate to="/catalog" replace />} />
+
+          {/* Manager routes - cho phép manager và admin */}
+          <Route path="/manager" element={<Navigate to="/manager/products" replace />} />
+          <Route
+            path="/manager/products"
+            element={
+              <ProtectedRoute allowedRoles={['manager', 'admin']}>
+                <ManagerProductsPage />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Admin routes - yêu cầu đăng nhập + role admin */}
+          <Route
+            path="/admin"
+            element={
+              <ProtectedRoute requiredRole="admin">
+                <AdminLayout />
+              </ProtectedRoute>
+            }
+          >
+            <Route index element={<AdminDashboard />} />
+            <Route path="users" element={<UserManagement />} />
+          </Route>
+
+          {/* Route 404 - Redirect mặc định */}
+          <Route path="*" element={<Navigate to="/catalog" replace />} />
+        </Routes>
+      </BrowserRouter>
+      </CartProvider>
+    </AuthProvider>
+  );
+}
+
+export default App;

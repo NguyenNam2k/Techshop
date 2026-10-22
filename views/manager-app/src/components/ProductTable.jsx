@@ -78,8 +78,8 @@ export default function ProductTable({
               </button>
             )}
 
-            <div className="text-xs font-mono px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 border border-slate-700">
-              Trang <span className="text-cyan-400 font-bold">{curPage}</span> / {totalPages} (Tổng {total} mục)
+            <div className="text-xs font-mono px-3 py-1.5 rounded-lg bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-sky-200 dark:border-slate-700 shadow-xs">
+              Trang <span className="text-sky-600 dark:text-cyan-400 font-bold">{curPage}</span> / {totalPages} (Tổng {total} mục)
             </div>
           </div>
         </div>
@@ -94,7 +94,7 @@ export default function ProductTable({
               value={filters.search || ''}
               onChange={(e) => onFilterChange({ search: e.target.value, page: 1 })}
               placeholder="Tìm theo tên, hãng (Asus, Apple...), SKU..."
-              className="w-full pl-9 pr-3.5 py-2 text-xs bg-slate-800/80 border border-slate-700/80 rounded-xl text-slate-100 placeholder-slate-400 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-all"
+              className="w-full pl-9 pr-3.5 py-2 text-xs bg-white dark:bg-slate-800/80 border border-sky-200 dark:border-slate-700/80 rounded-xl text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400 transition-all shadow-xs"
             />
           </div>
 
@@ -103,7 +103,7 @@ export default function ProductTable({
             <select
               value={filters.category_id || 'all'}
               onChange={(e) => onFilterChange({ category_id: e.target.value, page: 1 })}
-              className="w-full px-3 py-2 text-xs bg-slate-800/80 border border-slate-700/80 rounded-xl text-slate-100 focus:outline-none focus:border-cyan-500 transition-all cursor-pointer"
+              className="w-full px-3 py-2 text-xs bg-white dark:bg-slate-800/80 border border-sky-200 dark:border-slate-700/80 rounded-xl text-slate-900 dark:text-slate-100 focus:outline-none focus:border-sky-400 transition-all cursor-pointer shadow-xs"
             >
               <option value="all">Tất cả danh mục</option>
               {categories.map((cat) => (
@@ -119,7 +119,7 @@ export default function ProductTable({
             <select
               value={filters.stock_status || 'all'}
               onChange={(e) => onFilterChange({ stock_status: e.target.value, page: 1 })}
-              className="w-full px-3 py-2 text-xs bg-slate-800/80 border border-slate-700/80 rounded-xl text-slate-100 focus:outline-none focus:border-cyan-500 transition-all cursor-pointer"
+              className="w-full px-3 py-2 text-xs bg-white dark:bg-slate-800/80 border border-sky-200 dark:border-slate-700/80 rounded-xl text-slate-900 dark:text-slate-100 focus:outline-none focus:border-sky-400 transition-all cursor-pointer shadow-xs"
             >
               <option value="all">Tất cả tồn kho</option>
               <option value="in_stock">Còn hàng (&gt;0)</option>
@@ -133,7 +133,7 @@ export default function ProductTable({
             <select
               value={filters.limit || 10}
               onChange={(e) => onFilterChange({ limit: Number(e.target.value), page: 1 })}
-              className="w-full px-3 py-2 text-xs bg-slate-800/80 border border-slate-700/80 rounded-xl text-slate-100 focus:outline-none focus:border-cyan-500 transition-all cursor-pointer"
+              className="w-full px-3 py-2 text-xs bg-white dark:bg-slate-800/80 border border-sky-200 dark:border-slate-700/80 rounded-xl text-slate-900 dark:text-slate-100 focus:outline-none focus:border-sky-400 transition-all cursor-pointer shadow-xs"
             >
               <option value="5">5 / trang</option>
               <option value="10">10 / trang</option>
@@ -222,17 +222,17 @@ export default function ProductTable({
                         <div className="min-w-0">
                           <div className="flex items-center gap-2">
                             <span
-                              className="font-semibold text-slate-100 truncate max-w-[220px]"
+                              className="font-semibold text-slate-900 dark:text-slate-100 truncate max-w-[220px]"
                               title={prod.name}
                             >
                               {prod.name}
                             </span>
                           </div>
                           <div className="flex items-center gap-2 mt-0.5">
-                            <span className="font-mono text-[11px] text-cyan-400 bg-cyan-950/60 px-1.5 py-0.5 rounded border border-cyan-800/40">
+                            <span className="font-mono text-[11px] font-bold px-2 py-0.5 rounded border bg-white dark:bg-cyan-950/60 text-sky-700 dark:text-cyan-400 border-sky-200 dark:border-cyan-800/40 shadow-xs">
                               {prod.sku_code || 'N/A'}
                             </span>
-                            <span className="text-[11px] text-slate-400">• {prod.brand}</span>
+                            <span className="text-[11px] text-slate-500 dark:text-slate-400">• {prod.brand}</span>
                           </div>
                         </div>
                       </div>
@@ -240,15 +240,15 @@ export default function ProductTable({
 
                     {/* Category */}
                     <td className="py-3.5 px-4 whitespace-nowrap">
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium bg-slate-800/90 text-slate-200 border border-slate-700/60">
-                        <Tag className="w-3 h-3 text-cyan-400" />
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-white dark:bg-slate-800/90 text-slate-800 dark:text-slate-200 border border-sky-200 dark:border-slate-700/60 shadow-xs">
+                        <Tag className="w-3 h-3 text-sky-500 dark:text-cyan-400" />
                         <span>{prod.category_name || 'Uncategorized'}</span>
                       </span>
                     </td>
 
                     {/* Base Price */}
                     <td className="py-3.5 px-4 whitespace-nowrap">
-                      <span className="font-mono text-sm font-semibold text-slate-100">
+                      <span className="font-mono text-sm font-bold text-slate-900 dark:text-slate-100">
                         {Number(prod.base_price ?? 0).toLocaleString('vi-VN')} ₫
                       </span>
                     </td>
@@ -256,17 +256,17 @@ export default function ProductTable({
                     {/* Stock Badge */}
                     <td className="py-3.5 px-4 text-center whitespace-nowrap">
                       {stock === 0 ? (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-rose-500/10 text-rose-400 border border-rose-500/30">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-500/30">
                           <XCircle className="w-3 h-3" />
                           <span>Hết hàng (0)</span>
                         </span>
                       ) : stock <= 5 ? (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/30">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-500/30">
                           <AlertCircle className="w-3 h-3" />
                           <span>Sắp hết ({stock})</span>
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/30">
                           <Check className="w-3 h-3" />
                           <span>Còn {stock} cái</span>
                         </span>
@@ -276,15 +276,15 @@ export default function ProductTable({
                     {/* Status */}
                     <td className="py-3.5 px-4 text-center whitespace-nowrap">
                       {prod.status === 'active' ? (
-                        <span className="px-2 py-0.5 rounded text-[10px] font-medium bg-emerald-950 text-emerald-300 border border-emerald-800/50">
+                        <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/50">
                           Active
                         </span>
                       ) : prod.status === 'out_of_stock' ? (
-                        <span className="px-2 py-0.5 rounded text-[10px] font-medium bg-rose-950 text-rose-300 border border-rose-800/50">
+                        <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-rose-50 dark:bg-rose-950 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800/50">
                           Hết hàng
                         </span>
                       ) : (
-                        <span className="px-2 py-0.5 rounded text-[10px] font-medium bg-slate-800 text-slate-300">
+                        <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-sky-200 dark:border-slate-700">
                           {prod.status}
                         </span>
                       )}
@@ -297,7 +297,7 @@ export default function ProductTable({
                         <button
                           type="button"
                           onClick={() => onOpenGalleryModal(prod.id, prod.name)}
-                          className="p-1.5 rounded-lg bg-slate-800 hover:bg-emerald-500/20 text-slate-300 hover:text-emerald-400 border border-slate-700/60 hover:border-emerald-500/40 transition-all"
+                          className="p-1.5 rounded-lg bg-white dark:bg-slate-800 hover:bg-emerald-50 dark:hover:bg-emerald-500/20 text-slate-700 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 border border-sky-200 dark:border-slate-700/60 hover:border-emerald-300 transition-all shadow-xs"
                           title="Bộ sưu tập ảnh thiết bị"
                         >
                           <Images className="w-4 h-4" />
@@ -307,7 +307,7 @@ export default function ProductTable({
                         <button
                           type="button"
                           onClick={() => onEditProduct(prod)}
-                          className="p-1.5 rounded-lg bg-slate-800 hover:bg-cyan-500/20 text-slate-300 hover:text-cyan-400 border border-slate-700/60 hover:border-cyan-500/40 transition-all"
+                          className="p-1.5 rounded-lg bg-white dark:bg-slate-800 hover:bg-sky-50 dark:hover:bg-cyan-500/20 text-slate-700 dark:text-slate-300 hover:text-sky-600 dark:hover:text-cyan-400 border border-sky-200 dark:border-slate-700/60 hover:border-sky-300 transition-all shadow-xs"
                           title="Chỉnh sửa thiết bị"
                         >
                           <Edit3 className="w-4 h-4" />
@@ -324,7 +324,7 @@ export default function ProductTable({
                               name: prod.name
                             })
                           }
-                          className="p-1.5 rounded-lg bg-slate-800 hover:bg-violet-500/20 text-slate-300 hover:text-violet-400 border border-slate-700/60 hover:border-violet-500/40 transition-all"
+                          className="p-1.5 rounded-lg bg-white dark:bg-slate-800 hover:bg-violet-50 dark:hover:bg-violet-500/20 text-slate-700 dark:text-slate-300 hover:text-violet-600 dark:hover:text-violet-400 border border-sky-200 dark:border-slate-700/60 hover:border-violet-300 transition-all shadow-xs"
                           title="Điều chỉnh kho nhanh"
                         >
                           <PackagePlus className="w-4 h-4" />
@@ -334,7 +334,7 @@ export default function ProductTable({
                         <button
                           type="button"
                           onClick={() => onDeleteProduct(prod)}
-                          className="p-1.5 rounded-lg bg-slate-800 hover:bg-rose-500/20 text-slate-300 hover:text-rose-400 border border-slate-700/60 hover:border-rose-500/40 transition-all"
+                          className="p-1.5 rounded-lg bg-white dark:bg-slate-800 hover:bg-rose-50 dark:hover:bg-rose-500/20 text-slate-700 dark:text-slate-300 hover:text-rose-600 dark:hover:text-rose-400 border border-sky-200 dark:border-slate-700/60 hover:border-rose-300 transition-all shadow-xs"
                           title="Xóa thiết bị"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -363,7 +363,7 @@ export default function ProductTable({
             <button
               type="button"
               onClick={() => onFilterChange({ page: curPage - 1 })}
-              className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 font-medium flex items-center gap-1 border border-slate-700 transition-all"
+              className="px-3 py-1.5 rounded-lg bg-white dark:bg-slate-800 hover:bg-sky-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-medium flex items-center gap-1 border border-sky-200 dark:border-slate-700 transition-all shadow-xs"
             >
               <ChevronLeft className="w-4 h-4" />
               <span>Prev</span>
@@ -371,7 +371,7 @@ export default function ProductTable({
           ) : (
             <button
               disabled
-              className="px-3 py-1.5 rounded-lg bg-slate-900 text-slate-600 font-medium flex items-center gap-1 border border-slate-800/80 cursor-not-allowed"
+              className="px-3 py-1.5 rounded-lg bg-slate-50 dark:bg-slate-900 text-slate-400 dark:text-slate-600 font-medium flex items-center gap-1 border border-sky-100 dark:border-slate-800/80 cursor-not-allowed opacity-60"
             >
               <ChevronLeft className="w-4 h-4" />
               <span>Prev</span>
@@ -384,7 +384,7 @@ export default function ProductTable({
               p === curPage ? (
                 <span
                   key={p}
-                  className="w-8 h-8 rounded-lg bg-cyan-500 text-slate-950 font-bold flex items-center justify-center font-mono"
+                  className="w-8 h-8 rounded-lg bg-sky-500 text-white font-bold flex items-center justify-center font-mono shadow-sm"
                 >
                   {p}
                 </span>
@@ -393,7 +393,7 @@ export default function ProductTable({
                   key={p}
                   type="button"
                   onClick={() => onFilterChange({ page: p })}
-                  className="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium flex items-center justify-center font-mono border border-slate-700 transition-all"
+                  className="w-8 h-8 rounded-lg bg-white dark:bg-slate-800 hover:bg-sky-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-medium flex items-center justify-center font-mono border border-sky-200 dark:border-slate-700 transition-all shadow-xs"
                 >
                   {p}
                 </button>
@@ -406,7 +406,7 @@ export default function ProductTable({
             <button
               type="button"
               onClick={() => onFilterChange({ page: curPage + 1 })}
-              className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 font-medium flex items-center gap-1 border border-slate-700 transition-all"
+              className="px-3 py-1.5 rounded-lg bg-white dark:bg-slate-800 hover:bg-sky-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-medium flex items-center gap-1 border border-sky-200 dark:border-slate-700 transition-all shadow-xs"
             >
               <span>Next</span>
               <ChevronRight className="w-4 h-4" />
@@ -414,7 +414,7 @@ export default function ProductTable({
           ) : (
             <button
               disabled
-              className="px-3 py-1.5 rounded-lg bg-slate-900 text-slate-600 font-medium flex items-center gap-1 border border-slate-800/80 cursor-not-allowed"
+              className="px-3 py-1.5 rounded-lg bg-slate-50 dark:bg-slate-900 text-slate-400 dark:text-slate-600 font-medium flex items-center gap-1 border border-sky-100 dark:border-slate-800/80 cursor-not-allowed opacity-60"
             >
               <span>Next</span>
               <ChevronRight className="w-4 h-4" />

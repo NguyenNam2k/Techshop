@@ -86,3 +86,234 @@ body {
   background: #06b6d4;
   color: #0f172a;
 }
+
+/* ==========================================================
+   LIGHT MODE STYLING - PURE WHITE INTERIORS & LIGHT BLUE BORDERS
+   Yêu cầu: "Bên trong màu trắng tinh - Viền xanh dương nhẹ - Tuyệt đối không xám đậm"
+   ========================================================== */
+:is(html[data-theme="light"], html.light) {
+  color-scheme: light;
+}
+
+:is(html[data-theme="light"], html.light) body {
+  background-color: #f0f9ff !important; /* Xanh dương băng cực nhẹ, sáng bừng và tươi mới */
+  color: #0f172a !important;
+}
+
+/* Nền khung ứng dụng */
+:is(html[data-theme="light"], html.light) .bg-\[\#0b0f19\] {
+  background-color: #f0f9ff !important;
+  color: #0f172a !important;
+}
+
+/* Header & Sidebar: Nền trắng tinh, viền xanh dương nhẹ */
+:is(html[data-theme="light"], html.light) header,
+:is(html[data-theme="light"], html.light) .bg-\[\#0f172a\]\/70 {
+  background-color: rgba(255, 255, 255, 0.98) !important;
+  border-bottom: 1.5px solid #bae6fd !important; /* Viền xanh dương nhẹ (Sky 200 #bae6fd) */
+  box-shadow: 0 4px 15px -3px rgba(14, 165, 233, 0.08) !important;
+}
+
+:is(html[data-theme="light"], html.light) aside,
+:is(html[data-theme="light"], html.light) .bg-\[\#0f172a\] {
+  background-color: #ffffff !important;
+  border-right: 1.5px solid #bae6fd !important; /* Viền xanh dương nhẹ */
+  box-shadow: 4px 0 15px -3px rgba(14, 165, 233, 0.05) !important;
+}
+
+/* TẤT CẢ CÁC KHỐI CARD, CONTAINER, HỘP: MÀU TRẮNG BÊN TRONG, VIỀN XANH DƯƠNG NHẸ */
+:is(html[data-theme="light"], html.light) .glass-card,
+:is(html[data-theme="light"], html.light) .bg-slate-900,
+:is(html[data-theme="light"], html.light) .bg-slate-900\/60,
+:is(html[data-theme="light"], html.light) .bg-slate-900\/50,
+:is(html[data-theme="light"], html.light) .bg-slate-900\/40,
+:is(html[data-theme="light"], html.light) .bg-slate-900\/80,
+:is(html[data-theme="light"], html.light) .bg-slate-950,
+:is(html[data-theme="light"], html.light) .bg-slate-950\/50,
+:is(html[data-theme="light"], html.light) .bg-slate-950\/60,
+:is(html[data-theme="light"], html.light) .bg-slate-950\/80,
+:is(html[data-theme="light"], html.light) .bg-slate-800,
+:is(html[data-theme="light"], html.light) .bg-slate-800\/80,
+:is(html[data-theme="light"], html.light) .bg-slate-800\/60,
+:is(html[data-theme="light"], html.light) .bg-slate-800\/50,
+:is(html[data-theme="light"], html.light) .bg-slate-800\/40 {
+  background-color: #ffffff !important; /* Bên trong hoàn toàn màu trắng tinh khiết */
+  border-color: #bae6fd !important;     /* Viền xanh dương nhẹ */
+  box-shadow: 0 4px 16px -2px rgba(14, 165, 233, 0.06), 0 1px 3px 0 rgba(14, 165, 233, 0.04) !important;
+}
+
+/* TẤT CẢ CÁC ĐƯỜNG VIỀN: VIỀN XANH DƯƠNG NHẸ (SKY-200 #bae6fd) */
+:is(html[data-theme="light"], html.light) .border-slate-800,
+:is(html[data-theme="light"], html.light) .border-slate-800\/80,
+:is(html[data-theme="light"], html.light) .border-slate-800\/60,
+:is(html[data-theme="light"], html.light) .border-slate-800\/50,
+:is(html[data-theme="light"], html.light) .border-slate-800\/40,
+:is(html[data-theme="light"], html.light) .border-slate-700,
+:is(html[data-theme="light"], html.light) .border-slate-700\/80,
+:is(html[data-theme="light"], html.light) .border-slate-700\/60,
+:is(html[data-theme="light"], html.light) .border-slate-700\/50,
+:is(html[data-theme="light"], html.light) .border-slate-700\/40 {
+  border-color: #bae6fd !important; /* Viền xanh dương nhẹ tinh tế */
+}
+
+/* CÁC Ô NHẬP LIỆU (INPUT, SELECT, TEXTAREA): TRẮNG TINH BÊN TRONG, VIỀN XANH DƯƠNG NHẸ */
+:is(html[data-theme="light"], html.light) input,
+:is(html[data-theme="light"], html.light) select,
+:is(html[data-theme="light"], html.light) textarea {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border: 1.5px solid #bae6fd !important;
+  box-shadow: 0 1px 3px 0 rgba(14, 165, 233, 0.05) !important;
+}
+
+:is(html[data-theme="light"], html.light) input:focus,
+:is(html[data-theme="light"], html.light) select:focus,
+:is(html[data-theme="light"], html.light) textarea:focus {
+  background-color: #ffffff !important;
+  border-color: #0284c7 !important; /* Xanh dương đậm khi focus */
+  box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.2) !important;
+}
+
+:is(html[data-theme="light"], html.light) input::placeholder,
+:is(html[data-theme="light"], html.light) textarea::placeholder {
+  color: #94a3b8 !important;
+}
+
+/* NÚT BẤM VÀ THAO TÁC: NỀN TRẮNG, VIỀN XANH DƯƠNG NHẸ, HOVER XANH TRONG TRẺO */
+:is(html[data-theme="light"], html.light) .hover\:bg-slate-800:hover,
+:is(html[data-theme="light"], html.light) .hover\:bg-slate-800\/60:hover,
+:is(html[data-theme="light"], html.light) .hover\:bg-slate-700:hover {
+  background-color: #f0f9ff !important; /* Xanh băng cực nhẹ khi hover */
+  border-color: #7dd3fc !important;    /* Viền xanh đậm hơn một chút */
+  color: #0284c7 !important;
+}
+
+:is(html[data-theme="light"], html.light) .hover\:text-white:hover {
+  color: #0284c7 !important;
+}
+
+/* BẢNG DỮ LIỆU SẢN PHẨM */
+:is(html[data-theme="light"], html.light) thead,
+:is(html[data-theme="light"], html.light) thead tr {
+  background-color: #e0f2fe !important; /* Nền xanh dương dịu mát cho tiêu đề cột */
+  border-bottom: 2px solid #bae6fd !important;
+}
+
+:is(html[data-theme="light"], html.light) thead th {
+  background-color: #e0f2fe !important;
+  color: #0369a1 !important; /* Chữ xanh dương đậm sắc nét */
+  border-bottom: 2px solid #bae6fd !important;
+}
+
+:is(html[data-theme="light"], html.light) tbody tr {
+  background-color: #ffffff !important;
+}
+
+:is(html[data-theme="light"], html.light) tbody tr:hover {
+  background-color: #f0f9ff !important; /* Hover xanh nhạt cực êm */
+}
+
+:is(html[data-theme="light"], html.light) tbody td {
+  border-color: #e0f2fe !important;
+  color: #1e293b !important;
+}
+
+/* BREADCRUMB & TEXT HIERARCHY */
+:is(html[data-theme="light"], html.light) .text-white,
+:is(html[data-theme="light"], html.light) .text-slate-100 {
+  color: #0f172a !important; /* Chữ tiêu đề than đậm */
+}
+
+:is(html[data-theme="light"], html.light) .text-slate-200 {
+  color: #1e293b !important;
+}
+
+:is(html[data-theme="light"], html.light) .text-slate-300 {
+  color: #334155 !important;
+}
+
+:is(html[data-theme="light"], html.light) .text-slate-400 {
+  color: #475569 !important;
+}
+
+:is(html[data-theme="light"], html.light) .text-slate-500 {
+  color: #64748b !important;
+}
+
+:is(html[data-theme="light"], html.light) .text-cyan-400,
+:is(html[data-theme="light"], html.light) .text-cyan-300 {
+  color: #0284c7 !important; /* Xanh dương đậm nét trên nền sáng */
+}
+
+/* SIDEBAR: MỤC ĐƯỢC CHỌN VÀ CHƯA CHỌN */
+:is(html[data-theme="light"], html.light) .bg-cyan-500\/15 {
+  background-color: #f0f9ff !important; /* Bên trong trắng pha xanh cực nhẹ */
+  color: #0284c7 !important;           /* Chữ xanh dương đậm nổi bật */
+  border: 1.5px solid #38bdf8 !important; /* Viền xanh dương sáng nét */
+  box-shadow: 0 2px 8px -1px rgba(14, 165, 233, 0.15) !important;
+}
+
+:is(html[data-theme="light"], html.light) aside button:hover {
+  background-color: #f0f9ff !important;
+  color: #0284c7 !important;
+}
+
+/* HUY HIỆU & TAGS (BADGES): NỀN TRẮNG PHA MÀU NHẸ, VIỀN XANH/MÀU ĐẬM */
+:is(html[data-theme="light"], html.light) [class*="bg-cyan-950"] {
+  background-color: #ffffff !important;
+  color: #0369a1 !important;
+  border: 1.5px solid #bae6fd !important;
+}
+
+:is(html[data-theme="light"], html.light) [class*="bg-emerald-950"] {
+  background-color: #f0fdf4 !important;
+  color: #15803d !important;
+  border: 1.5px solid #86efac !important;
+}
+
+:is(html[data-theme="light"], html.light) [class*="bg-amber-950"] {
+  background-color: #fffbeb !important;
+  color: #b45309 !important;
+  border: 1.5px solid #fcd34d !important;
+}
+
+:is(html[data-theme="light"], html.light) [class*="bg-rose-950"] {
+  background-color: #fff1f2 !important;
+  color: #be123c !important;
+  border: 1.5px solid #fda4af !important;
+}
+
+:is(html[data-theme="light"], html.light) [class*="bg-slate-800"] {
+  background-color: #ffffff !important;
+  color: #1e293b !important;
+  border-color: #bae6fd !important;
+}
+
+:is(html[data-theme="light"], html.light) [class*="border-cyan-800"],
+:is(html[data-theme="light"], html.light) [class*="border-slate-700"] {
+  border-color: #bae6fd !important;
+}
+
+/* HỘP THOẠI MODAL: TRẮNG BÊN TRONG, VIỀN XANH DƯƠNG NHẸ */
+:is(html[data-theme="light"], html.light) .modal-box {
+  background-color: #ffffff !important; /* Bên trong trắng tinh */
+  border: 2px solid #bae6fd !important; /* Viền xanh dương nhẹ */
+  box-shadow: 0 25px 50px -12px rgba(14, 165, 233, 0.25) !important;
+}
+
+:is(html[data-theme="light"], html.light) .modal-overlay {
+  background-color: rgba(15, 23, 42, 0.35) !important;
+  backdrop-filter: blur(4px);
+}
+
+/* THANH CUỘN (SCROLLBAR) */
+:is(html[data-theme="light"], html.light) ::-webkit-scrollbar-track {
+  background: #f0f9ff;
+}
+:is(html[data-theme="light"], html.light) ::-webkit-scrollbar-thumb {
+  background: #bae6fd;
+  border-radius: 9999px;
+}
+:is(html[data-theme="light"], html.light) ::-webkit-scrollbar-thumb:hover {
+  background: #7dd3fc;
+}

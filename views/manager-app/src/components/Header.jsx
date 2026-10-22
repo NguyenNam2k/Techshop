@@ -1,5 +1,5 @@
 import React from 'react';
-import { ChevronRight, PlusCircle, UserCog, RefreshCw } from 'lucide-react';
+import { ChevronRight, PlusCircle, UserCog, RefreshCw, Sun, Moon } from 'lucide-react';
 
 const viewTitles = {
   products: 'Danh Sách Thiết Bị Công Nghệ',
@@ -12,7 +12,7 @@ const viewTitles = {
   staffs: 'Phân Quyền & Quản Lý Nhân Sự'
 };
 
-export default function Header({ activeView = 'products', onSelectView }) {
+export default function Header({ activeView = 'products', onSelectView, theme = 'dark', onToggleTheme }) {
   return (
     <header className="h-16 px-8 border-b border-slate-800 bg-[#0f172a]/70 backdrop-blur-md flex items-center justify-between sticky top-0 z-30">
       <div className="flex items-center gap-3 text-sm text-slate-400">
@@ -34,6 +34,21 @@ export default function Header({ activeView = 'products', onSelectView }) {
       </div>
 
       <div className="flex items-center gap-3">
+        {/* Nút chuyển giao diện Sáng / Tối - Chuẩn theo branch main */}
+        <button
+          type="button"
+          onClick={onToggleTheme}
+          title={theme === 'light' ? 'Chuyển sang giao diện tối' : 'Chuyển sang giao diện sáng'}
+          aria-label="Chuyển đổi giao diện sáng / tối"
+          className="p-2.5 rounded-xl border border-slate-800 bg-slate-900 hover:bg-slate-800 text-slate-200 hover:text-slate-100 transition cursor-pointer flex items-center justify-center active:scale-95 shadow-sm"
+        >
+          {theme === 'light' ? (
+            <Moon className="w-4 h-4 text-sky-400" />
+          ) : (
+            <Sun className="w-4 h-4 text-amber-400" />
+          )}
+        </button>
+
         {activeView !== 'create-product' && (
           <button
             type="button"

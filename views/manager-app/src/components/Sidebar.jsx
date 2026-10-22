@@ -9,7 +9,9 @@ import {
   TicketPercent,
   BarChart3,
   UserCog,
-  LogOut
+  LogOut,
+  Sun,
+  Moon
 } from 'lucide-react';
 
 export default function Sidebar({
@@ -17,7 +19,9 @@ export default function Sidebar({
   onSelectView,
   categoryCount = 0,
   staffCount = 0,
-  onOpenLogoutModal
+  onOpenLogoutModal,
+  theme = 'dark',
+  onToggleTheme
 }) {
   const navItems = [
     {
@@ -163,6 +167,47 @@ export default function Sidebar({
           </div>
         ))}
       </nav>
+
+      {/* Theme Mode Toggle Switch */}
+      <div className="px-4 py-3 border-t border-slate-800/80 bg-slate-900/40">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            {theme === 'dark' ? (
+              <Moon className="w-4 h-4 text-cyan-400" />
+            ) : (
+              <Sun className="w-4 h-4 text-amber-500" />
+            )}
+            <span className="text-xs font-medium text-slate-300">
+              {theme === 'dark' ? 'Chế độ Tối' : 'Chế độ Sáng'}
+            </span>
+          </div>
+
+          <button
+            type="button"
+            onClick={onToggleTheme}
+            title={theme === 'dark' ? 'Bật chế độ Sáng' : 'Bật chế độ Tối'}
+            className={`w-11 h-6 rounded-full transition-colors relative focus:outline-none p-0.5 cursor-pointer ${
+              theme === 'dark'
+                ? 'bg-cyan-950 border border-cyan-500/40'
+                : 'bg-slate-300 border border-slate-400'
+            }`}
+          >
+            <span
+              className={`w-5 h-5 rounded-full shadow-sm block transform transition-transform duration-200 flex items-center justify-center ${
+                theme === 'dark'
+                  ? 'translate-x-5 bg-cyan-400 text-slate-950'
+                  : 'translate-x-0 bg-white text-amber-500'
+              }`}
+            >
+              {theme === 'dark' ? (
+                <Moon className="w-2.5 h-2.5 text-slate-950" />
+              ) : (
+                <Sun className="w-2.5 h-2.5 text-amber-600" />
+              )}
+            </span>
+          </button>
+        </div>
+      </div>
 
       {/* Database Status & Logout Card */}
       <div className="p-4 border-t border-slate-800/80 bg-slate-900/60 space-y-3">

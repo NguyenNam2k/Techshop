@@ -18,6 +18,45 @@ import ReportsView from './views/ReportsView';
 import StaffsView from './views/StaffsView';
 
 export default function App() {
+  // Theme State ('dark' | 'light') - synchronized with main branch techshop_theme standard
+  const [theme, setTheme] = useState(() => {
+    try {
+      return localStorage.getItem('techshop_theme') === 'light' ? 'light' : 'dark';
+    } catch {
+      return 'dark';
+    }
+  });
+
+  useEffect(() => {
+    try {
+      const root = document.documentElement;
+      root.setAttribute('data-theme', theme);
+      if (theme === 'light') {
+        root.classList.remove('dark');
+        root.classList.add('light');
+      } else {
+        root.classList.add('dark');
+        root.classList.remove('light');
+      }
+      localStorage.setItem('techshop_theme', theme);
+    } catch (e) {
+      console.error('Error applying theme:', e);
+    }
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme(prev => {
+      const next = prev === 'light' ? 'dark' : 'light';
+      showToast(
+        next === 'light'
+          ? 'Đã chuyển sang giao diện Sáng'
+          : 'Đã chuyển sang giao diện Tối',
+        'info'
+      );
+      return next;
+    });
+  };
+
   // Navigation / View State
   const [activeView, setActiveView] = useState('products');
 
@@ -257,12 +296,19 @@ export default function App() {
         categoryCount={categories.length}
         staffCount={staffCount}
         onOpenLogoutModal={() => setIsLogoutModalOpen(true)}
+        theme={theme}
+        onToggleTheme={toggleTheme}
       />
 
       {/* MAIN DASHBOARD CONTENT AREA */}
       <main className="flex-1 flex flex-col min-w-0 overflow-y-auto custom-scrollbar">
-        {/* HEADER BAR */}
-        <Header activeView={activeView} onSelectView={handleSelectView} />
+        {/* HEADER BAR WITH LIGHT / DARK MODE TOGGLE */}
+        <Header
+          activeView={activeView}
+          onSelectView={handleSelectView}
+          theme={theme}
+          onToggleTheme={toggleTheme}
+        />
 
         {/* BODY CONTAINER */}
         <div className="p-8 space-y-8 max-w-[1600px] w-full mx-auto">

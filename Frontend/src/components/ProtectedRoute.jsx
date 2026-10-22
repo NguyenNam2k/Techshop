@@ -48,13 +48,18 @@ function ProtectedRoute({ children, requiredRole, allowedRoles }) {
     return <Navigate to="/login" replace />;
   }
 
+  const userRole = (user.role || '').toLowerCase();
+
   // Đã đăng nhập nhưng không đủ quyền → về catalog
-  if (requiredRole && user.role !== requiredRole) {
+  if (requiredRole && userRole !== requiredRole.toLowerCase()) {
     return <Navigate to="/catalog" replace />;
   }
 
-  if (allowedRoles && allowedRoles.length > 0 && !allowedRoles.includes(user.role)) {
-    return <Navigate to="/catalog" replace />;
+  if (allowedRoles && allowedRoles.length > 0) {
+    const normalizedAllowed = allowedRoles.map((r) => r.toLowerCase());
+    if (!normalizedAllowed.includes(userRole)) {
+      return <Navigate to="/catalog" replace />;
+    }
   }
 
   // Hợp lệ → render component con

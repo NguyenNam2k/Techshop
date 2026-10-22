@@ -136,7 +136,7 @@ export default function Header() {
     if (!q) return;
 
     setIsSearchOpen(false);
-    navigate(`/catalog?search=${encodeURIComponent(q)}`);
+    navigate(`/catalog?q=${encodeURIComponent(q)}`);
   };
 
   const handleSearchKeyDown = (e) => {
@@ -150,14 +150,9 @@ export default function Header() {
     }
   };
 
-  const handleToggleAuth = () => {
-    if (user) {
-      // Đăng xuất thực sự: xoá token + user qua AuthContext
-      logout();
-      navigate('/login');
-    } else {
-      navigate('/login');
-    }
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
   };
 
   const isLoggedOut = !user;
@@ -470,162 +465,209 @@ export default function Header() {
             </div>
           </div>
 
-          {/* Profile Avatar + Hover Dropdown */}
-          <div className="relative group">
-            <button
-              type="button"
-              className="flex items-center gap-2 p-1 pr-2.5 rounded-full bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-sky-500/60 transition cursor-pointer shadow-sm"
-            >
-              <div className="relative">
-                {!isLoggedOut ? (
-                  <img
-                    src={activeUser.avatar || DEFAULT_AVATAR}
-                    alt={activeUser.name}
-                    className="w-8 h-8 rounded-full object-cover border border-slate-600"
-                  />
-                ) : (
-                  <div className="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center text-slate-300">
-                    <User className="w-4 h-4" />
+          {/* Profile Avatar / Auth Buttons */}
+          {user ? (
+            <div className="relative group">
+              <button
+                type="button"
+                className="flex items-center gap-2 p-1 pr-2.5 rounded-full bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-sky-500/60 transition cursor-pointer shadow-sm"
+              >
+                <div className="relative">
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-sky-500 to-blue-600 flex items-center justify-center text-white font-black text-xs border border-sky-400/30">
+                    {(user.name || user.email || 'U')[0].toUpperCase()}
                   </div>
-                )}
-                <span
-                  className={`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border-2 border-slate-900 ${
-                    !isLoggedOut ? 'bg-emerald-400' : 'bg-slate-500'
-                  }`}
-                />
-              </div>
-              <ChevronDown className="w-3.5 h-3.5 text-slate-400 group-hover:text-sky-400 transition-transform group-hover:rotate-180" />
-            </button>
+                  <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border-2 border-slate-900 bg-emerald-400" />
+                </div>
+                <span className="text-xs font-bold text-slate-200 hidden md:inline max-w-[100px] truncate">
+                  {user.name || user.email}
+                </span>
+                <ChevronDown className="w-3.5 h-3.5 text-slate-400 group-hover:text-sky-400 transition-transform group-hover:rotate-180" />
+              </button>
 
-            {/* Dropdown Menu on Hover */}
-            <div className="absolute right-0 top-full pt-2 w-64 hidden group-hover:block z-50">
-              <div className="bg-slate-900 rounded-2xl shadow-2xl border border-slate-800 overflow-hidden">
-                {/* User Info Header */}
-                <div className="p-4 bg-slate-950/80 border-b border-slate-800 flex items-center gap-3">
-                  {!isLoggedOut ? (
-                    <img
-                      src={activeUser.avatar || DEFAULT_AVATAR}
-                      alt={activeUser.name}
-                      className="w-10 h-10 rounded-full object-cover border border-sky-500/40 shrink-0"
-                    />
-                  ) : (
-                    <div className="w-10 h-10 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-400 shrink-0">
-                      <User className="w-5 h-5" />
+              {/* Dropdown Menu on Hover */}
+              <div className="absolute right-0 top-full pt-2 w-64 hidden group-hover:block z-50">
+                <div className="bg-slate-900 rounded-2xl shadow-2xl border border-slate-800 overflow-hidden">
+                  {/* User Info Header */}
+                  <div className="p-4 bg-slate-950/80 border-b border-slate-800 flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-sky-500 to-indigo-600 flex items-center justify-center text-white font-extrabold text-sm shrink-0 shadow-md">
+                      {(user.name || user.email || 'U')[0].toUpperCase()}
                     </div>
-                  )}
-                  <div className="min-w-0">
-                    <p className="text-xs font-bold text-white truncate">
-                      {!isLoggedOut ? activeUser.name : 'Khách vãng lai'}
-                    </p>
-                    <p className="text-[11px] text-slate-400 truncate">
-                      {!isLoggedOut ? activeUser.email : 'Chưa đăng nhập'}
-                    </p>
-                    {!isLoggedOut && (
-                      <span className="inline-block mt-1 px-2 py-0.5 text-[10px] font-bold rounded-md bg-sky-500/15 text-sky-400 border border-sky-500/30">
-                        {activeUser.role || 'Thành viên VIP'}
+                    <div className="min-w-0">
+                      <p className="text-xs font-bold text-white truncate">
+                        {user.name || 'Người dùng'}
+                      </p>
+                      <p className="text-[11px] text-slate-400 truncate">
+                        {user.email || ''}
+                      </p>
+                      <span className="inline-block mt-1 px-2 py-0.5 text-[10px] font-bold rounded-md bg-sky-500/15 text-sky-400 border border-sky-500/30 capitalize">
+                        {user.role || 'Khách hàng'}
                       </span>
-                    )}
+                    </div>
                   </div>
-                </div>
 
-                {/* Menu Links */}
-                <div className="p-2 space-y-1 text-xs max-h-80 overflow-y-auto no-scrollbar">
-                  <Link
-                    to="/dashboard"
-                    className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800 transition"
-                  >
-                    <LayoutDashboard className="w-4 h-4 text-sky-400" />
-                    <span>Trung tâm điều hành</span>
-                  </Link>
+                  {/* Menu Links */}
+                  <div className="p-2 space-y-1 text-xs max-h-80 overflow-y-auto no-scrollbar">
+                    <Link
+                      to="/dashboard"
+                      className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800 transition"
+                    >
+                      <LayoutDashboard className="w-4 h-4 text-sky-400" />
+                      <span>Trung tâm điều hành</span>
+                    </Link>
 
-                  <Link
-                    to="/profile/account"
-                    className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800 transition"
-                  >
-                    <User className="w-4 h-4 text-sky-400" />
-                    <span>Hồ sơ &amp; Bảo mật</span>
-                  </Link>
-
-                  <Link
-                    to="/profile/orders"
-                    className="flex items-center justify-between px-3 py-2 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800 transition"
-                  >
-                    <span className="flex items-center gap-2.5">
-                      <Package className="w-4 h-4 text-indigo-400" />
-                      <span>Đơn hàng của tôi</span>
-                    </span>
-                  </Link>
-
-                  <Link
-                    to="/profile/vouchers"
-                    className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800 transition"
-                  >
-                    <TicketPercent className="w-4 h-4 text-amber-400" />
-                    <span>Kho Voucher &amp; Ưu đãi</span>
-                  </Link>
-
-                  <Link
-                    to="/profile/wishlist"
-                    className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800 transition"
-                  >
-                    <Heart className="w-4 h-4 text-rose-400" />
-                    <span>Sản phẩm yêu thích</span>
-                  </Link>
-
-                  <Link
-                    to="/profile/rewards"
-                    className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800 transition"
-                  >
-                    <Coins className="w-4 h-4 text-yellow-400" />
-                    <span>Điểm thưởng &amp; Hạng VIP</span>
-                  </Link>
-
-                  <Link
-                    to="/profile/payment-methods"
-                    className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800 transition"
-                  >
-                    <CreditCard className="w-4 h-4 text-emerald-400" />
-                    <span>Phương thức thanh toán</span>
-                  </Link>
-
-                  <Link
-                    to="/profile/warranty"
-                    className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800 transition"
-                  >
-                    <ShieldCheck className="w-4 h-4 text-teal-400" />
-                    <span>Chính sách bảo hành</span>
-                  </Link>
-                </div>
-
-                {/* Footer Action */}
-                <div className="p-2 bg-slate-950/60 border-t border-slate-800">
-                  <button
-                    type="button"
-                    onClick={handleToggleAuth}
-                    className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold transition cursor-pointer ${
-                      !isLoggedOut
-                        ? 'text-rose-400 hover:bg-rose-500/10'
-                        : 'text-sky-400 hover:bg-sky-500/10'
-                    }`}
-                  >
-                    {!isLoggedOut ? (
-                      <>
-                        <LogOut className="w-4 h-4" />
-                        <span>Đăng xuất</span>
-                      </>
-                    ) : (
-                      <>
-                        <LogIn className="w-4 h-4" />
-                        <span>Đăng nhập nhanh</span>
-                      </>
+                    {String(user.role || '').toLowerCase() === 'admin' && (
+                      <Link
+                        to="/admin"
+                        className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-amber-300 hover:text-amber-200 hover:bg-amber-500/15 transition font-semibold"
+                      >
+                        <ShieldCheck className="w-4 h-4 text-amber-400" />
+                        <span>Quản trị hệ thống (Admin)</span>
+                      </Link>
                     )}
-                  </button>
+
+                    {['admin', 'manager'].includes(String(user.role || '').toLowerCase()) && (
+                      <Link
+                        to="/manager/products"
+                        className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-indigo-300 hover:text-indigo-200 hover:bg-indigo-500/15 transition font-semibold"
+                      >
+                        <Package className="w-4 h-4 text-indigo-400" />
+                        <span>Quản lý sản phẩm (Manager)</span>
+                      </Link>
+                    )}
+
+                    <Link
+                      to="/profile/orders"
+                      className="flex items-center justify-between px-3 py-2 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800 transition"
+                    >
+                      <span className="flex items-center gap-2.5">
+                        <Package className="w-4 h-4 text-indigo-400" />
+                        <span>Đơn hàng của tôi</span>
+                      </span>
+                    </Link>
+
+                    <Link
+                      to="/profile/account"
+                      className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800 transition"
+                    >
+                      <User className="w-4 h-4 text-sky-400" />
+                      <span>Hồ sơ &amp; Bảo mật</span>
+                    </Link>
+                  </div>
+
+                  {/* Footer Action: Logout */}
+                  <div className="p-2 bg-slate-950/60 border-t border-slate-800">
+                    <button
+                      type="button"
+                      onClick={handleLogout}
+                      className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-rose-400 hover:bg-rose-500/10 transition cursor-pointer"
+                    >
+                      <LogOut className="w-4 h-4" />
+                      <span>Đăng xuất</span>
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              <Link
+                to="/login"
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-slate-200 hover:text-white bg-slate-800 hover:bg-slate-700 border border-slate-700 transition shadow-sm"
+              >
+                <LogIn className="w-3.5 h-3.5 text-sky-400" />
+                <span>Đăng nhập</span>
+              </Link>
+              <Link
+                to="/register"
+                className="hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-400 hover:to-blue-500 shadow-md shadow-sky-500/20 transition"
+              >
+                <span>Đăng ký</span>
+              </Link>
+            </div>
+          )}
         </div>
       </div>
+
+      {/* Main Navigation Sub-Bar (Thanh điều hướng nhanh đến Catalog, Home, Dashboard...) */}
+      <nav className="border-t border-slate-800/80 bg-slate-950/60 backdrop-blur-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center gap-1 sm:gap-2 overflow-x-auto no-scrollbar py-2 text-xs font-bold">
+          <Link
+            to="/"
+            className={`px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 whitespace-nowrap ${
+              location.pathname === '/' || location.pathname === '/home'
+                ? 'bg-sky-500/15 text-sky-400 border border-sky-500/30'
+                : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
+            }`}
+          >
+            <span>🏠</span>
+            <span>Trang Chủ</span>
+          </Link>
+
+          <Link
+            to="/catalog"
+            className={`px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 whitespace-nowrap ${
+              location.pathname === '/catalog' || location.pathname === '/products'
+                ? 'bg-sky-500/15 text-sky-400 border border-sky-500/30'
+                : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
+            }`}
+          >
+            <span>🛍️</span>
+            <span>Tất Cả Sản Phẩm (Catalog)</span>
+          </Link>
+
+          <Link
+            to="/build-pc"
+            className={`px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 whitespace-nowrap ${
+              location.pathname === '/build-pc'
+                ? 'bg-sky-500/15 text-sky-400 border border-sky-500/30'
+                : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
+            }`}
+          >
+            <Wrench className="w-3.5 h-3.5 text-sky-400" />
+            <span>Xây Dựng Cấu Hình PC</span>
+          </Link>
+
+          <Link
+            to="/dashboard"
+            className={`px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 whitespace-nowrap ${
+              location.pathname === '/dashboard'
+                ? 'bg-sky-500/15 text-sky-400 border border-sky-500/30'
+                : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
+            }`}
+          >
+            <span>⚡</span>
+            <span>Trung Tâm Điều Hành (Dashboard)</span>
+          </Link>
+
+          {['admin', 'manager'].includes(String(user?.role || '').toLowerCase()) && (
+            <Link
+              to="/manager/products"
+              className={`px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 whitespace-nowrap ${
+                location.pathname.startsWith('/manager')
+                  ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/40'
+                  : 'text-indigo-400 hover:text-indigo-300 hover:bg-indigo-500/10'
+              }`}
+            >
+              <span>📦</span>
+              <span>Quản Lý Cửa Hàng (Manager)</span>
+            </Link>
+          )}
+
+          {String(user?.role || '').toLowerCase() === 'admin' && (
+            <Link
+              to="/admin"
+              className={`px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 whitespace-nowrap ${
+                location.pathname.startsWith('/admin')
+                  ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
+                  : 'text-amber-400 hover:text-amber-300 hover:bg-amber-500/10'
+              }`}
+            >
+              <span>👑</span>
+              <span>Quản Trị Admin</span>
+            </Link>
+          )}
+        </div>
+      </nav>
     </header>
   );
 }

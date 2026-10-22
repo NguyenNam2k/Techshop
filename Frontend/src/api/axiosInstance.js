@@ -28,16 +28,21 @@ axiosInstance.interceptors.request.use(
 
 /**
  * Response Interceptor:
- * Nếu server trả về 401 (Unauthorized) hoặc 403 (Forbidden) → tự động logout
+ * Nếu server trả về 401 (Unauthorized) trên các request cần xác thực → tự động logout.
+ * Không redirect nếu đang trong luồng auth (login/register) để UI hiển thị thông báo lỗi.
  */
 axiosInstance.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401 || error.response?.status === 403) {
+    const status = error.response?.status;
+    const requestUrl = error.config?.url || '';
+    const isAuthRequest = requestUrl.includes('/auth/login') || requestUrl.includes('/auth/register');
+
+    if ((status === 401 || status === 403) && !isAuthRequest) {
       localStorage.removeItem('techshop_token');
       localStorage.removeItem('techshop_user');
-      // Redirect về login nếu chưa ở trang login
-      if (window.location.pathname !== '/login') {
+      localStorage.removeItem('techgear_user');
+      if (window.location.pathname !== '/login' && window.location.pathname !== '/register') {
         window.location.href = '/login';
       }
     }

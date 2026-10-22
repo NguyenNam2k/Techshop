@@ -5,6 +5,7 @@ const menuItems = [
   { path: '/admin',            icon: '📊', label: 'Tổng quan', end: true },
   { path: '/admin/users',      icon: '👥', label: 'Quản lý User' },
   { path: '/manager/products', icon: '📦', label: 'Quản lý Sản phẩm' },
+  { path: '/catalog',          icon: '🛍️', label: 'Xem Catalog' },
 ];
 
 function Sidebar() {

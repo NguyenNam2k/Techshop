@@ -15,7 +15,7 @@ function CatalogPage() {
   const currentMaxPrice = searchParams.get('maxPrice') || '';
   const currentInStock = searchParams.get('inStock') || '';
   const currentSort = searchParams.get('sort') || 'newest';
-  const currentSearch = searchParams.get('q') || '';
+  const currentSearch = searchParams.get('q') || searchParams.get('search') || '';
   const currentPage = parseInt(searchParams.get('page'), 10) || 1;
   const currentLimit = parseInt(searchParams.get('limit'), 10) || 12;
 
@@ -239,12 +239,6 @@ function CatalogPage() {
           </div>
         </div>
       </main>
-
-      {/* Footer */}
-      <footer className="mt-16 bg-slate-950 border-t border-slate-800/80 py-8 text-center text-xs text-slate-500">
-        <p>© 2026 Techshop E-Commerce Platform. All rights reserved.</p>
-        <p className="mt-1">Xây dựng với Node.js, Express, React, TailwindCSS & MySQL</p>
-      </footer>
     </div>
   );
 }

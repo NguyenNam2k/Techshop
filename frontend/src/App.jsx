@@ -49,7 +49,7 @@ function AppContent() {
           <Route path="/" element={<HomePage />} />
           <Route path="/home" element={<HomePage />} />
           <Route path="/catalog" element={<CatalogPage />} />
-          <Route path="/products" element={<ProductDetailPage />} />
+          <Route path="/products" element={<CatalogPage />} />
           <Route path="/products/:id" element={<ProductDetailPage />} />
           <Route path="/build-pc" element={<PCBuildPage />} />
           <Route path="/pc-build" element={<Navigate to="/build-pc" replace />} />

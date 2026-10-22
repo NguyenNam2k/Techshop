@@ -34,6 +34,8 @@ import {
   ArrowUpRight,
   Filter,
   Check,
+  LayoutGrid,
+  ExternalLink,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { api } from "../services/api";
@@ -681,6 +683,16 @@ function InventoryManagementPanel() {
       <Head
         title="Quản Lý Kho Hàng & Tồn Kho Thực Tế"
         desc="Theo dõi số lượng hàng tồn, giá bán niêm yết và mức cảnh báo nhập hàng."
+        action={
+          <Link
+            to="/catalog"
+            className={`${btnGhost} text-sky-400 hover:text-sky-300 flex items-center gap-1.5`}
+          >
+            <LayoutGrid className="w-4 h-4" />
+            <span>Mở Trang Catalog</span>
+            <ArrowUpRight className="w-3.5 h-3.5" />
+          </Link>
+        }
       />
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -1310,31 +1322,58 @@ export default function DashboardView() {
             </div>
           </div>
 
-          {/* Role Switcher Pill */}
-          <div className="flex items-center gap-3 w-full md:w-auto justify-between md:justify-end bg-slate-950 p-2 rounded-2xl border border-slate-800">
-            <span className="text-xs text-slate-400 font-bold pl-2">
-              Vai trò:
-            </span>
-            <select
-              value={currentRole}
-              onChange={(e) => {
-                const r = e.target.value;
-                setCurrentRole(r);
-                if (setUser) {
-                  setUser({
-                    name: ROLES[r].name,
-                    email: ROLES[r].email,
-                    role: r,
-                  });
-                }
-              }}
-              className="bg-slate-900 border border-slate-700 rounded-xl px-3 py-1.5 text-xs font-bold text-sky-400 outline-none cursor-pointer"
+          {/* Action Links & Role Switcher */}
+          <div className="flex flex-wrap items-center gap-2.5 w-full md:w-auto justify-between md:justify-end">
+            <Link
+              to="/"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-2xl text-xs font-bold text-slate-200 bg-slate-800/80 hover:bg-slate-700 hover:text-white border border-slate-700 transition shadow-sm cursor-pointer active:scale-95"
             >
-              <option value="admin">Quản Trị Viên (Admin)</option>
-              <option value="manager">Quản Lý Cửa Hàng (Manager)</option>
-              <option value="staff">Nhân Viên CSKH (Staff)</option>
-              <option value="customer">Khách Hàng VIP (Customer)</option>
-            </select>
+              <span>🏠</span>
+              <span>Trang Chủ</span>
+            </Link>
+
+            <Link
+              to="/catalog"
+              className="flex items-center gap-2 px-3.5 py-2 rounded-2xl text-xs font-bold bg-gradient-to-r from-sky-500/20 to-blue-500/20 hover:from-sky-500/30 hover:to-blue-500/30 text-sky-400 border border-sky-500/30 transition shadow-sm cursor-pointer active:scale-95"
+            >
+              <LayoutGrid className="w-4 h-4" />
+              <span>Xem Trang Catalog</span>
+              <ArrowUpRight className="w-3.5 h-3.5" />
+            </Link>
+
+            <Link
+              to="/build-pc"
+              className="hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-2xl text-xs font-bold text-slate-200 bg-slate-800/80 hover:bg-slate-700 hover:text-white border border-slate-700 transition shadow-sm cursor-pointer active:scale-95"
+            >
+              <span>🛠️</span>
+              <span>Build PC</span>
+            </Link>
+
+            <div className="flex items-center gap-3 bg-slate-950 p-2 rounded-2xl border border-slate-800">
+              <span className="text-xs text-slate-400 font-bold pl-2">
+                Vai trò:
+              </span>
+              <select
+                value={currentRole}
+                onChange={(e) => {
+                  const r = e.target.value;
+                  setCurrentRole(r);
+                  if (setUser) {
+                    setUser({
+                      name: ROLES[r].name,
+                      email: ROLES[r].email,
+                      role: r,
+                    });
+                  }
+                }}
+                className="bg-slate-900 border border-slate-700 rounded-xl px-3 py-1.5 text-xs font-bold text-sky-400 outline-none cursor-pointer"
+              >
+                <option value="admin">Quản Trị Viên (Admin)</option>
+                <option value="manager">Quản Lý Cửa Hàng (Manager)</option>
+                <option value="staff">Nhân Viên CSKH (Staff)</option>
+                <option value="customer">Khách Hàng VIP (Customer)</option>
+              </select>
+            </div>
           </div>
         </div>
 
@@ -1433,6 +1472,53 @@ export default function DashboardView() {
                 );
               })}
             </nav>
+
+            {/* Quick Links to other pages */}
+            <div className="pt-3 border-t border-slate-800 space-y-1.5">
+              <div className="text-[10px] font-bold text-slate-500 uppercase px-3 tracking-wider">
+                Lối Tắt Chuyển Trang
+              </div>
+              <Link
+                to="/"
+                className="w-full flex items-center gap-2.5 px-3.5 py-2 rounded-2xl text-xs font-bold text-slate-300 hover:text-white bg-slate-800/40 hover:bg-slate-800 border border-slate-800 transition cursor-pointer text-left"
+              >
+                <span>🏠</span>
+                <span>Về Trang Chủ</span>
+                <ArrowUpRight className="w-3.5 h-3.5 ml-auto opacity-60" />
+              </Link>
+              <Link
+                to="/catalog"
+                className="w-full flex items-center gap-2.5 px-3.5 py-2 rounded-2xl text-xs font-bold text-sky-400 bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/25 transition cursor-pointer text-left"
+              >
+                <LayoutGrid className="w-4 h-4 shrink-0" />
+                <span>Xem Trang Catalog</span>
+                <ArrowUpRight className="w-3.5 h-3.5 ml-auto opacity-70" />
+              </Link>
+              <Link
+                to="/build-pc"
+                className="w-full flex items-center gap-2.5 px-3.5 py-2 rounded-2xl text-xs font-bold text-slate-300 hover:text-white bg-slate-800/40 hover:bg-slate-800 border border-slate-800 transition cursor-pointer text-left"
+              >
+                <span>🛠️</span>
+                <span>Xây Dựng Cấu Hình PC</span>
+                <ArrowUpRight className="w-3.5 h-3.5 ml-auto opacity-60" />
+              </Link>
+              <Link
+                to="/manager/products"
+                className="w-full flex items-center gap-2.5 px-3.5 py-2 rounded-2xl text-xs font-bold text-indigo-400 bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/25 transition cursor-pointer text-left"
+              >
+                <Package className="w-4 h-4 shrink-0" />
+                <span>Quản Lý Sản Phẩm (Manager)</span>
+                <ArrowUpRight className="w-3.5 h-3.5 ml-auto opacity-70" />
+              </Link>
+              <Link
+                to="/admin"
+                className="w-full flex items-center gap-2.5 px-3.5 py-2 rounded-2xl text-xs font-bold text-amber-400 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/25 transition cursor-pointer text-left"
+              >
+                <ShieldCheck className="w-4 h-4 shrink-0" />
+                <span>Quản Trị Hệ Thống (Admin)</span>
+                <ArrowUpRight className="w-3.5 h-3.5 ml-auto opacity-70" />
+              </Link>
+            </div>
           </aside>
 
           {/* Active Content Panel */}

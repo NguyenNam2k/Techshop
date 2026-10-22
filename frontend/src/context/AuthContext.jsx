@@ -4,6 +4,7 @@ const AuthContext = createContext();
 
 const TOKEN_KEY = 'techshop_token';
 const USER_KEY  = 'techshop_user';
+const LEGACY_USER_KEY = 'techgear_user';
 
 export function AuthProvider({ children }) {
   const [user, setUserState] = useState(null);
@@ -13,10 +14,13 @@ export function AuthProvider({ children }) {
   // Restore session từ localStorage khi app khởi động
   useEffect(() => {
     try {
-      const savedUser  = localStorage.getItem(USER_KEY);
+      const savedUser  = localStorage.getItem(USER_KEY) || localStorage.getItem(LEGACY_USER_KEY);
       const savedToken = localStorage.getItem(TOKEN_KEY);
-      if (savedUser && savedToken) {
-        setUserState(JSON.parse(savedUser));
+      if (savedUser) {
+        const parsed = JSON.parse(savedUser);
+        if (parsed && typeof parsed === 'object') {
+          setUserState(parsed);
+        }
       }
     } catch {
       // ignore parse error
@@ -27,15 +31,19 @@ export function AuthProvider({ children }) {
 
   /** Đăng nhập: lưu token + user vào localStorage */
   const login = (token, userData) => {
-    localStorage.setItem(TOKEN_KEY, token);
-    localStorage.setItem(USER_KEY, JSON.stringify(userData));
-    setUserState(userData);
+    if (token) localStorage.setItem(TOKEN_KEY, token);
+    if (userData) {
+      localStorage.setItem(USER_KEY, JSON.stringify(userData));
+      localStorage.setItem(LEGACY_USER_KEY, JSON.stringify(userData));
+      setUserState(userData);
+    }
   };
 
   /** Đăng xuất: xóa token + user */
   const logout = () => {
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(USER_KEY);
+    localStorage.removeItem(LEGACY_USER_KEY);
     setUserState(null);
   };
 
@@ -46,6 +54,7 @@ export function AuthProvider({ children }) {
       return;
     }
     localStorage.setItem(USER_KEY, JSON.stringify(userData));
+    localStorage.setItem(LEGACY_USER_KEY, JSON.stringify(userData));
     setUserState(userData);
   };
 

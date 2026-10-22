@@ -31,6 +31,11 @@ import ManagerProductsPage from './pages/manager/ManagerProductsPage';
 import { AuthProvider } from './context/AuthContext';
 import { CartProvider } from './context/CartContext';
 import { ThemeProvider } from './context/ThemeContext';
+import { GoogleOAuthProvider } from '@react-oauth/google';
+
+const GOOGLE_CLIENT_ID =
+  import.meta.env.VITE_GOOGLE_CLIENT_ID ||
+  '383514140787-3gl2e75k1791mv20alfm401t9o56i9ks.apps.googleusercontent.com';
 
 function AppContent() {
   const location = useLocation();
@@ -105,14 +110,16 @@ function AppContent() {
 
 export default function App() {
   return (
-    <ThemeProvider>
-      <AuthProvider>
-        <CartProvider>
-          <Router>
-            <AppContent />
-          </Router>
-        </CartProvider>
-      </AuthProvider>
-    </ThemeProvider>
+    <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
+      <ThemeProvider>
+        <AuthProvider>
+          <CartProvider>
+            <Router>
+              <AppContent />
+            </Router>
+          </CartProvider>
+        </AuthProvider>
+      </ThemeProvider>
+    </GoogleOAuthProvider>
   );
 }

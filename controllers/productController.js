@@ -1,3 +1,5 @@
+const path = require('path');
+const fs = require('fs');
 const ProductService = require('../services/productService');
 const CategoryService = require('../services/categoryService');
 const StaffService = require('../services/staffService');
@@ -21,58 +23,22 @@ class ProductController {
 
   /**
    * GET /manager/products (and legacy /admin/products)
-   * Renders the complete Manager Product & Category Management Dashboard UI
+   * Serves the Manager React JSX Single Page Application (SPA)
    */
-  static async renderManagerPage(req, res, next) {
+  static renderManagerPage(req, res, next) {
     try {
-      const page = parseInt(req.query.page, 10) || 1;
-      const limit = parseInt(req.query.limit, 10) || 10;
-      const category_id = req.query.category_id || 'all';
-      const search = req.query.search || '';
-      const status = req.query.status || 'all';
-      const stock_status = req.query.stock_status || 'all';
-      const sort = req.query.sort || 'newest';
+      const reactAppDist = path.join(__dirname, '..', 'views', 'manager-app', 'dist', 'index.html');
 
-      // 1. Fetch paginated products via Service
-      const productResult = await ProductService.getProducts({
-        page,
-        limit,
-        category_id,
-        search,
-        status,
-        stock_status,
-        sort
-      });
+      if (fs.existsSync(reactAppDist)) {
+        return res.sendFile(reactAppDist);
+      }
 
-      // 2. Fetch all categories for filter and dropdown via Service
-      const categories = await CategoryService.getAllCategories();
-
-      // 3. Fetch KPI stats via Service
-      const stats = await ProductService.getCatalogStats();
-
-      // 4. Fetch subordinate staff list via StaffService
-      const staffs = await StaffService.getStaffsByManager(1);
-
-      // 5. Render EJS view for Manager
-      return res.render('manager/products', {
-        title: 'Quản lý Thiết Bị Công Nghệ - Manager Portal | TechShop',
-        products: productResult.products,
-        pagination: productResult.pagination,
-        categories,
-        stats,
-        staffs,
-        filters: {
-          page,
-          limit,
-          category_id,
-          search,
-          status,
-          stock_status,
-          sort
-        },
-        flashMessage: req.query.msg || null,
-        flashType: req.query.msgType || 'success'
-      });
+      return res.status(503).send(`
+        <div style="font-family:sans-serif; text-align:center; padding: 50px; background: #0b0f19; color: #f1f5f9; min-height: 100vh;">
+          <h2 style="color: #06b6d4;">Chưa tìm thấy bản build của React Manager App</h2>
+          <p style="color: #94a3b8;">Vui lòng chạy <code>cd views/manager-app && npm run build</code> để khởi tạo giao diện.</p>
+        </div>
+      `);
     } catch (error) {
       next(error);
     }

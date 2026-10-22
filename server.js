@@ -13,15 +13,14 @@ const reportRoutes = require('./routes/reportRoutes');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// View engine setup
-app.set('view engine', 'ejs');
-app.set('views', path.join(__dirname, 'views'));
 
 // Core Middlewares
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, 'views', 'manager-app', 'dist')));
+app.use('/manager', express.static(path.join(__dirname, 'views', 'manager-app', 'dist')));
 
 // Application Routes
 app.use(productRoutes);

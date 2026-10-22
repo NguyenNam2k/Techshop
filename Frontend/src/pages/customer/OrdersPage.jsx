@@ -43,10 +43,10 @@ import {
   Share2,
   ShoppingCart
 } from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
-import { useCart } from '../context/CartContext';
-import { api } from '../services/api';
-import VietqrModal from '../components/checkout/VietqrModal';
+import { useAuth } from '../../context/AuthContext';
+import { useCart } from '../../context/CartContext';
+import { api } from '../../services/api';
+import VietqrModal from '../../components/checkout/VietqrModal';
 
 const DEFAULT_AVATAR =
   'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200&auto=format&fit=crop&q=80';

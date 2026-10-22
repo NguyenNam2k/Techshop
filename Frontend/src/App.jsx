@@ -3,17 +3,18 @@ import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'r
 import Header from './components/common/Header';
 import Footer from './components/common/Footer';
 import SupportBubble from './components/common/SupportBubble';
-import ProductDetailPage from './pages/ProductDetailPage';
-import HomePage from './pages/HomePage';
-import PCBuildPage from './pages/PCBuildPage';
-import DashboardPage from './pages/DashboardPage';
-import CartPage from './pages/CartPage';
-import CheckoutPage from './pages/CheckoutPage';
-import SuccessPage from './pages/SuccessPage';
-import OrdersPage from './pages/OrdersPage';
-
-// Customer Catalog
+// Customer pages
+import HomePage from './pages/customer/HomePage';
 import CatalogPage from './pages/customer/CatalogPage';
+import ProductDetailPage from './pages/customer/ProductDetailPage';
+import PCBuildPage from './pages/customer/PCBuildPage';
+import CartPage from './pages/customer/CartPage';
+import CheckoutPage from './pages/customer/CheckoutPage';
+import SuccessPage from './pages/customer/SuccessPage';
+import OrdersPage from './pages/customer/OrdersPage';
+
+// Dashboard page
+import DashboardPage from './pages/dashboard/DashboardPage';
 
 // Auth pages
 import LoginPage from './pages/auth/LoginPage';

@@ -22,10 +22,10 @@ import {
   Terminal,
   Zap
 } from 'lucide-react';
-import VietqrModal from '../components/checkout/VietqrModal';
-import { useCart } from '../context/CartContext';
-import { api } from '../services/api';
-import vietnamAdminUnits from '../data/vietnam-administrative-units.json';
+import VietqrModal from '../../components/checkout/VietqrModal';
+import { useCart } from '../../context/CartContext';
+import { api } from '../../services/api';
+import vietnamAdminUnits from '../../data/vietnam-administrative-units.json';
 
 const isDevEnvironment =
   import.meta.env.DEV ||

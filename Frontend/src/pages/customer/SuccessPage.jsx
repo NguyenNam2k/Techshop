@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link, Navigate, useParams } from 'react-router-dom';
 import { CheckCircle2, Loader2 } from 'lucide-react';
-import { api } from '../services/api';
+import { api } from '../../services/api';
 
 const formatVND = (price) =>
   new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(price || 0);

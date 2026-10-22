@@ -17,8 +17,8 @@ import {
   ArrowUpRight,
   Pencil
 } from 'lucide-react';
-import { api } from '../services/api';
-import { useCart } from '../context/CartContext';
+import { api } from '../../services/api';
+import { useCart } from '../../context/CartContext';
 
 const formatVND = (n) =>
   new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(n || 0);

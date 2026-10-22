@@ -19,8 +19,17 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
-app.use(express.static(path.join(__dirname, 'views', 'manager-app', 'dist')));
-app.use('/manager', express.static(path.join(__dirname, 'views', 'manager-app', 'dist')));
+const staticDistOptions = {
+  setHeaders: (res, filePath) => {
+    if (filePath.endsWith('.html')) {
+      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+    }
+  }
+};
+app.use(express.static(path.join(__dirname, 'views', 'manager-app', 'dist'), staticDistOptions));
+app.use('/manager', express.static(path.join(__dirname, 'views', 'manager-app', 'dist'), staticDistOptions));
 
 // Application Routes
 app.use(productRoutes);

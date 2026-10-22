@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { FolderTree, X, Plus, Trash2, AlertCircle } from 'lucide-react';
 
 function CategoryModal({
@@ -165,4 +165,3 @@ function CategoryModal({
 }
 
 export default CategoryModal;
-

@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Boxes, X, Check, AlertCircle } from 'lucide-react';
 
 function QuickStockModal({
@@ -258,4 +258,3 @@ function QuickStockModal({
 }
 
 export default QuickStockModal;
-

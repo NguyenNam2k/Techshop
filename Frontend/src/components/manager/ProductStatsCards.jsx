@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import {
   Monitor,
   CheckCircle,
@@ -115,4 +115,3 @@ function ProductStatsCards({ stats = {}, onOpenCategories }) {
 }
 
 export default ProductStatsCards;
-

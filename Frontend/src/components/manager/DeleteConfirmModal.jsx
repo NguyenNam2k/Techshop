@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { AlertTriangle, Trash2, X, Boxes, ShieldAlert } from 'lucide-react';
 
 function DeleteConfirmModal({
@@ -109,4 +109,3 @@ function DeleteConfirmModal({
 }
 
 export default DeleteConfirmModal;
-

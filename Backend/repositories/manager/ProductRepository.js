@@ -877,4 +877,5 @@ class ProductRepository extends BaseRepository {
   }
 }
 
+
 module.exports = ProductRepository;

@@ -2,10 +2,10 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 
 const menuItems = [
-  { path: '/admin',            icon: '📊', label: 'Tổng quan', end: true },
-  { path: '/admin/users',      icon: '👥', label: 'Quản lý User' },
-  { path: '/manager/products', icon: '📦', label: 'Quản lý Sản phẩm' },
-  { path: '/catalog',          icon: '🛍️', label: 'Xem Catalog' },
+  { path: '/admin',             icon: '📊', label: 'Tổng quan', end: true },
+  { path: '/admin/users',       icon: '👥', label: 'Quản lý Người dùng' },
+  { path: '/admin/roles',       icon: '🛡️', label: 'Quản lý Vai trò (Roles)' },
+  { path: '/admin/permissions', icon: '🔑', label: 'Quản lý Quyền hạn' },
 ];
 
 function Sidebar() {

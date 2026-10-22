@@ -14,6 +14,8 @@ import {
   CreditCard
 } from 'lucide-react';
 import { useCart } from '../../context/CartContext';
+import { useAuth } from '../../context/AuthContext';
+import AuthRequiredModal from '../../components/common/AuthRequiredModal';
 import { isSingleConfigurationProduct } from '../../components/pdp/VariantSelector';
 
 const FALLBACK_IMAGE =
@@ -24,6 +26,8 @@ const formatVND = (n) =>
 
 export default function CartPage() {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const [showAuthModal, setShowAuthModal] = useState(false);
   const {
     cartItems = [],
     loading = false,
@@ -330,8 +334,14 @@ export default function CartPage() {
 
                 <button
                   type="button"
-                  onClick={() => navigate('/checkout')}
-                  className="w-full py-3.5 px-6 rounded-xl bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-400 hover:to-blue-500 text-white font-extrabold text-sm shadow-lg shadow-sky-500/25 flex items-center justify-center gap-2 transition active:scale-[0.99]"
+                  onClick={() => {
+                    if (!user) {
+                      setShowAuthModal(true);
+                      return;
+                    }
+                    navigate('/checkout');
+                  }}
+                  className="w-full py-3.5 px-6 rounded-xl bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-400 hover:to-blue-500 text-white font-extrabold text-sm shadow-lg shadow-sky-500/25 flex items-center justify-center gap-2 transition active:scale-[0.99] cursor-pointer"
                 >
                   <span>Tiến Hành Thanh Toán</span>
                   <ArrowRight className="w-4 h-4" />
@@ -357,6 +367,12 @@ export default function CartPage() {
           </div>
         )}
       </div>
+
+      {/* Modal yêu cầu đăng nhập khi khách bấm thanh toán */}
+      <AuthRequiredModal
+        isOpen={showAuthModal}
+        onClose={() => setShowAuthModal(false)}
+      />
     </div>
   );
 }

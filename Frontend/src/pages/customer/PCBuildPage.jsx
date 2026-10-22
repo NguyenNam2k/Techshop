@@ -19,6 +19,8 @@ import {
 } from 'lucide-react';
 import { api } from '../../services/api';
 import { useCart } from '../../context/CartContext';
+import { useAuth } from '../../context/AuthContext';
+import AuthRequiredModal from '../../components/common/AuthRequiredModal';
 
 const formatVND = (n) =>
   new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(n || 0);
@@ -585,6 +587,8 @@ function FilterOption({ type = 'checkbox', name, checked, onChange, label, count
 
 export default function PCBuilderView() {
   const { addToCart } = useCart();
+  const { user } = useAuth();
+  const [showAuthModal, setShowAuthModal] = useState(false);
 
   const [dbProducts, setDbProducts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -894,6 +898,10 @@ export default function PCBuilderView() {
   ]);
 
   const handleAddFullPCToCart = () => {
+    if (!user) {
+      setShowAuthModal(true);
+      return;
+    }
     let addedCount = 0;
     Object.values(selectedParts).forEach((part) => {
       if (part) {
@@ -1451,6 +1459,12 @@ export default function PCBuilderView() {
           </div>
         </div>
       )}
+
+      {/* Modal yêu cầu đăng nhập khi khách build PC bấm thêm vào giỏ */}
+      <AuthRequiredModal
+        isOpen={showAuthModal}
+        onClose={() => setShowAuthModal(false)}
+      />
     </div>
   );
 }

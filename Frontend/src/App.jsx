@@ -58,7 +58,14 @@ function AppContent() {
           <Route path="/build-pc" element={<PCBuildPage />} />
           <Route path="/pc-build" element={<Navigate to="/build-pc" replace />} />
           <Route path="/cart" element={<CartPage />} />
-          <Route path="/checkout" element={<CheckoutPage />} />
+          <Route
+            path="/checkout"
+            element={
+              <ProtectedRoute>
+                <CheckoutPage />
+              </ProtectedRoute>
+            }
+          />
           <Route path="/success/:orderCode" element={<SuccessPage />} />
           <Route path="/success" element={<Navigate to="/profile/orders" replace />} />
           <Route path="/profile" element={<OrdersPage />} />

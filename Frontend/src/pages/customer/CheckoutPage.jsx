@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import VietqrModal from '../../components/checkout/VietqrModal';
 import { useCart } from '../../context/CartContext';
+import { useAuth } from '../../context/AuthContext';
 import { api } from '../../services/api';
 import vietnamAdminUnits from '../../data/vietnam-administrative-units.json';
 
@@ -51,16 +52,35 @@ const DEFAULT_WARD_ID = getWardsForProvince('79')[0]?.id || '25747';
 const CheckoutPage = () => {
   const navigate = useNavigate();
   const { cartItems = [], subtotal = 0, clearCart } = useCart();
+  const { user, isLoading: authLoading } = useAuth();
+
+  // Chặn khách chưa đăng nhập truy cập trang thanh toán
+  useEffect(() => {
+    if (!authLoading && !user) {
+      navigate('/login', { state: { from: '/checkout' }, replace: true });
+    }
+  }, [user, authLoading, navigate]);
 
   const [formData, setFormData] = useState({
-    recipientName: 'Nguyễn Văn Nam',
-    recipientPhone: '0988123456',
+    recipientName: user?.name || user?.username || '',
+    recipientPhone: user?.phone || '',
     provinceId: DEFAULT_PROVINCE_ID,
     wardId: DEFAULT_WARD_ID,
-    streetAddress: 'Số 123 Nguyễn Huệ',
+    streetAddress: user?.address || 'Số 123 Nguyễn Huệ',
     paymentMethod: 'cod',
     orderNotes: ''
   });
+
+  useEffect(() => {
+    if (user) {
+      setFormData((prev) => ({
+        ...prev,
+        recipientName: prev.recipientName || user.name || user.username || '',
+        recipientPhone: prev.recipientPhone || user.phone || '',
+        streetAddress: prev.streetAddress || user.address || ''
+      }));
+    }
+  }, [user]);
 
   const [shippingQuote, setShippingQuote] = useState({
     deliveryMethod: 'express',

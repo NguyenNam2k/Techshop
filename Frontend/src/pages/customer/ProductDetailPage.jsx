@@ -15,6 +15,8 @@ import AddToCartSection from '../../components/pdp/AddToCartSection';
 import ProductSpecsTable from '../../components/pdp/ProductSpecsTable';
 import SimilarProductsSlider from '../../components/pdp/SimilarProductsSlider';
 import { useCart } from '../../context/CartContext';
+import { useAuth } from '../../context/AuthContext';
+import AuthRequiredModal from '../../components/common/AuthRequiredModal';
 import { api, withTransientRetry } from '../../services/api';
 
 const DEFAULT_PRODUCT_SLUG = 'asus-rog-zephyrus-g16-2024-oled-intel-core-ultra-9-rtx-4080-17';
@@ -24,6 +26,8 @@ const ProductDetailPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { addToCart } = useCart();
+  const { user } = useAuth();
+  const [showAuthModal, setShowAuthModal] = useState(false);
 
   const queryParams = new URLSearchParams(location.search);
   const queryId = queryParams.get('id') || queryParams.get('slug');
@@ -279,10 +283,18 @@ const ProductDetailPage = () => {
               product={product}
               variant={selectedVariant}
               onAddToCart={(qty) => {
+                if (!user) {
+                  setShowAuthModal(true);
+                  return;
+                }
                 showToast(`Đã thêm ${qty}x "${product.name}" vào giỏ hàng!`);
                 addToCart(product, selectedVariant, qty);
               }}
               onBuyNow={(qty) => {
+                if (!user) {
+                  setShowAuthModal(true);
+                  return;
+                }
                 addToCart(product, selectedVariant, qty);
                 navigate('/checkout');
               }}
@@ -316,6 +328,13 @@ const ProductDetailPage = () => {
         {/* Sản phẩm cùng danh mục */}
         <SimilarProductsSlider id={product.id} currentProductId={product.id} />
       </div>
+
+      {/* Modal yêu cầu đăng nhập khi khách bấm mua hàng */}
+      <AuthRequiredModal
+        isOpen={showAuthModal}
+        onClose={() => setShowAuthModal(false)}
+        productName={product?.name}
+      />
     </div>
   );
 };

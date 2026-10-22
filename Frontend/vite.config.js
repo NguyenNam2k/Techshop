@@ -1,25 +1,30 @@
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
-import tailwindcss from '@tailwindcss/vite'
+import { defineConfig, loadEnv } from 'vite';
+import react from '@vitejs/plugin-react';
 
-export default defineConfig({
-  plugins: [
-    react(),
-    tailwindcss(),
-  ],
-  server: {
-    port: 3000,
-    proxy: {
-      // Tự động chuyển mọi request /api/* sang backend Express (port 5000)
-      '/api': {
-        target: 'http://localhost:5000',
-        changeOrigin: true,
-      },
-      // Chuyển tiếp các request /manager/* sang backend Express (port 5000)
-      '/manager': {
-        target: 'http://localhost:5000',
-        changeOrigin: true,
-      },
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, process.cwd(), '');
+  const target = env.VITE_DEV_API_TARGET || 'http://localhost:3000';
+
+  return {
+    plugins: [react()],
+    build: {
+      // Giữ nguyên :is() trong CSS (nếu hạ cấp, các selector theme sẽ bị khai triển thành hàng MB)
+      cssTarget: 'chrome111'
     },
-  },
-})
+    server: {
+      port: 5173,
+      proxy: {
+        '/api': {
+          target,
+          changeOrigin: true,
+          secure: false
+        },
+        '/uploads': {
+          target,
+          changeOrigin: true,
+          secure: false
+        }
+      }
+    }
+  };
+});

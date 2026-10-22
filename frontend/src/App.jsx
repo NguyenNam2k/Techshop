@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import Header from './components/common/Header';
 import Footer from './components/common/Footer';
 import SupportBubble from './components/common/SupportBubble';
@@ -11,18 +11,44 @@ import CartPage from './pages/CartPage';
 import CheckoutPage from './pages/CheckoutPage';
 import SuccessPage from './pages/SuccessPage';
 import OrdersPage from './pages/OrdersPage';
+
+// Customer Catalog
+import CatalogPage from './pages/customer/CatalogPage';
+
+// Auth pages
+import LoginPage from './pages/auth/LoginPage';
+import RegisterPage from './pages/auth/RegisterPage';
+import ProtectedRoute from './components/ProtectedRoute';
+
+// Admin pages
+import AdminLayout from './pages/admin/AdminLayout';
+import AdminDashboard from './pages/admin/AdminDashboard';
+import UserManagement from './pages/admin/UserManagement';
+
+// Manager pages
+import ManagerProductsPage from './pages/manager/ManagerProductsPage';
+
 import { AuthProvider } from './context/AuthContext';
 import { CartProvider } from './context/CartContext';
 import { ThemeProvider } from './context/ThemeContext';
 
 function AppContent() {
+  const location = useLocation();
+  const isStandalone =
+    location.pathname.startsWith('/manager') ||
+    location.pathname.startsWith('/admin') ||
+    location.pathname === '/login' ||
+    location.pathname === '/register';
+
   return (
     <div className="min-h-screen flex flex-col bg-slate-950 text-slate-100">
-      <Header />
-      <main className="flex-grow">
+      {!isStandalone && <Header />}
+      <main className={isStandalone ? 'min-h-screen' : 'flex-grow'}>
         <Routes>
+          {/* Public Storefront */}
           <Route path="/" element={<HomePage />} />
           <Route path="/home" element={<HomePage />} />
+          <Route path="/catalog" element={<CatalogPage />} />
           <Route path="/products" element={<ProductDetailPage />} />
           <Route path="/products/:id" element={<ProductDetailPage />} />
           <Route path="/build-pc" element={<PCBuildPage />} />
@@ -37,13 +63,42 @@ function AppContent() {
           <Route path="/orders" element={<OrdersPage />} />
           <Route path="/my-orders" element={<OrdersPage />} />
           <Route path="/tracking" element={<OrdersPage />} />
-          {/* Also support typing /:id directly at root (e.g., /14 -> /products/<slug>) */}
+
+          {/* Auth routes */}
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
+
+          {/* Manager routes */}
+          <Route path="/manager" element={<Navigate to="/manager/products" replace />} />
+          <Route
+            path="/manager/products"
+            element={
+              <ProtectedRoute allowedRoles={['manager', 'admin']}>
+                <ManagerProductsPage />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Admin routes */}
+          <Route
+            path="/admin"
+            element={
+              <ProtectedRoute requiredRole="admin">
+                <AdminLayout />
+              </ProtectedRoute>
+            }
+          >
+            <Route index element={<AdminDashboard />} />
+            <Route path="users" element={<UserManagement />} />
+          </Route>
+
+          {/* Fallback for slug id or not found */}
           <Route path="/:id" element={<ProductDetailPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>
-      <Footer />
-      <SupportBubble />
+      {!isStandalone && <Footer />}
+      {!isStandalone && <SupportBubble />}
     </div>
   );
 }

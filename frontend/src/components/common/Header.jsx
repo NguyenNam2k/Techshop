@@ -41,7 +41,7 @@ export default function Header() {
   const navigate = useNavigate();
   const location = useLocation();
   const { cartItems = [], cartCount = 0, subtotal = 0, removeItem } = useCart();
-  const { user, setUser } = useAuth();
+  const { user, setUser, logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const [searchText, setSearchText] = useState('');
   const [searchResults, setSearchResults] = useState([]);
@@ -151,22 +151,16 @@ export default function Header() {
   };
 
   const handleToggleAuth = () => {
-    if (user === false) {
-      const demoUser = {
-        name: 'Nguyễn Nam',
-        email: 'nam.nguyen@techshop.vn',
-        role: 'Thành viên VIP',
-        avatar: DEFAULT_AVATAR
-      };
-      setUser(demoUser);
-      localStorage.setItem('techgear_user', JSON.stringify(demoUser));
+    if (user) {
+      // Đăng xuất thực sự: xoá token + user qua AuthContext
+      logout();
+      navigate('/login');
     } else {
-      setUser(false);
-      localStorage.removeItem('techgear_user');
+      navigate('/login');
     }
   };
 
-  const isLoggedOut = user === false;
+  const isLoggedOut = !user;
 
   return (
     <header className="sticky top-0 z-30 w-full bg-slate-900/95 backdrop-blur-md border-b border-slate-800 shadow-md transition-colors duration-200">

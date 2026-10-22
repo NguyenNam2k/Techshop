@@ -1,25 +1,64 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 
 const AuthContext = createContext();
 
+const TOKEN_KEY = 'techshop_token';
+const USER_KEY  = 'techshop_user';
+
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(() => {
-    try {
-      const saved = localStorage.getItem('techgear_user');
-      return saved ? JSON.parse(saved) : null;
-    } catch {
-      return null;
-    }
-  });
+  const [user, setUserState] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Restore session từ localStorage khi app khởi động
+  useEffect(() => {
+    try {
+      const savedUser  = localStorage.getItem(USER_KEY);
+      const savedToken = localStorage.getItem(TOKEN_KEY);
+      if (savedUser && savedToken) {
+        setUserState(JSON.parse(savedUser));
+      }
+    } catch {
+      // ignore parse error
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  /** Đăng nhập: lưu token + user vào localStorage */
+  const login = (token, userData) => {
+    localStorage.setItem(TOKEN_KEY, token);
+    localStorage.setItem(USER_KEY, JSON.stringify(userData));
+    setUserState(userData);
+  };
+
+  /** Đăng xuất: xóa token + user */
+  const logout = () => {
+    localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(USER_KEY);
+    setUserState(null);
+  };
+
+  /** Cập nhật thông tin user (dùng trong Dashboard role-switcher) */
+  const setUser = (userData) => {
+    if (!userData) {
+      logout();
+      return;
+    }
+    localStorage.setItem(USER_KEY, JSON.stringify(userData));
+    setUserState(userData);
+  };
 
   return (
     <AuthContext.Provider
       value={{
         user,
         setUser,
+        login,
+        logout,
+        isLoading,
         searchQuery,
-        setSearchQuery
+        setSearchQuery,
       }}
     >
       {children}
@@ -33,8 +72,11 @@ export function useAuth() {
     return {
       user: null,
       setUser: () => {},
+      login: () => {},
+      logout: () => {},
+      isLoading: false,
       searchQuery: '',
-      setSearchQuery: () => {}
+      setSearchQuery: () => {},
     };
   }
   return ctx;

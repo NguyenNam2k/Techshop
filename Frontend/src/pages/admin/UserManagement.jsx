@@ -29,6 +29,13 @@ function UserManagement() {
   const [formError, setFormError] = useState('');
   const [formLoading, setFormLoading] = useState(false);
 
+  // Assign Role Modal state
+  const [showRoleModal, setShowRoleModal] = useState(false);
+  const [roleModalUser, setRoleModalUser] = useState(null);
+  const [selectedNewRole, setSelectedNewRole] = useState('customer');
+  const [roleLoading, setRoleLoading] = useState(false);
+  const [roleFeedback, setRoleFeedback] = useState('');
+
   // Fetch users
   const fetchUsers = async () => {
     try {
@@ -119,6 +126,37 @@ function UserManagement() {
       fetchUsers();
     } catch (err) {
       alert(err.response?.data?.message || 'Lỗi cập nhật trạng thái!');
+    }
+  };
+
+  // Assign Role handlers
+  const handleOpenAssignRole = (u) => {
+    setRoleModalUser(u);
+    setSelectedNewRole(u.role);
+    setRoleFeedback('');
+    setShowRoleModal(true);
+  };
+
+  const handleSaveRole = async (e) => {
+    e.preventDefault();
+    if (!roleModalUser) return;
+    if (roleModalUser.role === selectedNewRole) {
+      setShowRoleModal(false);
+      return;
+    }
+    setRoleLoading(true);
+    setRoleFeedback('');
+    try {
+      await axiosInstance.patch(`/users/${roleModalUser.id}/role`, {
+        currentRole: roleModalUser.role,
+        newRole: selectedNewRole
+      });
+      setShowRoleModal(false);
+      fetchUsers();
+    } catch (err) {
+      setRoleFeedback(err.response?.data?.message || 'Lỗi cập nhật vai trò người dùng!');
+    } finally {
+      setRoleLoading(false);
     }
   };
 
@@ -312,9 +350,12 @@ function UserManagement() {
                     {u.created_at ? new Date(u.created_at).toLocaleDateString('vi-VN', { year: 'numeric', month: '2-digit', day: '2-digit' }) : '—'}
                   </td>
                   <td className="px-5 py-3 text-center">
-                    <div className="flex items-center justify-center gap-2">
+                    <div className="flex items-center justify-center gap-1.5">
                       <button onClick={() => handleViewDetail(u)} className="text-blue-400 hover:text-blue-300 text-xs px-2.5 py-1 rounded-lg hover:bg-blue-500/10 transition font-medium">
                         👁️ Chi tiết
+                      </button>
+                      <button onClick={() => handleOpenAssignRole(u)} className="text-amber-400 hover:text-amber-300 text-xs px-2.5 py-1 rounded-lg hover:bg-amber-500/10 transition font-medium">
+                        🏷️ Vai trò
                       </button>
                       <button onClick={() => handleToggleStatus(u)} className={`text-xs px-2.5 py-1 rounded-lg transition font-medium ${u.status === 'active' ? 'text-red-400 hover:text-red-300 hover:bg-red-500/10' : 'text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10'}`}>
                         {u.status === 'active' ? '🔒 Khóa' : '🔓 Mở khóa'}
@@ -459,6 +500,68 @@ function UserManagement() {
             <div className="px-6 py-4">
               <button onClick={() => setShowDetailModal(false)} className="w-full px-4 py-2.5 bg-slate-700 hover:bg-slate-600 text-white text-sm rounded-xl transition">Đóng</button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ===== MODAL: Assign Role ===== */}
+      {showRoleModal && roleModalUser && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+          <div className="bg-slate-800 rounded-2xl border border-slate-700 w-full max-w-md shadow-2xl p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                🏷️ Phân vai trò người dùng
+              </h2>
+              <button onClick={() => setShowRoleModal(false)} className="text-slate-500 hover:text-white text-xl">✕</button>
+            </div>
+
+            <p className="text-xs text-slate-400 mb-4">
+              Đang phân vai trò cho tài khoản: <strong className="text-white">{roleModalUser.name}</strong> ({roleModalUser.email})
+            </p>
+
+            {roleFeedback && (
+              <div className="p-3 mb-4 rounded-xl text-xs bg-rose-500/10 border border-rose-500/30 text-rose-300">
+                ⚠️ {roleFeedback}
+              </div>
+            )}
+
+            <form onSubmit={handleSaveRole} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                  Vai trò mới (Target Role)
+                </label>
+                <select
+                  value={selectedNewRole}
+                  onChange={(e) => setSelectedNewRole(e.target.value)}
+                  className="w-full bg-slate-700 text-white border border-slate-600 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-blue-500"
+                >
+                  <option value="customer">Khách hàng (customer)</option>
+                  <option value="staff">Nhân viên (staff)</option>
+                  <option value="manager">Quản lý (manager)</option>
+                  <option value="admin">Quản trị viên (admin)</option>
+                </select>
+                <p className="text-[11px] text-slate-500 mt-1.5">
+                  Lưu ý: Thay đổi vai trò sẽ di chuyển và cấp quyền tài khoản tương ứng trên toàn hệ thống.
+                </p>
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowRoleModal(false)}
+                  className="flex-1 px-4 py-2.5 bg-slate-700 hover:bg-slate-600 text-white text-sm rounded-xl transition"
+                >
+                  Hủy
+                </button>
+                <button
+                  type="submit"
+                  disabled={roleLoading}
+                  className="flex-1 px-4 py-2.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-60 text-white text-sm font-medium rounded-xl transition cursor-pointer"
+                >
+                  {roleLoading ? 'Đang lưu...' : 'Xác nhận đổi Role'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

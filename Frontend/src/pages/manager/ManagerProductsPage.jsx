@@ -6,11 +6,14 @@ import {
   Plus,
   RefreshCw,
   SlidersHorizontal,
-  ExternalLink
+  ExternalLink,
+  Sun,
+  Moon
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 import axiosInstance from '../../api/axiosInstance';
+import { useTheme } from '../../context/ThemeContext';
 import ManagerSidebar from '../../components/manager/ManagerSidebar';
 import ProductStatsCards from '../../components/manager/ProductStatsCards';
 import ProductFilterBar from '../../components/manager/ProductFilterBar';
@@ -23,6 +26,8 @@ import DeleteConfirmModal from '../../components/manager/DeleteConfirmModal';
 import ToastNotification from '../../components/manager/ToastNotification';
 
 function ManagerProductsPage() {
+  const { theme, toggleTheme } = useTheme();
+
   // Data States
   const [products, setProducts] = useState([]);
   const [stats, setStats] = useState({
@@ -353,15 +358,20 @@ function ManagerProductsPage() {
               <span>Thêm mới</span>
             </button>
 
-            {/* View Catalog Storefront link */}
-            <Link
-              to="/catalog"
-              target="_blank"
-              className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white border border-slate-700 transition-all"
-              title="Xem cửa hàng khách"
+            {/* Nút Chuyển đổi giao diện Sáng / Tối Cyberpunk (chuẩn giống Customer) */}
+            <button
+              type="button"
+              onClick={toggleTheme}
+              title={theme === 'light' ? 'Chuyển sang giao diện Cyberpunk Tối' : 'Chuyển sang giao diện Sáng'}
+              aria-label="Chuyển đổi giao diện sáng / tối"
+              className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 transition-all cursor-pointer flex items-center justify-center active:scale-95 shadow-sm"
             >
-              <ExternalLink className="w-4 h-4" />
-            </Link>
+              {theme === 'light' ? (
+                <Moon className="w-4 h-4 text-sky-400" />
+              ) : (
+                <Sun className="w-4 h-4 text-amber-400" />
+              )}
+            </button>
           </div>
         </header>
 

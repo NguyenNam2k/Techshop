@@ -18,4 +18,7 @@ router.post('/', userController.createUser);
 // PATCH  /api/users/:id/status — Kích hoạt / Vô hiệu hóa tài khoản
 router.patch('/:id/status', userController.updateUserStatus);
 
+// PATCH  /api/users/:id/role   — Phân lại vai trò (Assign Role)
+router.patch('/:id/role', userController.updateUserRole);
+
 module.exports = router;

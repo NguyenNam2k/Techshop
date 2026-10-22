@@ -832,7 +832,7 @@ const CheckoutPage = () => {
                   ))}
                 </div>
 
-                {/* Coupon / Voucher Box (Synced with /views/manager/products.ejs coupons table) */}
+                {/* Coupon / Voucher Box */}
                 <div className="pt-3 border-t border-slate-800 space-y-2.5">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-bold uppercase text-slate-300 flex items-center gap-1.5">

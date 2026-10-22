@@ -1,6 +1,4 @@
 const ProductService = require('../../services/manager/productService');
-const CategoryService = require('../../services/manager/categoryService');
-const StaffService = require('../../services/manager/staffService');
 
 /**
  * Product Controller
@@ -19,78 +17,6 @@ class ProductController {
       req.path.startsWith('/api') ||
       req.query.format === 'json'
     );
-  }
-
-  // =========================================================================
-  // MANAGER DASHBOARD & VIEWS (SSR EJS)
-  // =========================================================================
-
-  /**
-   * GET /manager/products (and /admin/products)
-   * Renders the complete Manager Product & Category Management Dashboard UI
-   */
-  static async renderManagerPage(req, res, next) {
-    try {
-      const page = parseInt(req.query.page, 10) || 1;
-      const limit = parseInt(req.query.limit, 10) || 10;
-      const category_id = req.query.category_id || 'all';
-      const search = req.query.search || '';
-      const status = req.query.status || 'all';
-      const stock_status = req.query.stock_status || 'all';
-      const sort = req.query.sort || 'newest';
-
-      // 1. Fetch paginated products via Service
-      const productResult = await ProductService.getProducts({
-        page,
-        limit,
-        category_id,
-        search,
-        status,
-        stock_status,
-        sort
-      });
-
-      // 2. Fetch all categories for filter and dropdown via Service
-      const categories = await CategoryService.getAllCategories();
-
-      // 3. Fetch KPI stats via Service
-      const stats = await ProductService.getCatalogStats();
-
-      // 4. Fetch subordinate staff list via StaffService
-      const staffs = await StaffService.getStaffsByManager(1);
-
-      // 5. Render EJS view for Manager
-      return res.render('manager/products', {
-        title: 'Quản lý Thiết Bị Công Nghệ - Manager Portal | TechShop',
-        products: productResult.products,
-        pagination: productResult.pagination,
-        categories,
-        stats,
-        staffs,
-        filters: {
-          page,
-          limit,
-          category_id,
-          search,
-          status,
-          stock_status,
-          sort
-        },
-        flashMessage: req.query.msg || null,
-        flashType: req.query.msgType || 'success'
-      });
-    } catch (error) {
-      if (typeof next === 'function') {
-        next(error);
-      } else {
-        console.error('Error in renderManagerPage:', error);
-        res.status(500).send('Lỗi khi tải trang quản lý.');
-      }
-    }
-  }
-
-  static renderAdminPage(req, res, next) {
-    return ProductController.renderManagerPage(req, res, next);
   }
 
   /**

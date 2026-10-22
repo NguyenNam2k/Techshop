@@ -1,3 +1,5 @@
+const path = require('path');
+const fs = require('fs');
 const ProductService = require('../../services/manager/productService');
 
 /**
@@ -17,6 +19,33 @@ class ProductController {
       req.path.startsWith('/api') ||
       req.query.format === 'json'
     );
+  }
+
+  /**
+   * GET /manager/products (and legacy /admin/products)
+   * Serves the Manager React JSX Single Page Application (SPA)
+   */
+  static renderManagerPage(req, res, next) {
+    try {
+      const reactAppDist = path.join(__dirname, '..', '..', '..', 'views', 'manager-app', 'dist', 'index.html');
+
+      if (fs.existsSync(reactAppDist)) {
+        res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+        res.setHeader('Pragma', 'no-cache');
+        res.setHeader('Expires', '0');
+        return res.sendFile(reactAppDist);
+      }
+
+      const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:3000';
+      return res.redirect(`${FRONTEND_URL}/manager/products`);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  // Alias for backward compatibility
+  static renderAdminPage(req, res, next) {
+    return ProductController.renderManagerPage(req, res, next);
   }
 
   /**
@@ -104,7 +133,9 @@ class ProductController {
         base_price,
         initial_stock,
         sku_code,
-        description
+        description,
+        thumbnail_url,
+        images
       } = req.body;
 
       const errors = [];
@@ -135,6 +166,8 @@ class ProductController {
         initial_stock: stock,
         sku_code: sku_code.trim(),
         description: description ? description.trim() : '',
+        thumbnail_url: thumbnail_url ? thumbnail_url.trim() : null,
+        images: Array.isArray(images) ? images : [],
         manager_id: req.body.manager_id || null
       });
 
@@ -168,7 +201,8 @@ class ProductController {
         brand,
         base_price,
         sku_code,
-        description
+        description,
+        thumbnail_url
       } = req.body;
 
       const errors = [];
@@ -193,6 +227,7 @@ class ProductController {
         base_price: price,
         sku_code: sku_code ? sku_code.trim() : null,
         description: description ? description.trim() : '',
+        thumbnail_url: thumbnail_url !== undefined ? thumbnail_url : null,
         changed_by: req.body.changed_by || 'Manager'
       });
 
@@ -378,6 +413,92 @@ class ProductController {
         success: false,
         message: 'Internal server error'
       });
+    }
+  }
+
+  /**
+   * POST /api/products/upload-image
+   * Handles image upload via Multer
+   */
+  static async uploadImage(req, res, next) {
+    try {
+      if (!req.file) {
+        return res.status(400).json({
+          success: false,
+          message: 'Vui lòng chọn tệp hình ảnh để tải lên!'
+        });
+      }
+
+      const imageUrl = `/uploads/products/${req.file.filename}`;
+      return res.status(200).json({
+        success: true,
+        message: 'Tải hình ảnh lên thành công!',
+        url: imageUrl,
+        filename: req.file.filename,
+        size: req.file.size
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * GET /api/products/:id/images
+   */
+  static async getProductImages(req, res, next) {
+    try {
+      const { id } = req.params;
+      const images = await ProductService.getProductImages(id);
+      return res.status(200).json({
+        success: true,
+        data: images
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * POST /api/products/:id/images
+   */
+  static async addProductImage(req, res, next) {
+    try {
+      const { id } = req.params;
+      const { image_url, angle_label, is_primary } = req.body;
+      const result = await ProductService.addProductImage(id, {
+        image_url,
+        angle_label,
+        is_primary
+      });
+      return res.status(201).json(result);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * DELETE /api/products/:id/images/:imageId
+   */
+  static async deleteProductImage(req, res, next) {
+    try {
+      const { id, imageId } = req.params;
+      const result = await ProductService.deleteProductImage(id, imageId);
+      return res.status(200).json(result);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * PATCH /api/products/:id/images/:imageId/primary
+   */
+  static async setPrimaryImage(req, res, next) {
+    try {
+      const { id, imageId } = req.params;
+      const result = await ProductService.setPrimaryImage(id, imageId);
+      return res.status(200).json(result);
+    } catch (error) {
+      next(error);
     }
   }
 }

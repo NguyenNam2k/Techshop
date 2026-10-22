@@ -41,8 +41,29 @@ const reportRoutes = require('./routes/manager/reportRoutes');
 const logRoutes = require('./routes/admin/logRoutes');
 const { testConnection } = require('./config/database');
 
-// Manager & Admin Web Routes (Redirect to React Frontend SPA)
-app.use('/manager', managerRoutes);
+// 3. Phục vụ Manager App SPA nếu đã build dist (Duong's Manager Portal)
+const managerAppDist = path.join(__dirname, '../views/manager-app/dist');
+if (fs.existsSync(managerAppDist)) {
+  const staticDistOptions = {
+    setHeaders: (res, filePath) => {
+      if (filePath.endsWith('.html')) {
+        res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+        res.setHeader('Pragma', 'no-cache');
+        res.setHeader('Expires', '0');
+      }
+    }
+  };
+  app.use('/manager', express.static(managerAppDist, staticDistOptions));
+  app.get(['/manager', '/manager/*'], (req, res, next) => {
+    if (req.path.startsWith('/manager/api')) return next();
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.sendFile(path.join(managerAppDist, 'index.html'));
+  });
+} else {
+  // Manager & Admin Web Routes (Redirect to React Frontend SPA)
+  app.use('/manager', managerRoutes);
+}
+
 app.get('/admin/products', (req, res) => res.redirect(`${FRONTEND_URL}/manager/products`));
 app.get('/admin', (req, res) => res.redirect(`${FRONTEND_URL}/admin`));
 app.get('/logout', (req, res) => res.redirect(`${FRONTEND_URL}/login`));

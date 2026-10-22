@@ -21,8 +21,7 @@ import {
   Loader2,
   Sun,
   Moon,
-  Wrench,
-  LayoutDashboard
+  Wrench
 } from 'lucide-react';
 import { useCart } from '../../context/CartContext';
 import { useAuth } from '../../context/AuthContext';
@@ -507,13 +506,6 @@ export default function Header() {
 
                   {/* Menu Links */}
                   <div className="p-2 space-y-1 text-xs max-h-80 overflow-y-auto no-scrollbar">
-                    <Link
-                      to="/dashboard"
-                      className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800 transition"
-                    >
-                      <LayoutDashboard className="w-4 h-4 text-sky-400" />
-                      <span>Trung tâm điều hành</span>
-                    </Link>
 
                     {String(user.role || '').toLowerCase() === 'admin' && (
                       <Link
@@ -625,18 +617,6 @@ export default function Header() {
           >
             <Wrench className="w-3.5 h-3.5 text-sky-400" />
             <span>Xây Dựng Cấu Hình PC</span>
-          </Link>
-
-          <Link
-            to="/dashboard"
-            className={`px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 whitespace-nowrap ${
-              location.pathname === '/dashboard'
-                ? 'bg-sky-500/15 text-sky-400 border border-sky-500/30'
-                : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
-            }`}
-          >
-            <span>⚡</span>
-            <span>Trung Tâm Điều Hành (Dashboard)</span>
           </Link>
 
           {['admin', 'manager'].includes(String(user?.role || '').toLowerCase()) && (

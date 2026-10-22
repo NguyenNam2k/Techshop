@@ -7,10 +7,10 @@ import { useAuth } from '../context/AuthContext';
  * Cách dùng trong App.jsx (wrapper pattern):
  *
  *   <Route
- *     path="/dashboard"
+ *     path="/profile"
  *     element={
  *       <ProtectedRoute>
- *         <DashboardPage />
+ *         <OrdersPage />
  *       </ProtectedRoute>
  *     }
  *   />

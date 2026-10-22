@@ -13,8 +13,6 @@ import CheckoutPage from './pages/customer/CheckoutPage';
 import SuccessPage from './pages/customer/SuccessPage';
 import OrdersPage from './pages/customer/OrdersPage';
 
-// Dashboard page
-import DashboardPage from './pages/dashboard/DashboardPage';
 
 // Auth pages
 import LoginPage from './pages/auth/LoginPage';
@@ -59,7 +57,6 @@ function AppContent() {
           <Route path="/products/:id" element={<ProductDetailPage />} />
           <Route path="/build-pc" element={<PCBuildPage />} />
           <Route path="/pc-build" element={<Navigate to="/build-pc" replace />} />
-          <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/cart" element={<CartPage />} />
           <Route path="/checkout" element={<CheckoutPage />} />
           <Route path="/success/:orderCode" element={<SuccessPage />} />

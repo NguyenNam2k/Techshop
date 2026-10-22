@@ -12,7 +12,7 @@ export default defineConfig(({ mode }) => {
       cssTarget: 'chrome111'
     },
     server: {
-      port: 5173,
+      port: 3000,
       proxy: {
         '/api': {
           target,

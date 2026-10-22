@@ -1,80 +1,92 @@
-import { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import axiosInstance from '../api/axiosInstance';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 
-/**
- * AuthContext — Quản lý trạng thái xác thực toàn cục.
- * Cung cấp: user, token, isLoading, login(), logout()
- */
-const AuthContext = createContext(null);
+const AuthContext = createContext();
+
+const TOKEN_KEY = 'techshop_token';
+const USER_KEY  = 'techshop_user';
+const LEGACY_USER_KEY = 'techgear_user';
 
 export function AuthProvider({ children }) {
-  const [user, setUser]       = useState(null);
-  const [token, setToken]     = useState(null);
-  const [isLoading, setIsLoading] = useState(true); // true khi đang restore session
+  const [user, setUserState] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
 
-  /**
-   * Khi app khởi động: kiểm tra token trong localStorage.
-   * Nếu có → gọi /api/auth/me để lấy thông tin user mới nhất.
-   */
+  // Restore session từ localStorage khi app khởi động
   useEffect(() => {
-    const restoreSession = async () => {
-      const storedToken = localStorage.getItem('techshop_token');
-      if (!storedToken) {
-        setIsLoading(false);
-        return;
-      }
-      try {
-        const res = await axiosInstance.get('/auth/me');
-        if (res.data.success) {
-          setUser(res.data.user);
-          setToken(storedToken);
+    try {
+      const savedUser  = localStorage.getItem(USER_KEY) || localStorage.getItem(LEGACY_USER_KEY);
+      const savedToken = localStorage.getItem(TOKEN_KEY);
+      if (savedUser) {
+        const parsed = JSON.parse(savedUser);
+        if (parsed && typeof parsed === 'object') {
+          setUserState(parsed);
         }
-      } catch {
-        // Token hết hạn hoặc không hợp lệ → xóa
-        localStorage.removeItem('techshop_token');
-        localStorage.removeItem('techshop_user');
-      } finally {
-        setIsLoading(false);
       }
-    };
-    restoreSession();
+    } catch {
+      // ignore parse error
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
 
-  /**
-   * Đăng nhập: lưu token + user vào state và localStorage
-   */
-  const login = useCallback((newToken, userData) => {
-    localStorage.setItem('techshop_token', newToken);
-    localStorage.setItem('techshop_user', JSON.stringify(userData));
-    setToken(newToken);
-    setUser(userData);
-  }, []);
+  /** Đăng nhập: lưu token + user vào localStorage */
+  const login = (token, userData) => {
+    if (token) localStorage.setItem(TOKEN_KEY, token);
+    if (userData) {
+      localStorage.setItem(USER_KEY, JSON.stringify(userData));
+      localStorage.setItem(LEGACY_USER_KEY, JSON.stringify(userData));
+      setUserState(userData);
+    }
+  };
 
-  /**
-   * Đăng xuất: xóa state và localStorage
-   */
-  const logout = useCallback(() => {
-    localStorage.removeItem('techshop_token');
-    localStorage.removeItem('techshop_user');
-    setToken(null);
-    setUser(null);
-  }, []);
+  /** Đăng xuất: xóa token + user */
+  const logout = () => {
+    localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(USER_KEY);
+    localStorage.removeItem(LEGACY_USER_KEY);
+    setUserState(null);
+  };
+
+  /** Cập nhật thông tin user (dùng trong Dashboard role-switcher) */
+  const setUser = (userData) => {
+    if (!userData) {
+      logout();
+      return;
+    }
+    localStorage.setItem(USER_KEY, JSON.stringify(userData));
+    localStorage.setItem(LEGACY_USER_KEY, JSON.stringify(userData));
+    setUserState(userData);
+  };
 
   return (
-    <AuthContext.Provider value={{ user, token, isLoading, login, logout }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        setUser,
+        login,
+        logout,
+        isLoading,
+        searchQuery,
+        setSearchQuery,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
 }
 
-/**
- * Hook tiện ích — dùng trong bất kỳ component nào:
- *   const { user, login, logout } = useAuth();
- */
 export function useAuth() {
   const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error('useAuth phải được dùng bên trong <AuthProvider>');
+  if (!ctx) {
+    return {
+      user: null,
+      setUser: () => {},
+      login: () => {},
+      logout: () => {},
+      isLoading: false,
+      searchQuery: '',
+      setSearchQuery: () => {},
+    };
+  }
   return ctx;
 }
-
-export default AuthContext;

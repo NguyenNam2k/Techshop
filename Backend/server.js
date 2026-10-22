@@ -13,9 +13,7 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Cấu hình View Engine EJS cho Manager Dashboard
-app.set('view engine', 'ejs');
-app.set('views', path.join(__dirname, '../views'));
+const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:3000';
 
 // Đường dẫn tài nguyên tĩnh
 const frontendDistPath = path.join(__dirname, '../Frontend/dist');
@@ -45,11 +43,32 @@ const roleRoutes = require('./routes/admin/roleRoutes');
 const permissionRoutes = require('./routes/admin/permissionRoutes');
 const { testConnection } = require('./config/database');
 
-// Manager Dashboard Web Routes
-app.use('/manager', managerRoutes);
-app.get('/admin/products', (req, res) => res.redirect('/manager/products'));
-app.get('/admin', (req, res) => res.redirect('/manager/products'));
-app.get('/logout', (req, res) => res.redirect('/manager/products?msg=Đã+đăng+xuất+phiên+làm+việc+thành+công&msgType=success'));
+// 3. Phục vụ Manager App SPA nếu đã build dist (Duong's Manager Portal)
+const managerAppDist = path.join(__dirname, '../views/manager-app/dist');
+if (fs.existsSync(managerAppDist)) {
+  const staticDistOptions = {
+    setHeaders: (res, filePath) => {
+      if (filePath.endsWith('.html')) {
+        res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+        res.setHeader('Pragma', 'no-cache');
+        res.setHeader('Expires', '0');
+      }
+    }
+  };
+  app.use('/manager', express.static(managerAppDist, staticDistOptions));
+  app.get(['/manager', '/manager/*'], (req, res, next) => {
+    if (req.path.startsWith('/manager/api')) return next();
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.sendFile(path.join(managerAppDist, 'index.html'));
+  });
+} else {
+  // Manager & Admin Web Routes (Redirect to React Frontend SPA)
+  app.use('/manager', managerRoutes);
+}
+
+app.get('/admin/products', (req, res) => res.redirect(`${FRONTEND_URL}/manager/products`));
+app.get('/admin', (req, res) => res.redirect(`${FRONTEND_URL}/admin`));
+app.get('/logout', (req, res) => res.redirect(`${FRONTEND_URL}/login`));
 
 // API Routes
 app.use('/api/auth', authRoutes);
@@ -78,7 +97,7 @@ app.get('/dashboard', (req, res) => res.redirect('/'));
 
 // Route mặc định điều hướng tới Giao diện Khách hàng (SPA React Catalog)
 app.get('*', (req, res) => {
-  if (req.path.startsWith('/api') || req.path.startsWith('/manager')) {
+  if (req.path.startsWith('/api')) {
     return res.status(404).json({ success: false, message: 'Resource not found' });
   }
   if (fs.existsSync(path.join(frontendDistPath, 'index.html'))) {
@@ -94,7 +113,7 @@ async function startServer() {
   app.listen(PORT, () => {
     console.log(`=================================================`);
     console.log(`🚀 Techshop Server đang chạy tại: http://localhost:${PORT}`);
-    console.log(`📊 Manager Portal Dashboard:     http://localhost:${PORT}/manager/products`);
+    console.log(`📊 Manager Portal Dashboard:     ${FRONTEND_URL}/manager/products`);
     console.log(`🛍️ Customer Catalog Web:         http://localhost:${PORT}/catalog`);
     console.log(`🔑 Auth API Endpoint:            http://localhost:${PORT}/api/auth`);
     console.log(`=================================================`);

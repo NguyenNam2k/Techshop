@@ -1,9 +1,3 @@
-<<<<<<< Updated upstream
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider } from './context/AuthContext';
-import { CartProvider } from './context/CartContext';
-import ProtectedRoute from './components/ProtectedRoute';
-=======
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import Header from './components/common/Header';
@@ -21,11 +15,9 @@ import SuccessPage from './pages/customer/SuccessPage';
 import OrdersPage from './pages/customer/OrdersPage';
 
 // Auth pages
->>>>>>> Stashed changes
 import LoginPage from './pages/auth/LoginPage';
 import RegisterPage from './pages/auth/RegisterPage';
-import CatalogPage from './pages/customer/CatalogPage';
-import ProductDetailPage from './pages/customer/ProductDetailPage';
+import ProtectedRoute from './components/ProtectedRoute';
 
 // Admin pages
 import AdminLayout from './pages/admin/AdminLayout';
@@ -37,19 +29,6 @@ import PermissionManagement from './pages/admin/PermissionManagement';
 // Manager pages
 import ManagerProductsPage from './pages/manager/ManagerProductsPage';
 
-<<<<<<< Updated upstream
-function App() {
-  return (
-    <AuthProvider>
-      <CartProvider>
-        <BrowserRouter>
-          <Routes>
-            {/* Public Storefront & Catalog routes */}
-            <Route path="/" element={<CatalogPage />} />
-            <Route path="/catalog" element={<CatalogPage />} />
-            <Route path="/products" element={<CatalogPage />} />
-            <Route path="/products/:id" element={<ProductDetailPage />} />
-=======
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { CartProvider } from './context/CartContext';
 import { ThemeProvider } from './context/ThemeContext';
@@ -161,20 +140,12 @@ function AppContent() {
               </ProtectedRoute>
             }
           />
->>>>>>> Stashed changes
 
-          {/* Public auth routes */}
+          {/* Auth routes */}
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
 
-<<<<<<< Updated upstream
-          {/* Redirect /dashboard cũ về /catalog */}
-          <Route path="/dashboard" element={<Navigate to="/catalog" replace />} />
-
-          {/* Manager routes - yêu cầu đăng nhập + role manager hoặc admin */}
-=======
           {/* Manager routes (Chỉ Manager & Staff được phép truy cập) */}
->>>>>>> Stashed changes
           <Route path="/manager" element={<Navigate to="/manager/products" replace />} />
           <Route
             path="/manager/products"
@@ -186,11 +157,7 @@ function AppContent() {
           />
           <Route path="/admin/products" element={<Navigate to="/manager/products" replace />} />
 
-<<<<<<< Updated upstream
-          {/* Admin routes - yêu cầu đăng nhập + role admin */}
-=======
           {/* Admin routes (Chỉ Admin được phép truy cập) */}
->>>>>>> Stashed changes
           <Route
             path="/admin"
             element={
@@ -205,13 +172,29 @@ function AppContent() {
             <Route path="permissions" element={<PermissionManagement />} />
           </Route>
 
-          {/* Route 404 - Redirect mặc định */}
-          <Route path="*" element={<Navigate to="/catalog" replace />} />
+          {/* Fallback for slug id or not found */}
+          <Route path="/:id" element={<ProductDetailPage />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
-      </BrowserRouter>
-      </CartProvider>
-    </AuthProvider>
+      </main>
+      {!isStandalone && <Footer />}
+      {!isStandalone && <SupportBubble />}
+    </div>
   );
 }
 
-export default App;
+export default function App() {
+  return (
+    <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
+      <ThemeProvider>
+        <AuthProvider>
+          <CartProvider>
+            <Router>
+              <AppContent />
+            </Router>
+          </CartProvider>
+        </AuthProvider>
+      </ThemeProvider>
+    </GoogleOAuthProvider>
+  );
+}

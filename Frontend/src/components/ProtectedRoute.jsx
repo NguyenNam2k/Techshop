@@ -7,10 +7,10 @@ import { useAuth } from '../context/AuthContext';
  * Cách dùng trong App.jsx (wrapper pattern):
  *
  *   <Route
- *     path="/dashboard"
+ *     path="/profile"
  *     element={
  *       <ProtectedRoute>
- *         <DashboardPage />
+ *         <OrdersPage />
  *       </ProtectedRoute>
  *     }
  *   />
@@ -48,16 +48,6 @@ function ProtectedRoute({ children, requiredRole, allowedRoles }) {
     return <Navigate to="/login" replace />;
   }
 
-<<<<<<< Updated upstream
-  // Kiểm tra danh sách allowedRoles nếu được truyền vào
-  if (allowedRoles && Array.isArray(allowedRoles) && !allowedRoles.includes(user.role)) {
-    return <Navigate to="/catalog" replace />;
-  }
-
-  // Đã đăng nhập nhưng không đủ quyền đơn lẻ → về catalog
-  if (requiredRole && user.role !== requiredRole) {
-    return <Navigate to="/catalog" replace />;
-=======
   const userRole = (user.role || '').toLowerCase();
 
   const getHomeForRole = (role) => {
@@ -76,7 +66,6 @@ function ProtectedRoute({ children, requiredRole, allowedRoles }) {
     if (!normalizedAllowed.includes(userRole)) {
       return <Navigate to={getHomeForRole(userRole)} replace />;
     }
->>>>>>> Stashed changes
   }
 
   // Hợp lệ → render component con

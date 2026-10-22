@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import axiosInstance from '../../api/axiosInstance';
-import Header from '../../components/common/Header';
 import FilterSidebar from '../../components/catalog/FilterSidebar';
 import ProductGrid from '../../components/catalog/ProductGrid';
 import Pagination from '../../components/admin/Pagination';
@@ -16,7 +15,7 @@ function CatalogPage() {
   const currentMaxPrice = searchParams.get('maxPrice') || '';
   const currentInStock = searchParams.get('inStock') || '';
   const currentSort = searchParams.get('sort') || 'newest';
-  const currentSearch = searchParams.get('q') || '';
+  const currentSearch = searchParams.get('q') || searchParams.get('search') || '';
   const currentPage = parseInt(searchParams.get('page'), 10) || 1;
   const currentLimit = parseInt(searchParams.get('limit'), 10) || 12;
 
@@ -121,12 +120,6 @@ function CatalogPage() {
 
   return (
     <div className="min-h-screen bg-slate-900 text-slate-100 flex flex-col">
-      {/* 1. Header with Smart Search */}
-      <Header
-        initialSearch={currentSearch}
-        onSearchSubmit={(val) => updateQueryParam('q', val.trim())}
-      />
-
       {/* Main Container */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {/* Breadcrumb & Action bar */}
@@ -246,12 +239,6 @@ function CatalogPage() {
           </div>
         </div>
       </main>
-
-      {/* Footer */}
-      <footer className="mt-16 bg-slate-950 border-t border-slate-800/80 py-8 text-center text-xs text-slate-500">
-        <p>© 2026 Techshop E-Commerce Platform. All rights reserved.</p>
-        <p className="mt-1">Xây dựng với Node.js, Express, React, TailwindCSS & MySQL</p>
-      </footer>
     </div>
   );
 }

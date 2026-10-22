@@ -1,13 +1,109 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useGoogleLogin } from '@react-oauth/google';
 import axiosInstance from '../../api/axiosInstance';
 import { useAuth } from '../../context/AuthContext';
 
+// Error Boundary bảo vệ nút Google tránh làm sập trang đăng ký nếu Google SDK lỗi
+class GoogleErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false };
+  }
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+  componentDidCatch(err) {
+    console.warn('[Google OAuth Register Error Boundary]:', err);
+  }
+  render() {
+    if (this.state.hasError) {
+      return null;
+    }
+    return this.props.children;
+  }
+}
+
+function GoogleRegisterSection({ onRegisterSuccess, onError, disabled }) {
+  const [googleLoading, setGoogleLoading] = useState(false);
+
+  let handleGoogleLogin = null;
+  try {
+    handleGoogleLogin = useGoogleLogin({
+      onSuccess: async (tokenResponse) => {
+        setGoogleLoading(true);
+        try {
+          const res = await axiosInstance.post('/auth/google', {
+            credential: tokenResponse.access_token,
+            isAccessToken: true,
+          });
+          if (res.data?.success) {
+            onRegisterSuccess(res.data.token, res.data.user);
+          } else {
+            onError(res.data?.message || 'Đăng ký Google thất bại!');
+          }
+        } catch (err) {
+          onError(err.response?.data?.message || 'Đăng ký Google thất bại!');
+        } finally {
+          setGoogleLoading(false);
+        }
+      },
+      onError: () => onError('Đăng ký Google bị huỷ hoặc thất bại!'),
+      flow: 'implicit',
+    });
+  } catch (err) {
+    console.warn('Google OAuth hook init error in register:', err);
+    return null;
+  }
+
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => {
+          try {
+            if (handleGoogleLogin) handleGoogleLogin();
+          } catch (e) {
+            onError('Không thể kết nối dịch vụ Google OAuth.');
+          }
+        }}
+        disabled={disabled || googleLoading}
+        className="w-full flex items-center justify-center gap-3 bg-white hover:bg-gray-50
+          disabled:opacity-60 disabled:cursor-not-allowed text-gray-700 font-semibold
+          rounded-xl py-3 text-sm transition-all duration-200 border border-gray-200 shadow-sm cursor-pointer"
+      >
+        {googleLoading ? (
+          <>
+            <span className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
+            Đang xử lý Google...
+          </>
+        ) : (
+          <>
+            <svg className="w-5 h-5" viewBox="0 0 24 24">
+              <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+              <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+              <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/>
+              <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+            </svg>
+            <span>Đăng ký với Google</span>
+          </>
+        )}
+      </button>
+
+      {/* Divider */}
+      <div className="flex items-center gap-3">
+        <div className="flex-1 h-px bg-slate-600" />
+        <span className="text-slate-400 text-xs font-medium">hoặc đăng ký bằng tài khoản</span>
+        <div className="flex-1 h-px bg-slate-600" />
+      </div>
+    </>
+  );
+}
+
 const Field = ({ label, name, type = 'text', placeholder, required = false, rightElement, value, onChange, error }) => (
   <div>
-    <label className="block text-slate-300 text-sm font-medium mb-1.5">
-      {label} {required && <span className="text-red-400">*</span>}
+    <label className="block text-slate-300 text-xs font-bold mb-1.5">
+      {label} {required && <span className="text-rose-400">*</span>}
     </label>
     <div className="relative">
       <input
@@ -16,13 +112,13 @@ const Field = ({ label, name, type = 'text', placeholder, required = false, righ
         value={value}
         onChange={onChange}
         placeholder={placeholder}
-        className={`w-full bg-slate-700 text-white placeholder-slate-400 rounded-xl px-4 py-3 text-sm border outline-none transition
+        className={`w-full bg-slate-950 text-white placeholder-slate-500 rounded-xl px-4 py-2.5 text-xs border outline-none transition
           ${rightElement ? 'pr-12' : ''}
-          ${error ? 'border-red-500 focus:border-red-400' : 'border-slate-600 focus:border-blue-500'}`}
+          ${error ? 'border-rose-500 focus:border-rose-400' : 'border-slate-800 focus:border-sky-500'}`}
       />
       {rightElement}
     </div>
-    {error && <p className="text-red-400 text-xs mt-1">{error}</p>}
+    {error && <p className="text-rose-400 text-[11px] mt-1">{error}</p>}
   </div>
 );
 
@@ -30,7 +126,7 @@ const EyeBtn = ({ show, onToggle }) => (
   <button
     type="button"
     onClick={onToggle}
-    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 text-lg"
+    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 text-sm cursor-pointer"
   >
     {show ? '🙈' : '👁️'}
   </button>
@@ -45,7 +141,6 @@ function RegisterPage() {
   });
   const [errors, setErrors]   = useState({});
   const [loading, setLoading] = useState(false);
-  const [googleLoading, setGoogleLoading] = useState(false);
   const [apiError, setApiError] = useState('');
   const [showPw, setShowPw]   = useState(false);
   const [showCpw, setShowCpw] = useState(false);
@@ -73,7 +168,6 @@ function RegisterPage() {
     else if (!emailRegex.test(form.email.trim()))
       errs.email = 'Địa chỉ Email không đúng định dạng!';
 
-    // SĐT bắt buộc, đúng 10 chữ số
     if (!form.phone.trim())
       errs.phone = 'Vui lòng nhập Số điện thoại!';
     else if (!/^[0-9]{10}$/.test(form.phone.trim()))
@@ -92,6 +186,11 @@ function RegisterPage() {
     return errs;
   };
 
+  const handleRegisterSuccess = (token, userData) => {
+    login(token, userData);
+    navigate('/catalog', { replace: true });
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     const errs = validate();
@@ -108,9 +207,10 @@ function RegisterPage() {
         password: form.password,
       });
 
-      if (res.data.success) {
-        login(res.data.token, res.data.user);
-        navigate('/catalog', { replace: true });
+      if (res.data?.success) {
+        handleRegisterSuccess(res.data.token, res.data.user);
+      } else {
+        setApiError(res.data?.message || 'Đăng ký tài khoản thất bại!');
       }
     } catch (err) {
       const msg = err.response?.data?.message || 'Đăng ký thất bại, vui lòng thử lại!';
@@ -120,94 +220,54 @@ function RegisterPage() {
     }
   };
 
-  // Google OAuth
-  const handleGoogleLogin = useGoogleLogin({
-    onSuccess: async (tokenResponse) => {
-      setGoogleLoading(true);
-      setApiError('');
-      try {
-        const res = await axiosInstance.post('/auth/google', {
-          credential: tokenResponse.access_token,
-          isAccessToken: true,
-        });
-        if (res.data.success) {
-          login(res.data.token, res.data.user);
-          navigate('/catalog', { replace: true });
-        }
-      } catch (err) {
-        setApiError(err.response?.data?.message || 'Đăng ký Google thất bại!');
-      } finally {
-        setGoogleLoading(false);
-      }
-    },
-    onError: () => setApiError('Đăng ký Google bị huỷ hoặc thất bại!'),
-    flow: 'implicit',
-  });
-
   return (
-    <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4">
-      <div className="w-full max-w-md bg-slate-800 rounded-2xl shadow-2xl border border-slate-700 overflow-hidden">
+    <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-4">
+      {/* Nút quay lại Storefront */}
+      <div className="w-full max-w-md mb-3 flex items-center justify-between text-xs font-semibold text-slate-400">
+        <Link to="/" className="flex items-center gap-1.5 text-sky-400 hover:text-sky-300 transition">
+          <span>← Về Trang Chủ</span>
+        </Link>
+        <Link to="/catalog" className="text-slate-400 hover:text-slate-200 transition">
+          🛍️ Xem Catalog Sản Phẩm
+        </Link>
+      </div>
 
+      <div className="w-full max-w-md bg-slate-900 rounded-3xl shadow-2xl border border-slate-800 overflow-hidden">
         {/* Header */}
-        <div className="bg-gradient-to-r from-emerald-600 to-teal-600 px-8 py-8 text-center">
-          <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center mx-auto mb-3">
-            <span className="text-3xl">👤</span>
+        <div className="bg-gradient-to-r from-emerald-600 via-teal-600 to-sky-600 px-8 py-7 text-center">
+          <div className="w-14 h-14 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center mx-auto mb-2 shadow-lg">
+            <span className="text-2xl">👤</span>
           </div>
-          <h1 className="text-2xl font-bold text-white font-['Outfit']">
-            Tạo Tài Khoản
+          <h1 className="text-xl font-black text-white tracking-tight">
+            Tạo Tài Khoản Khách Hàng
           </h1>
-          <p className="text-emerald-100 text-sm mt-1">
-            Đăng ký để trở thành Khách hàng Techshop
+          <p className="text-emerald-100 text-xs mt-1">
+            Đăng ký để nhận ưu đãi thành viên và bảo hành VIP
           </p>
         </div>
 
         <div className="px-8 py-6 space-y-4">
           {apiError && (
-            <div className="bg-red-500/10 border border-red-500/30 rounded-lg px-4 py-3 text-red-400 text-sm">
-              ⚠️ {apiError}
+            <div className="bg-rose-500/10 border border-rose-500/30 rounded-xl px-4 py-3 text-rose-400 text-xs flex items-center gap-2">
+              <span>⚠️</span>
+              <span>{apiError}</span>
             </div>
           )}
 
-          {/* Nút Google */}
-          <button
-            type="button"
-            onClick={() => handleGoogleLogin()}
-            disabled={googleLoading || loading}
-            className="w-full flex items-center justify-center gap-3 bg-white hover:bg-gray-50
-              disabled:opacity-60 disabled:cursor-not-allowed text-gray-700 font-semibold
-              rounded-xl py-3 text-sm transition-all duration-200 border border-gray-200 shadow-sm"
-          >
-            {googleLoading ? (
-              <>
-                <span className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" />
-                Đang xử lý...
-              </>
-            ) : (
-              <>
-                <svg className="w-5 h-5" viewBox="0 0 24 24">
-                  <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                  <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                  <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/>
-                  <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-                </svg>
-                Đăng ký với Google
-              </>
-            )}
-          </button>
+          {/* Nút Google bọc trong Error Boundary */}
+          <GoogleErrorBoundary>
+            <GoogleRegisterSection
+              onRegisterSuccess={handleRegisterSuccess}
+              onError={(msg) => setApiError(msg)}
+              disabled={loading}
+            />
+          </GoogleErrorBoundary>
 
-          {/* Divider */}
-          <div className="flex items-center gap-3">
-            <div className="flex-1 h-px bg-slate-600" />
-            <span className="text-slate-500 text-xs">hoặc đăng ký bằng tài khoản</span>
-            <div className="flex-1 h-px bg-slate-600" />
-          </div>
-
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-3.5">
             <Field label="👤 Họ và tên" name="name" placeholder="Nguyễn Văn A" required value={form.name} onChange={handleChange} error={errors.name} />
             <Field label="🏷️ Tên đăng nhập" name="username" placeholder="nguyenvana123" required value={form.username} onChange={handleChange} error={errors.username} />
             <Field label="📧 Địa chỉ Email" name="email" type="email" placeholder="example@techshop.com" required value={form.email} onChange={handleChange} error={errors.email} />
 
-            {/* Phone + Address — 2 cột */}
             <div className="grid grid-cols-2 gap-3">
               <Field label="📱 Số điện thoại" name="phone" placeholder="0901234567" required value={form.phone} onChange={handleChange} error={errors.phone} />
               <Field label="🏠 Địa chỉ" name="address" placeholder="Hà Nội / TP.HCM" value={form.address} onChange={handleChange} error={errors.address} />
@@ -230,25 +290,25 @@ function RegisterPage() {
 
             <button
               type="submit"
-              disabled={loading || googleLoading}
-              className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500
-                disabled:opacity-60 disabled:cursor-not-allowed text-white font-semibold rounded-xl py-3 text-sm
-                transition-all duration-200 flex items-center justify-center gap-2"
+              disabled={loading}
+              className="w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500
+                disabled:opacity-60 disabled:cursor-not-allowed text-white font-bold rounded-xl py-3 text-xs
+                transition-all duration-200 flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20 cursor-pointer active:scale-95"
             >
               {loading ? (
                 <>
                   <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  Đang tạo tài khoản...
+                  <span>Đang khởi tạo tài khoản...</span>
                 </>
               ) : (
-                '✅ Tạo Tài Khoản Khách Hàng'
+                <span>Tạo Tài Khoản Khách Hàng →</span>
               )}
             </button>
 
-            <p className="text-center text-slate-400 text-sm">
+            <p className="text-center text-slate-400 text-xs pt-1">
               Đã có tài khoản?{' '}
-              <Link to="/login" className="text-emerald-400 hover:text-emerald-300 font-medium">
-                Đăng nhập
+              <Link to="/login" className="text-emerald-400 hover:text-emerald-300 font-bold">
+                Đăng nhập ngay
               </Link>
             </p>
           </form>

@@ -1,7 +1,7 @@
-# Tech-Gaming-Store
+# TechGear-Gaming-Store
 A specialized, full-featured e-commerce platform for computer hardware, PC components, and high-performance gaming peripherals. Built with React, Node.js (Express), Python (FastAPI), and MySQL, featuring a cutting-edge Multimodal AI Search Engine (Reverse Image & Semantic Search), real-time hardware configuration, and transactional order management.
 ## 🚀 Project Overview
-Techshop is a modern e-commerce solution engineered specifically for tech enthusiasts, gamers, and custom PC builders. The platform bridges the gap between visual inspiration and technical specifications by allowing users to search for complex hardware components using real-world setup photos, natural language intent, or hybrid combinations, alongside deep hardware configuration, atomic inventory locking, and instant VietQR banking payments.
+TechGear is a modern e-commerce solution engineered specifically for tech enthusiasts, gamers, and custom PC builders. The platform bridges the gap between visual inspiration and technical specifications by allowing users to search for complex hardware components using real-world setup photos, natural language intent, or hybrid combinations, alongside deep hardware configuration, atomic inventory locking, and instant VietQR banking payments.
 ## ✨ Key Features
 
 ### 🏠 Homepage
@@ -66,13 +66,8 @@ Techshop is a modern e-commerce solution engineered specifically for tech enthus
 - **Vite 5** - Next-generation frontend build tooling
 - **Node.js 18+** - Asynchronous event-driven JavaScript runtime
 - **Express.js 4.19** - Fast, unopinionated backend web framework
-- **Python 3.10+** - High-performance runtime for AI microservices
-- **FastAPI 0.100+** - Modern, asynchronous Python web API framework
-### AI & Computer Vision
-- **PyTorch** - Deep learning tensor computation framework
-- **Hugging Face Transformers** - Pretrained state-of-the-art vision-language models
-- **clip-ViT-B-32-multilingual-v1** - Multimodal vector backbone supporting text and visual embeddings
-- **Cosine Similarity Engine** - Vector distance calculation for similarity retrieval
+### Embedding Provider
+- **FastAPI endpoint** - The backend calls the separately deployed embedding service configured by `FASTAPI_URL`.
 ### Database & Asset Management
 - **MySQL 8.0 / 9.x** - Relational database with InnoDB engine and native JSON data types
 - **mysql2/promise** - High-performance MySQL client with connection pooling
@@ -88,14 +83,12 @@ Techshop is a modern e-commerce solution engineered specifically for tech enthus
 - **Google Auth Library** - Google OAuth 2.0 credential verification
 - **node-cron** - Task scheduling for inactive session cleanup workers
 - **dotenv** - Environment variable management
-### Development & Testing Tools
-- **Thunder Client / Postman** - API endpoint testing and automation
+### Development Tools
 - **ESLint & Prettier** - Code quality and formatting enforcement
-- **Uvicorn** - Lightning-fast ASGI web server for Python
 ## 📁 Project Structure
 
 <details open>
-  <summary>📁 <b>bleengear/</b> <i>(Root Monorepo)</i></summary>
+  <summary>📁 <b>techgear/</b> <i>(Root Monorepo)</i></summary>
   <ul>
     <li>
       <details open>
@@ -125,7 +118,7 @@ Techshop is a modern e-commerce solution engineered specifically for tech enthus
       <details open>
         <summary>📁 <b>backend/</b> — <i>Core Web Server (Node.js & Express.js)</i></summary>
         <ul>
-          <li>📁 <b>database/</b> — <i>MySQL schema DDL and realistic tech hardware seed datasets</i></li>
+          <li>📁 <b>database/</b> — <i>MySQL schema migrations</i></li>
           <li>
             <details open>
               <summary>📁 <b>src/</b> — <i>Server source code</i></summary>
@@ -144,19 +137,7 @@ Techshop is a modern e-commerce solution engineered specifically for tech enthus
         </ul>
       </details>
     </li>
-    <li>
-      <details open>
-        <summary>📁 <b>ai-service/</b> — <i>AI Microservice (Python FastAPI & Multilingual CLIP)</i></summary>
-        <ul>
-          <li>📄 <code>main.py</code> — <i>FastAPI application and visual/text search endpoints</i></li>
-          <li>📄 <code>model.py</code> — <i>clip-ViT-B-32-multilingual-v1 loader and tensor encoding</i></li>
-          <li>📄 <code>similarity.py</code> — <i>Cosine similarity and weighted hybrid vector fusion</i></li>
-          <li>📄 <code>requirements.txt</code> — <i>Python libraries (fastapi, uvicorn, torch, transformers)</i></li>
-          <li>📄 <code>.env.example</code> — <i>Environment configuration for AI model and port</i></li>
-        </ul>
-      </details>
-    </li>
-    <li>📄 <code>.gitignore</code> — <i>Multi-stack git ignore rules (Node.js & Python)</i></li>
+    <li><i>AI embedding endpoint is external and configured via <code>FASTAPI_URL</code>.</i></li>
     <li>📄 <code>LICENSE</code> — <i>MIT open-source license</i></li>
     <li>📄 <code>README.md</code> — <i>Project documentation and architecture overview</i></li>
   </ul>
@@ -166,14 +147,13 @@ Techshop is a modern e-commerce solution engineered specifically for tech enthus
 Prerequisites
 Node.js v18.0.0 or higher
 npm or yarn
-Python 3.10 or higher
 MySQL Server 8.0 or 9.x
 
 🚀 Deployment
 Production Strategy
 Frontend: Build static bundle (npm run build) and serve via Nginx or Vercel
 Backend: Containerize with Node.js LTS Alpine image and run with PM2 cluster mode
-AI Service: Deploy via Docker using Gunicorn with Uvicorn workers
+Embedding API: Set `FASTAPI_URL` to the deployed FastAPI endpoint
 Database: Managed MySQL instance with automated snapshot backups
 
 📄 License

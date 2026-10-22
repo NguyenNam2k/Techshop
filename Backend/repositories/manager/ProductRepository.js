@@ -184,7 +184,13 @@ class ProductRepository extends BaseRepository {
       [id]
     );
 
+    const [images] = await pool.query(
+      `SELECT * FROM product_images WHERE product_id = ? ORDER BY is_primary DESC, sort_order ASC, id ASC`,
+      [id]
+    );
+
     product.variants = variants;
+    product.images = images;
     product.default_variant = variants[0] || null;
     product.sku_code = variants[0] ? variants[0].sku : '';
     product.total_stock = variants.reduce((sum, v) => sum + Number(v.stock), 0);
@@ -278,9 +284,10 @@ class ProductRepository extends BaseRepository {
         model_code, 
         base_price, 
         description, 
+        thumbnail_url,
         warranty_months, 
         status
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         productData.category_id,
         productData.created_by_manager_id || null,
@@ -290,6 +297,7 @@ class ProductRepository extends BaseRepository {
         productData.model_code || null,
         productData.base_price,
         productData.description || null,
+        productData.thumbnail_url || null,
         productData.warranty_months || 12,
         productData.status || 'active'
       ]
@@ -340,6 +348,7 @@ class ProductRepository extends BaseRepository {
         brand = ?,
         base_price = ?,
         description = ?,
+        thumbnail_url = COALESCE(?, thumbnail_url),
         model_code = COALESCE(?, model_code),
         status = COALESCE(?, status),
         updated_at = NOW()
@@ -351,6 +360,7 @@ class ProductRepository extends BaseRepository {
         updateData.brand,
         updateData.base_price,
         updateData.description || null,
+        updateData.thumbnail_url !== undefined ? updateData.thumbnail_url : null,
         updateData.model_code || null,
         updateData.status || null,
         id
@@ -798,6 +808,72 @@ class ProductRepository extends BaseRepository {
     `;
     const [rows] = await pool.query(query, [categoryId, currentProductId, limit]);
     return rows;
+  }
+
+  // =========================================================================
+  // PRODUCT IMAGE MANAGEMENT (Gallery CRUD)
+  // =========================================================================
+
+  /**
+   * Insert product image into product_images
+   */
+  static async insertProductImage({ product_id, variant_id = null, image_url, angle_label = 'Góc nhìn tổng thể', is_primary = false, sort_order = 0 }, connection = null) {
+    const executor = connection || pool;
+    const [result] = await executor.query(
+      `INSERT INTO product_images (product_id, variant_id, image_url, angle_label, is_primary, sort_order)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      [product_id, variant_id, image_url, angle_label, is_primary ? 1 : 0, sort_order]
+    );
+    return result.insertId;
+  }
+
+  /**
+   * Get all images for a product
+   */
+  static async findImagesByProductId(productId, connection = null) {
+    const executor = connection || pool;
+    const [rows] = await executor.query(
+      `SELECT * FROM product_images WHERE product_id = ? ORDER BY is_primary DESC, sort_order ASC, id ASC`,
+      [productId]
+    );
+    return rows;
+  }
+
+  /**
+   * Delete product image by ID
+   */
+  static async deleteProductImage(imageId, connection = null) {
+    const executor = connection || pool;
+    const [result] = await executor.query(
+      `DELETE FROM product_images WHERE id = ?`,
+      [imageId]
+    );
+    return result.affectedRows > 0;
+  }
+
+  /**
+   * Set primary image for product & synchronize thumbnail_url
+   */
+  static async setPrimaryImage(productId, imageId, connection = null) {
+    const executor = connection || pool;
+    await executor.query(`UPDATE product_images SET is_primary = 0 WHERE product_id = ?`, [productId]);
+    await executor.query(`UPDATE product_images SET is_primary = 1 WHERE id = ? AND product_id = ?`, [imageId, productId]);
+    const [img] = await executor.query(`SELECT image_url FROM product_images WHERE id = ?`, [imageId]);
+    if (img.length > 0) {
+      await executor.query(`UPDATE products SET thumbnail_url = ? WHERE id = ?`, [img[0].image_url, productId]);
+    }
+  }
+
+  /**
+   * Directly update thumbnail URL
+   */
+  static async updateThumbnail(productId, thumbnailUrl, connection = null) {
+    const executor = connection || pool;
+    const [result] = await executor.query(
+      `UPDATE products SET thumbnail_url = ?, updated_at = NOW() WHERE id = ?`,
+      [thumbnailUrl, productId]
+    );
+    return result.affectedRows > 0;
   }
 }
 

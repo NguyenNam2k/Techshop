@@ -206,6 +206,8 @@ class ProductService {
     initial_stock,
     sku_code,
     description,
+    thumbnail_url = null,
+    images = [],
     manager_id = null
   }) {
     if (!name || !name.trim()) throw new Error('Tên thiết bị không được để trống.');
@@ -242,6 +244,7 @@ class ProductService {
       }
 
       const slug = await this.generateUniqueSlug(cleanName, null, connection);
+      const cleanThumbnail = thumbnail_url && thumbnail_url.trim() ? thumbnail_url.trim() : null;
 
       const productId = await ProductRepository.insertProduct({
         category_id: parseInt(category_id, 10),
@@ -252,6 +255,7 @@ class ProductService {
         model_code: cleanSku,
         base_price: priceNum,
         description: cleanDesc,
+        thumbnail_url: cleanThumbnail,
         warranty_months: 12,
         status: stockNum > 0 ? 'active' : 'out_of_stock'
       }, connection);
@@ -266,6 +270,36 @@ class ProductService {
         stock: stockNum,
         status: stockNum > 0 ? 'available' : 'out_of_stock'
       }, connection);
+
+      // Insert primary image into product_images if thumbnail is provided
+      if (cleanThumbnail) {
+        await ProductRepository.insertProductImage({
+          product_id: productId,
+          variant_id: variantId,
+          image_url: cleanThumbnail,
+          angle_label: 'Ảnh đại diện chính',
+          is_primary: true,
+          sort_order: 0
+        }, connection);
+      }
+
+      // Insert additional gallery images if provided
+      if (Array.isArray(images) && images.length > 0) {
+        for (let i = 0; i < images.length; i++) {
+          const item = images[i];
+          const imgUrl = typeof item === 'string' ? item.trim() : (item.image_url ? item.image_url.trim() : '');
+          if (imgUrl && imgUrl !== cleanThumbnail) {
+            await ProductRepository.insertProductImage({
+              product_id: productId,
+              variant_id: variantId,
+              image_url: imgUrl,
+              angle_label: (typeof item === 'object' && item.angle_label) ? item.angle_label : `Góc nhìn phụ ${i + 1}`,
+              is_primary: false,
+              sort_order: i + 1
+            }, connection);
+          }
+        }
+      }
 
       await LogRepository.insertInventoryLog({
         variant_id: variantId,
@@ -308,6 +342,7 @@ class ProductService {
     base_price,
     sku_code,
     description,
+    thumbnail_url,
     changed_by = 'Manager'
   }) {
     const prodId = parseInt(productId, 10);
@@ -318,6 +353,7 @@ class ProductService {
     const cleanSku = sku_code ? sku_code.trim().toUpperCase() : null;
     const cleanDesc = description !== undefined ? description.trim() : null;
     const priceNum = base_price !== undefined ? parseFloat(base_price) : null;
+    const cleanThumbnail = thumbnail_url !== undefined && thumbnail_url !== null ? thumbnail_url.trim() : undefined;
 
     const connection = await BaseRepository.getConnection();
 
@@ -364,8 +400,26 @@ class ProductService {
         brand: cleanBrand || existingProduct.brand,
         base_price: priceNum !== null ? priceNum : existingProduct.base_price,
         description: cleanDesc !== null ? cleanDesc : existingProduct.description,
+        thumbnail_url: cleanThumbnail,
         model_code: cleanSku || existingProduct.model_code
       }, connection);
+
+      if (cleanThumbnail) {
+        const existingImages = await ProductRepository.findImagesByProductId(prodId, connection);
+        const match = existingImages.find(img => img.image_url === cleanThumbnail);
+        if (match) {
+          await ProductRepository.setPrimaryImage(prodId, match.id, connection);
+        } else {
+          await ProductRepository.insertProductImage({
+            product_id: prodId,
+            variant_id: existingVariants[0] ? existingVariants[0].id : null,
+            image_url: cleanThumbnail,
+            angle_label: 'Ảnh đại diện chính',
+            is_primary: true,
+            sort_order: 0
+          }, connection);
+        }
+      }
 
       if (priceNum !== null && !isNaN(priceNum)) {
         for (const variant of existingVariants) {
@@ -711,6 +765,80 @@ class ProductService {
       console.error('Error in getSimilarProducts:', err);
       throw err;
     }
+  }
+
+  // =========================================================================
+  // PRODUCT IMAGE GALLERY SERVICES (Manager Feature)
+  // =========================================================================
+
+  /**
+   * Get all images of a product
+   */
+  static async getProductImages(productId) {
+    const prodId = parseInt(productId, 10);
+    if (!prodId) throw new Error('ID thiết bị không hợp lệ.');
+    return await ProductRepository.findImagesByProductId(prodId);
+  }
+
+  /**
+   * Add image to product gallery
+   */
+  static async addProductImage(productId, { image_url, angle_label = 'Góc nhìn khác', is_primary = false, variant_id = null }) {
+    const prodId = parseInt(productId, 10);
+    if (!prodId) throw new Error('ID thiết bị không hợp lệ.');
+    if (!image_url || !image_url.trim()) throw new Error('Đường dẫn hình ảnh không được để trống.');
+
+    const cleanUrl = image_url.trim();
+    const imageId = await ProductRepository.insertProductImage({
+      product_id: prodId,
+      variant_id,
+      image_url: cleanUrl,
+      angle_label: angle_label.trim(),
+      is_primary: Boolean(is_primary)
+    });
+
+    if (is_primary) {
+      await ProductRepository.updateThumbnail(prodId, cleanUrl);
+    }
+
+    return {
+      success: true,
+      imageId,
+      image_url: cleanUrl,
+      message: 'Thêm hình ảnh cho sản phẩm thành công!'
+    };
+  }
+
+  /**
+   * Delete product image
+   */
+  static async deleteProductImage(productId, imageId) {
+    const prodId = parseInt(productId, 10);
+    const imgId = parseInt(imageId, 10);
+    if (!prodId || !imgId) throw new Error('Tham số không hợp lệ.');
+
+    const deleted = await ProductRepository.deleteProductImage(imgId);
+    if (!deleted) throw new Error('Không tìm thấy hình ảnh để xóa.');
+
+    return {
+      success: true,
+      message: 'Đã xóa hình ảnh thành công.'
+    };
+  }
+
+  /**
+   * Set primary image for product
+   */
+  static async setPrimaryImage(productId, imageId) {
+    const prodId = parseInt(productId, 10);
+    const imgId = parseInt(imageId, 10);
+    if (!prodId || !imgId) throw new Error('Tham số không hợp lệ.');
+
+    await ProductRepository.setPrimaryImage(prodId, imgId);
+    return {
+      success: true,
+      message: 'Đã đặt làm ảnh đại diện chính của sản phẩm!'
+    };
   }
 }
 

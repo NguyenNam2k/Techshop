@@ -27,7 +27,6 @@ import ToastNotification from '../../components/manager/ToastNotification';
 
 function ManagerProductsPage() {
   const { theme, toggleTheme } = useTheme();
-
   // Data States
   const [products, setProducts] = useState([]);
   const [stats, setStats] = useState({

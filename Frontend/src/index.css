@@ -34,31 +34,54 @@ html[data-theme="light"],
 html.light {
   color-scheme: light;
   /* Thang màu Slate cho Light mode: Sắc nét, tương phản cao, không bị nhờ nhờ/xỉn màu */
-  --slate-50: 15 23 42;       /* Chữ đen than đậm #0f172a */
-  --slate-100: 15 23 42;      /* Chữ đen than đậm #0f172a */
-  --slate-200: 30 41 59;      /* Chữ tối #1e293b */
-  --slate-300: 51 65 85;      /* Chữ body đậm #334155 */
-  --slate-400: 71 85 105;     /* Chữ phụ nét #475569 (rõ ràng, không nhợt nhạt) */
-  --slate-500: 100 116 139;   /* Chữ mờ vừa phải #64748b */
-  --slate-600: 148 163 184;   /* Viền nhấn phụ #94a3b8 */
-  --slate-700: 203 213 225;   /* Viền input/nút #cbd5e1 */
-  --slate-800: 226 232 240;   /* Viền card nổi #e2e8f0 */
-  --slate-900: 255 255 255;   /* Nền card trắng tinh #ffffff */
-  --slate-950: 248 250 252;   /* Nền trang sáng, trong trẻo #f8fafc */
+  --slate-50: 15 23 42;
+  /* Chữ đen than đậm #0f172a */
+  --slate-100: 15 23 42;
+  /* Chữ đen than đậm #0f172a */
+  --slate-200: 30 41 59;
+  /* Chữ tối #1e293b */
+  --slate-300: 51 65 85;
+  /* Chữ body đậm #334155 */
+  --slate-400: 71 85 105;
+  /* Chữ phụ nét #475569 (rõ ràng, không nhợt nhạt) */
+  --slate-500: 100 116 139;
+  /* Chữ mờ vừa phải #64748b */
+  --slate-600: 148 163 184;
+  /* Viền nhấn phụ #94a3b8 */
+  --slate-700: 203 213 225;
+  /* Viền input/nút #cbd5e1 */
+  --slate-800: 226 232 240;
+  /* Viền card nổi #e2e8f0 */
+  --slate-900: 255 255 255;
+  /* Nền card trắng tinh #ffffff */
+  --slate-950: 248 250 252;
+  /* Nền trang sáng, trong trẻo #f8fafc */
 
   /* Màu nhấn rực rỡ, đậm đà, punchy trên nền sáng */
-  --sky-300: 14 165 233;      /* #0ea5e9 - Sky 500 */
-  --sky-400: 2 132 199;       /* #0284c7 - Sky 600 nổi bật trên nền trắng */
-  --emerald-300: 16 185 129;  /* #10b981 - Emerald 500 */
-  --emerald-400: 5 150 105;   /* #059669 - Emerald 600 */
-  --amber-300: 245 158 11;    /* #f59e0b - Amber 500 */
-  --amber-400: 217 119 6;     /* #d97706 - Amber 600 */
-  --rose-300: 244 63 94;      /* #f43f5e - Rose 500 */
-  --rose-400: 225 29 72;      /* #e11d48 - Rose 600 */
-  --blue-300: 59 130 246;     /* #3b82f6 - Blue 500 */
-  --blue-400: 37 99 235;      /* #2563eb - Blue 600 (Royal Tech Blue) */
-  --indigo-300: 99 102 241;   /* #6366f1 - Indigo 500 */
-  --indigo-400: 79 70 229;    /* #4f46e5 - Indigo 600 */
+  --sky-300: 14 165 233;
+  /* #0ea5e9 - Sky 500 */
+  --sky-400: 2 132 199;
+  /* #0284c7 - Sky 600 nổi bật trên nền trắng */
+  --emerald-300: 16 185 129;
+  /* #10b981 - Emerald 500 */
+  --emerald-400: 5 150 105;
+  /* #059669 - Emerald 600 */
+  --amber-300: 245 158 11;
+  /* #f59e0b - Amber 500 */
+  --amber-400: 217 119 6;
+  /* #d97706 - Amber 600 */
+  --rose-300: 244 63 94;
+  /* #f43f5e - Rose 500 */
+  --rose-400: 225 29 72;
+  /* #e11d48 - Rose 600 */
+  --blue-300: 59 130 246;
+  /* #3b82f6 - Blue 500 */
+  --blue-400: 37 99 235;
+  /* #2563eb - Blue 600 (Royal Tech Blue) */
+  --indigo-300: 99 102 241;
+  /* #6366f1 - Indigo 500 */
+  --indigo-400: 79 70 229;
+  /* #4f46e5 - Indigo 600 */
 }
 
 /* Footer luôn bị khóa về Dark theme */
@@ -94,6 +117,7 @@ html[data-theme="light"] :is(footer, .dark-locked) {
   html {
     @apply transition-colors duration-200;
   }
+
   body {
     @apply antialiased transition-colors duration-200;
     background-color: rgb(var(--slate-950));
@@ -120,25 +144,32 @@ html[data-theme="light"] .shadow-2xl {
 html[data-theme="light"] .text-white {
   color: #0f172a;
 }
+
 html[data-theme="light"] .text-slate-100 {
   color: #0f172a !important;
 }
+
 html[data-theme="light"] .text-slate-200 {
   color: #1e293b !important;
 }
+
 html[data-theme="light"] .text-slate-300 {
   color: #334155 !important;
 }
+
 html[data-theme="light"] .text-slate-400 {
   color: #475569 !important;
 }
+
 /* Bảo vệ: Nếu component nào dùng text-slate-900 hoặc text-slate-800, chuyển sang chữ tối ngay */
 html[data-theme="light"] .text-slate-900 {
   color: #0f172a !important;
 }
+
 html[data-theme="light"] .text-slate-800 {
   color: #1e293b !important;
 }
+
 html[data-theme="light"] .text-slate-700 {
   color: #334155 !important;
 }
@@ -146,42 +177,34 @@ html[data-theme="light"] .text-slate-700 {
 /* CHỈ giữ chữ trắng trên NÚT BẤM (button, a, pill) có nền màu đặc hoặc gradient, hoặc bên trong footer */
 html[data-theme="light"] :is(footer, .dark-locked) .text-white,
 html[data-theme="light"] :is(footer, .dark-locked).text-white,
-html[data-theme="light"] button:is(
-  [class*="bg-sky-"],
+html[data-theme="light"] button:is([class*="bg-sky-"],
   [class*="bg-blue-"],
   [class*="bg-indigo-"],
   [class*="bg-emerald-"],
   [class*="bg-rose-"],
   [class*="bg-red-"],
-  [class*="bg-gradient-"]
-) .text-white,
-html[data-theme="light"] button:is(
-  [class*="bg-sky-"],
+  [class*="bg-gradient-"]) .text-white,
+html[data-theme="light"] button:is([class*="bg-sky-"],
   [class*="bg-blue-"],
   [class*="bg-indigo-"],
   [class*="bg-emerald-"],
   [class*="bg-rose-"],
   [class*="bg-red-"],
-  [class*="bg-gradient-"]
-).text-white,
-html[data-theme="light"] a:is(
-  [class*="bg-sky-"],
+  [class*="bg-gradient-"]).text-white,
+html[data-theme="light"] a:is([class*="bg-sky-"],
   [class*="bg-blue-"],
   [class*="bg-indigo-"],
   [class*="bg-emerald-"],
   [class*="bg-rose-"],
   [class*="bg-red-"],
-  [class*="bg-gradient-"]
-) .text-white,
-html[data-theme="light"] a:is(
-  [class*="bg-sky-"],
+  [class*="bg-gradient-"]) .text-white,
+html[data-theme="light"] a:is([class*="bg-sky-"],
   [class*="bg-blue-"],
   [class*="bg-indigo-"],
   [class*="bg-emerald-"],
   [class*="bg-rose-"],
   [class*="bg-red-"],
-  [class*="bg-gradient-"]
-).text-white {
+  [class*="bg-gradient-"]).text-white {
   color: #ffffff !important;
 }
 
@@ -197,9 +220,9 @@ html[data-theme="light"] .hover\:text-slate-950:hover {
     width: 0px;
     height: 0px;
   }
+
   .no-scrollbar {
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
 }
-

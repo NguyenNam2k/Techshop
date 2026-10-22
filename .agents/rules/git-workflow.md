@@ -11,3 +11,4 @@ trigger: always_on
 
 ## 2. Quy chuẩn Commit Message
 - Luôn viết commit message bằng **tiếng Việt**, ngắn gọn, rõ ràng, dễ hiểu cho các thành viên trong nhóm.
+- **KHÔNG dùng các tiền tố tiếng Anh** như `style:`, `feat:`, `fix:`, `refactor:`, `chore:`, v.v. Viết trực tiếp nội dung bằng tiếng Việt (ví dụ: `dinh dang chuan hoa index.css`, `cap nhat chuc nang dang nhap`).

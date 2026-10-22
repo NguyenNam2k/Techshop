@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { CheckCircle2, AlertTriangle, AlertCircle, Info, X } from 'lucide-react';
 
 function ToastNotification({ toasts = [], onRemove }) {
@@ -51,4 +51,3 @@ function ToastNotification({ toasts = [], onRemove }) {
 }
 
 export default ToastNotification;
-

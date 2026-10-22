@@ -91,9 +91,35 @@ const updateUserStatus = async (req, res) => {
   }
 };
 
+/**
+ * Phân vai trò cho người dùng (Assign Role)
+ * PATCH /api/users/:id/role
+ */
+const updateUserRole = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { currentRole, newRole } = req.body;
+    await userService.updateUserRole(id, currentRole, newRole);
+
+    return res.json({
+      success: true,
+      message: `Chuyển vai trò sang ${newRole} thành công!`
+    });
+  } catch (error) {
+    console.error('[UpdateUserRole Error]:', error);
+    const statusCode = error.status || 500;
+    return res.status(statusCode).json({
+      success: false,
+      message: error.message || 'Lỗi cập nhật vai trò người dùng!',
+      error: error.error || error.message
+    });
+  }
+};
+
 module.exports = {
   getAllUsers,
   getUserById,
   createUser,
-  updateUserStatus
+  updateUserStatus,
+  updateUserRole
 };

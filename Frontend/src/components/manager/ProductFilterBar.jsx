@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import {
   Search,
   Filter,
@@ -154,4 +154,3 @@ function ProductFilterBar({
 }
 
 export default ProductFilterBar;
-

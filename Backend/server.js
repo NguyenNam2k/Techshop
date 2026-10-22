@@ -39,6 +39,8 @@ const staffRoutes = require('./routes/manager/staffRoutes');
 const couponRoutes = require('./routes/manager/couponRoutes');
 const reportRoutes = require('./routes/manager/reportRoutes');
 const logRoutes = require('./routes/admin/logRoutes');
+const roleRoutes = require('./routes/admin/roleRoutes');
+const permissionRoutes = require('./routes/admin/permissionRoutes');
 const { testConnection } = require('./config/database');
 
 // 3. Phục vụ Manager App SPA nếu đã build dist (Duong's Manager Portal)
@@ -78,6 +80,8 @@ app.use('/api/staffs', staffRoutes);
 app.use('/api/coupons', couponRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/logs', logRoutes);
+app.use('/api/roles', roleRoutes);
+app.use('/api/permissions', permissionRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

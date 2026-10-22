@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import {
   Edit3,
   PackagePlus,
@@ -339,4 +339,3 @@ function ProductTable({
 }
 
 export default ProductTable;
-

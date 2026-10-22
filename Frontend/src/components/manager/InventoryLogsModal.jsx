@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ClipboardList, X, RotateCcw, AlertCircle } from 'lucide-react';
 import axiosInstance from '../../api/axiosInstance';
 
@@ -143,4 +143,3 @@ function InventoryLogsModal({ isOpen, onClose }) {
 }
 
 export default InventoryLogsModal;
-

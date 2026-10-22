@@ -162,6 +162,75 @@ const userService = {
     }
 
     return { status };
+  },
+
+  /**
+   * Thay đổi vai trò người dùng (Assign Role)
+   */
+  updateUserRole: async (id, currentRole, newRole) => {
+    if (!currentRole || !newRole) {
+      throw { status: 400, message: 'Thiếu vai trò hiện tại hoặc vai trò mới!' };
+    }
+    if (currentRole === newRole) {
+      return { success: true, message: 'Vai trò không thay đổi.' };
+    }
+
+    const validRoles = ['customer', 'admin', 'manager', 'staff'];
+    if (!validRoles.includes(newRole)) {
+      throw { status: 400, message: 'Vai trò mới không hợp lệ!' };
+    }
+
+    const user = await userService.getUserById(id, currentRole);
+    if (!user) {
+      throw { status: 404, message: 'Không tìm thấy người dùng!' };
+    }
+
+    const { pool } = require('../../config/database');
+    const conn = await pool.getConnection();
+    try {
+      await conn.beginTransaction();
+
+      const name = user.full_name || user.name || 'Người dùng';
+      const email = user.email;
+      const phone = user.phone || null;
+      const pwdHash = user.password_hash || '$2a$10$3c4573b0f5ef89791ffbbuJ80b4jQy48p5wL47q66UaK2w3G';
+
+      if (newRole === 'customer') {
+        await conn.query(
+          `INSERT INTO customers (name, email, password_hash, phone, status) VALUES (?, ?, ?, ?, 'active')`,
+          [name, email, pwdHash, phone]
+        );
+      } else if (newRole === 'admin') {
+        const username = user.username || `admin_${Date.now().toString().slice(-4)}`;
+        await conn.query(
+          `INSERT INTO admins (username, email, password_hash, full_name, phone, security_level, status) VALUES (?, ?, ?, ?, ?, 'system_admin', 'active')`,
+          [username, email, pwdHash, name, phone]
+        );
+      } else if (newRole === 'manager') {
+        const mgrCode = user.manager_code || `MGR${Date.now().toString().slice(-4)}`;
+        await conn.query(
+          `INSERT INTO managers (manager_code, full_name, email, password_hash, phone, status) VALUES (?, ?, ?, ?, ?, 'active')`,
+          [mgrCode, name, email, pwdHash, phone]
+        );
+      } else if (newRole === 'staff') {
+        const stfCode = user.staff_code || `STF${Date.now().toString().slice(-4)}`;
+        await conn.query(
+          `INSERT INTO staffs (staff_code, full_name, email, password_hash, phone, department, status) VALUES (?, ?, ?, ?, ?, 'Warehouse', 'active')`,
+          [stfCode, name, email, pwdHash, phone]
+        );
+      }
+
+      const oldTable = currentRole === 'staff' ? 'staffs' : currentRole === 'admin' ? 'admins' : currentRole === 'manager' ? 'managers' : 'customers';
+      await conn.query(`DELETE FROM ${oldTable} WHERE id = ?`, [id]);
+
+      await conn.commit();
+      return { success: true };
+    } catch (err) {
+      await conn.rollback();
+      throw err;
+    } finally {
+      conn.release();
+    }
   }
 };
 

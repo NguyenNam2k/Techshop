@@ -50,15 +50,21 @@ function ProtectedRoute({ children, requiredRole, allowedRoles }) {
 
   const userRole = (user.role || '').toLowerCase();
 
-  // Đã đăng nhập nhưng không đủ quyền → về catalog
+  const getHomeForRole = (role) => {
+    if (role === 'admin') return '/admin';
+    if (role === 'manager' || role === 'staff') return '/manager/products';
+    return '/catalog';
+  };
+
+  // Đã đăng nhập nhưng không đủ quyền → cách ly và chuyển về trang của chính vai trò đó
   if (requiredRole && userRole !== requiredRole.toLowerCase()) {
-    return <Navigate to="/catalog" replace />;
+    return <Navigate to={getHomeForRole(userRole)} replace />;
   }
 
   if (allowedRoles && allowedRoles.length > 0) {
     const normalizedAllowed = allowedRoles.map((r) => r.toLowerCase());
     if (!normalizedAllowed.includes(userRole)) {
-      return <Navigate to="/catalog" replace />;
+      return <Navigate to={getHomeForRole(userRole)} replace />;
     }
   }
 

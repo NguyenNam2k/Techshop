@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   ShoppingBag,
@@ -18,8 +18,7 @@ import { useAuth } from '../../context/AuthContext';
 import AuthRequiredModal from '../../components/common/AuthRequiredModal';
 import { isSingleConfigurationProduct } from '../../components/pdp/VariantSelector';
 
-const FALLBACK_IMAGE =
-  'https://images.unsplash.com/photo-1587202372775-e229f172b9d7?w=400&auto=format&fit=crop&q=80';
+const FALLBACK_IMAGE = '/placeholder.svg';
 
 const formatVND = (n) =>
   new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(n || 0);

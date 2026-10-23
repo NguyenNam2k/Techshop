@@ -329,6 +329,34 @@ function ProductCard({ product, onAddToCart, onNavigate }) {
   );
 }
 
+// Helper: Phân tích khoảng giá thành query params minPrice & maxPrice
+const parsePriceRangeParams = (pr) => {
+  const text = pr.toLowerCase();
+  const mult = text.includes('k') ? 1000 : 1000000;
+  if (text.startsWith('dưới')) {
+    const num = parseFloat(text.replace(/[^0-9.]/g, ''));
+    return `maxPrice=${num * mult}`;
+  }
+  if (text.startsWith('trên')) {
+    const num = parseFloat(text.replace(/[^0-9.]/g, ''));
+    return `minPrice=${num * mult}`;
+  }
+  if (text.includes('-')) {
+    const parts = text.split('-');
+    const min = parseFloat(parts[0].replace(/[^0-9.]/g, '')) * mult;
+    const max = parseFloat(parts[1].replace(/[^0-9.]/g, '')) * mult;
+    return `minPrice=${min}&maxPrice=${max}`;
+  }
+  return '';
+};
+
+// Helper: Chuẩn hóa tên thương hiệu (VD: 'ASUS ROG' -> 'ASUS')
+const cleanBrandName = (brandStr) => {
+  return brandStr
+    .replace(/ (ROG|UltraGear|Odyssey|Alienware|Gaming|G|Legion|Predator)$/i, '')
+    .trim();
+};
+
 export default function HomePage() {
   const navigate = useNavigate();
   const { addToCart } = useCart();
@@ -609,8 +637,8 @@ export default function HomePage() {
                   type="button"
                   onMouseEnter={() => handleCategoryMouseEnter(cat)}
                   onClick={() => {
-                    setSelectedCategory(isSelected ? null : cat);
                     setHoveredCategory(null);
+                    navigate(`/catalog?category=${cat.slug}`);
                   }}
                   className={`w-full flex items-center justify-between py-2 px-2.5 rounded-xl transition cursor-pointer text-left group ${
                     isSelected
@@ -666,8 +694,9 @@ export default function HomePage() {
               <button
                 type="button"
                 onClick={() => {
-                  setSelectedCategory(hoveredCategory);
+                  const slug = hoveredCategory.slug;
                   setHoveredCategory(null);
+                  navigate(`/catalog?category=${slug}`);
                 }}
                 className="text-xs font-bold text-sky-400 hover:text-sky-300 flex items-center gap-1 group/btn cursor-pointer"
               >
@@ -686,19 +715,23 @@ export default function HomePage() {
                       Thương Hiệu Nổi Bật
                     </div>
                     <div className="flex flex-wrap gap-1.5">
-                      {hoveredCategory.brands.map((b) => (
-                        <button
-                          key={b}
-                          type="button"
-                          onClick={() => {
-                            setSelectedCategory(hoveredCategory);
-                            setHoveredCategory(null);
-                          }}
-                          className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-slate-950 hover:bg-sky-500/15 hover:text-sky-400 hover:border-sky-500/30 text-slate-300 border border-slate-800 transition cursor-pointer"
-                        >
-                          {b}
-                        </button>
-                      ))}
+                      {hoveredCategory.brands.map((b) => {
+                        const cleanBrand = cleanBrandName(b);
+                        return (
+                          <button
+                            key={b}
+                            type="button"
+                            onClick={() => {
+                              const slug = hoveredCategory.slug;
+                              setHoveredCategory(null);
+                              navigate(`/catalog?category=${slug}&brands=${encodeURIComponent(cleanBrand)}`);
+                            }}
+                            className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-slate-950 hover:bg-sky-500/15 hover:text-sky-400 hover:border-sky-500/30 text-slate-300 border border-slate-800 transition cursor-pointer"
+                          >
+                            {b}
+                          </button>
+                        );
+                      })}
                     </div>
                   </div>
                 )}
@@ -714,8 +747,9 @@ export default function HomePage() {
                           key={s}
                           type="button"
                           onClick={() => {
-                            setSelectedCategory(hoveredCategory);
+                            const slug = hoveredCategory.slug;
                             setHoveredCategory(null);
+                            navigate(`/catalog?category=${slug}&q=${encodeURIComponent(s)}`);
                           }}
                           className="px-2.5 py-1 text-xs font-medium rounded-lg bg-slate-950 hover:bg-slate-800 text-slate-300 border border-slate-800/80 transition cursor-pointer"
                         >
@@ -732,14 +766,23 @@ export default function HomePage() {
                       Khoảng Giá Tham Khảo
                     </div>
                     <div className="flex flex-wrap gap-1.5">
-                      {hoveredCategory.priceRanges.map((pr) => (
-                        <span
-                          key={pr}
-                          className="px-2 py-0.5 text-[11px] font-mono rounded-md bg-slate-950 text-slate-400 border border-slate-800"
-                        >
-                          {pr}
-                        </span>
-                      ))}
+                      {hoveredCategory.priceRanges.map((pr) => {
+                        const priceQuery = parsePriceRangeParams(pr);
+                        return (
+                          <button
+                            key={pr}
+                            type="button"
+                            onClick={() => {
+                              const slug = hoveredCategory.slug;
+                              setHoveredCategory(null);
+                              navigate(`/catalog?category=${slug}${priceQuery ? `&${priceQuery}` : ''}`);
+                            }}
+                            className="px-2 py-0.5 text-[11px] font-mono rounded-md bg-slate-950 hover:bg-sky-500/15 hover:text-sky-400 text-slate-400 border border-slate-800 transition cursor-pointer"
+                          >
+                            {pr}
+                          </button>
+                        );
+                      })}
                     </div>
                   </div>
                 )}
@@ -800,12 +843,10 @@ export default function HomePage() {
               <button
                 key={cat.id}
                 type="button"
-                onClick={() => setSelectedCategory(isSelected ? null : cat)}
-                className={`shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-xl border text-xs font-bold cursor-pointer shadow-sm transition ${
-                  isSelected
-                    ? 'bg-sky-500/20 border-sky-500 text-sky-400'
-                    : 'bg-slate-900 border-slate-800 text-slate-200'
-                }`}
+                onClick={() => {
+                  navigate(`/catalog?category=${cat.slug}`);
+                }}
+                className="shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-xl border border-slate-800 bg-slate-900 text-slate-200 text-xs font-bold cursor-pointer shadow-sm hover:border-sky-500/50 hover:text-sky-400 transition"
               >
                 <Icon className={`w-3.5 h-3.5 ${cat.color}`} />
                 <span>{cat.name.split(' - ')[0]}</span>
@@ -912,8 +953,7 @@ export default function HomePage() {
             {/* Banner 2: Laptop Gaming Giảm Đến 7 Triệu */}
             <div
               onClick={() => {
-                const cat = FULL_CATEGORIES.find((c) => c.slug === 'laptops');
-                setSelectedCategory(cat || null);
+                navigate('/catalog?category=laptops');
               }}
               className="relative overflow-hidden rounded-2xl p-4 bg-slate-900 hover:bg-slate-850 text-white shadow-md hover:shadow-xl transition-all duration-300 group flex flex-col justify-between min-h-[115px] active:scale-[0.99] border border-slate-800 hover:border-slate-700 cursor-pointer"
             >
@@ -938,8 +978,7 @@ export default function HomePage() {
             {/* Banner 3: Gear Esports Chính Hãng */}
             <div
               onClick={() => {
-                const cat = FULL_CATEGORIES.find((c) => c.slug === 'keyboards' || c.slug === 'mice');
-                setSelectedCategory(cat || null);
+                navigate('/catalog?category=keyboards');
               }}
               className="relative overflow-hidden rounded-2xl p-4 bg-gradient-to-r from-red-600 via-rose-600 to-orange-500 text-white shadow-md hover:shadow-xl transition-all duration-300 group flex flex-col justify-between min-h-[115px] active:scale-[0.99] border border-rose-400/20 cursor-pointer"
             >
@@ -1373,10 +1412,7 @@ export default function HomePage() {
             <div
               key={idx}
               onClick={() => {
-                const matchedCat = FULL_CATEGORIES.find((c) =>
-                  ['gpus', 'cpus', 'keyboards', 'laptops'].includes(c.slug)
-                );
-                setSelectedCategory(matchedCat || null);
+                navigate(`/catalog?brands=${encodeURIComponent(brand.tag)}`);
               }}
               className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 hover:border-sky-500/60 hover:bg-slate-900/60 transition cursor-pointer text-center group"
             >

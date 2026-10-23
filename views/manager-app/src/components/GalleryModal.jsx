@@ -111,7 +111,12 @@ export default function GalleryModal({
       const addJson = await addRes.json();
       if (!addJson.success) throw new Error(addJson.message || 'Lỗi lưu ảnh');
 
-      showToast('Tải ảnh và lưu vào bộ sưu tập thành công!', 'success');
+      showToast(
+        upData.storage === 'cloudinary'
+          ? 'Đã tải ảnh lên Cloudinary và lưu vào bộ sưu tập thành công!'
+          : 'Đã tải ảnh và lưu vào bộ sưu tập thành công!',
+        'success'
+      );
       fetchImages();
       onImagesUpdated?.();
     } catch (err) {
@@ -185,65 +190,38 @@ export default function GalleryModal({
           </button>
         </div>
 
-        {/* Add Image Form Section */}
+        {/* Add Image Form Section (Chỉ tải tệp từ máy tính - Lưu máy / Cloud) */}
         <div className="p-4 border-b border-slate-800/80 bg-slate-900/50">
-          <form onSubmit={handleAddImage} className="space-y-3">
-            <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
-              <div className="sm:col-span-5">
-                <label className="block text-[11px] font-semibold text-slate-300 mb-1">
-                  Link URL ảnh mới
-                </label>
-                <input
-                  type="url"
-                  value={newImageUrl}
-                  onChange={(e) => setNewImageUrl(e.target.value)}
-                  placeholder="https://... hoặc dùng nút tải tệp bên cạnh"
-                  className="w-full px-3 py-1.5 text-xs bg-slate-800 border border-slate-700 rounded-lg text-white font-mono focus:outline-none focus:border-cyan-400"
-                />
-              </div>
-
-              <div className="sm:col-span-4">
-                <label className="block text-[11px] font-semibold text-slate-300 mb-1">
-                  Nhãn góc chụp / Mô tả ảnh
-                </label>
-                <input
-                  type="text"
-                  value={newAngleLabel}
-                  onChange={(e) => setNewAngleLabel(e.target.value)}
-                  placeholder="VD: Góc nghiêng 45°, Cổng kết nối..."
-                  className="w-full px-3 py-1.5 text-xs bg-slate-800 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-cyan-400"
-                />
-              </div>
-
-              <div className="sm:col-span-3 flex items-end gap-2">
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="flex-1 py-1.5 px-3 bg-cyan-600 hover:bg-cyan-500 text-slate-950 font-bold text-xs rounded-lg shadow-md transition-all flex items-center justify-center gap-1.5 disabled:opacity-50"
-                >
-                  {isSubmitting ? (
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  ) : (
-                    <Plus className="w-3.5 h-3.5" />
-                  )}
-                  <span>Thêm Ảnh</span>
-                </button>
-
-                <label
-                  className="py-1.5 px-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-lg text-xs cursor-pointer flex items-center justify-center"
-                  title="Tải ảnh từ máy tính"
-                >
-                  <Upload className="w-3.5 h-3.5" />
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleFileUpload}
-                    className="hidden"
-                  />
-                </label>
-              </div>
+          <div className="flex flex-col sm:flex-row items-center gap-3">
+            <div className="w-full sm:flex-1">
+              <label className="block text-[11px] font-semibold text-slate-300 mb-1">
+                Nhãn góc chụp / Mô tả ảnh
+              </label>
+              <input
+                type="text"
+                value={newAngleLabel}
+                onChange={(e) => setNewAngleLabel(e.target.value)}
+                placeholder="VD: Góc nghiêng 45°, Cổng kết nối, Vỏ hộp thực tế..."
+                className="w-full px-3 py-2 text-xs bg-slate-800 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-cyan-400"
+              />
             </div>
-          </form>
+
+            <div className="w-full sm:w-auto pt-1 sm:pt-4">
+              <label
+                className="w-full sm:w-auto px-4 py-2 bg-gradient-to-r from-cyan-500 to-cyan-600 hover:from-cyan-400 hover:to-cyan-500 text-slate-950 font-bold text-xs rounded-lg shadow-md transition-all cursor-pointer flex items-center justify-center gap-2"
+                title="Chọn ảnh từ máy tính để thêm vào bộ sưu tập"
+              >
+                <Upload className="w-4 h-4" />
+                <span>Tải Ảnh Từ Máy Tính</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileUpload}
+                  className="hidden"
+                />
+              </label>
+            </div>
+          </div>
         </div>
 
         {/* Gallery Grid Container */}

@@ -1,6 +1,7 @@
 const path = require('path');
 const fs = require('fs');
 const ProductService = require('../../services/manager/productService');
+const { uploadToCloudinary, isCloudinaryConfigured } = require('../../config/cloudinary');
 
 /**
  * Product Controller
@@ -429,11 +430,37 @@ class ProductController {
         });
       }
 
+      // 1. Kiểm tra nếu có cấu hình Cloud (Cloudinary)
+      if (isCloudinaryConfigured()) {
+        try {
+          const cloudRes = await uploadToCloudinary(req.file.path, 'techshop/products');
+          return res.status(200).json({
+            success: true,
+            storage: 'cloudinary',
+            message: 'Tải hình ảnh lên Cloudinary CDN thành công!',
+            url: cloudRes.secure_url,
+            data: {
+              image_url: cloudRes.secure_url,
+              public_id: cloudRes.public_id
+            },
+            filename: req.file.filename,
+            size: req.file.size
+          });
+        } catch (cloudErr) {
+          console.warn('⚠️ Lỗi tải ảnh lên Cloudinary, chuyển sang lưu máy cục bộ:', cloudErr.message);
+        }
+      }
+
+      // 2. Mặc định: Lưu vào máy cục bộ (Local Storage qua Multer)
       const imageUrl = `/uploads/products/${req.file.filename}`;
       return res.status(200).json({
         success: true,
-        message: 'Tải hình ảnh lên thành công!',
+        storage: 'local',
+        message: 'Tải hình ảnh lên máy cục bộ thành công!',
         url: imageUrl,
+        data: {
+          image_url: imageUrl
+        },
         filename: req.file.filename,
         size: req.file.size
       });

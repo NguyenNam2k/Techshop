@@ -324,131 +324,45 @@ export default function ProductForm({
           ></textarea>
         </div>
 
-        {/* Field 8: Hình ảnh thiết bị (Thumbnail & Upload) */}
+        {/* Field 8: Hình ảnh thiết bị (Chỉ tải tệp từ máy - Lưu máy / Cloud) */}
         <div className="border-t border-slate-800/80 pt-3">
           <div className="flex items-center justify-between mb-1.5">
             <label className="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
               <ImageIcon className="w-3.5 h-3.5 text-cyan-400" />
               <span>8. Hình Ảnh Đại Diện (Thumbnail)</span>
             </label>
-            <div className="flex items-center gap-1.5">
-              <button
-                type="button"
-                onClick={() => setImageInputMode('url')}
-                className={`text-[10px] font-medium px-2 py-0.5 rounded transition-all ${
-                  imageInputMode === 'url'
-                    ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30'
-                    : 'bg-slate-800 text-slate-400 hover:text-white border border-slate-700'
-                }`}
-              >
-                Link URL
-              </button>
-              <button
-                type="button"
-                onClick={() => setImageInputMode('upload')}
-                className={`text-[10px] font-medium px-2 py-0.5 rounded transition-all ${
-                  imageInputMode === 'upload'
-                    ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30'
-                    : 'bg-slate-800 text-slate-400 hover:text-white border border-slate-700'
-                }`}
-              >
-                Tải Tệp Lên
-              </button>
-            </div>
+            <span className="text-[10px] font-mono text-cyan-400/80 bg-cyan-950/60 px-2 py-0.5 rounded border border-cyan-800/40">
+              Lưu máy / Cloudinary
+            </span>
           </div>
 
-          {/* Mode 1: URL Input */}
-          {imageInputMode === 'url' ? (
-            <div className="space-y-1.5">
-              <div className="relative">
-                <input
-                  type="url"
-                  name="thumbnail_url"
-                  value={formData.thumbnail_url}
-                  onChange={handleChange}
-                  placeholder="https://images.unsplash.com/... hoặc /uploads/products/..."
-                  className="w-full pl-3.5 pr-8 py-2 text-xs bg-slate-800/90 border border-slate-700 rounded-xl text-white placeholder-slate-500 font-mono focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 transition-all"
-                />
-                {formData.thumbnail_url && (
-                  <button
-                    type="button"
-                    onClick={handleClearThumbnail}
-                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-rose-400 p-0.5"
-                  >
-                    <X className="w-3.5 h-3.5" />
-                  </button>
-                )}
-              </div>
-
-              {/* Quick image sample presets */}
-              <div className="flex items-center gap-1 flex-wrap text-[10px] text-slate-400 pt-0.5">
-                <span className="text-slate-500 font-mono">Gợi ý mẫu:</span>
-                <button
-                  type="button"
-                  onClick={() => handleApplyPreset('keyboard')}
-                  className="px-1.5 py-0.5 rounded bg-slate-800 hover:bg-cyan-950 text-slate-300 hover:text-cyan-300 border border-slate-700/60 transition-all"
-                >
-                  Bàn phím
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleApplyPreset('mouse')}
-                  className="px-1.5 py-0.5 rounded bg-slate-800 hover:bg-cyan-950 text-slate-300 hover:text-cyan-300 border border-slate-700/60 transition-all"
-                >
-                  Chuột
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleApplyPreset('laptop')}
-                  className="px-1.5 py-0.5 rounded bg-slate-800 hover:bg-cyan-950 text-slate-300 hover:text-cyan-300 border border-slate-700/60 transition-all"
-                >
-                  Laptop
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleApplyPreset('monitor')}
-                  className="px-1.5 py-0.5 rounded bg-slate-800 hover:bg-cyan-950 text-slate-300 hover:text-cyan-300 border border-slate-700/60 transition-all"
-                >
-                  Màn hình
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleApplyPreset('gpu')}
-                  className="px-1.5 py-0.5 rounded bg-slate-800 hover:bg-cyan-950 text-slate-300 hover:text-cyan-300 border border-slate-700/60 transition-all"
-                >
-                  Card GPU
-                </button>
-              </div>
-            </div>
-          ) : (
-            /* Mode 2: Local File Upload */
-            <div className="space-y-1.5">
-              <label className="relative block border-2 border-dashed border-slate-700 hover:border-cyan-500/50 rounded-xl p-3.5 text-center cursor-pointer transition-all bg-slate-800/40">
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleFileUpload}
-                  className="hidden"
-                />
-                {!isUploading ? (
-                  <div className="flex flex-col items-center justify-center gap-1 text-slate-400">
-                    <UploadCloud className="w-6 h-6 text-cyan-400 mb-0.5" />
-                    <span className="text-xs font-medium text-slate-200">
-                      Nhấn để chọn ảnh từ máy tính
-                    </span>
-                    <span className="text-[10px] text-slate-500">
-                      Tự động lưu vào /public/uploads/products/ (Max: 10MB)
-                    </span>
-                  </div>
-                ) : (
-                  <div className="flex items-center justify-center gap-2 text-cyan-400 text-xs py-2">
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    <span>Đang tải ảnh lên hệ thống...</span>
-                  </div>
-                )}
-              </label>
-            </div>
-          )}
+          {/* Upload từ máy tính */}
+          <div className="space-y-1.5">
+            <label className="relative block border-2 border-dashed border-slate-700 hover:border-cyan-500/50 rounded-xl p-3.5 text-center cursor-pointer transition-all bg-slate-800/40">
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleFileUpload}
+                className="hidden"
+              />
+              {!isUploading ? (
+                <div className="flex flex-col items-center justify-center gap-1 text-slate-400">
+                  <UploadCloud className="w-6 h-6 text-cyan-400 mb-0.5" />
+                  <span className="text-xs font-medium text-slate-200">
+                    Nhấn để chọn ảnh từ máy tính
+                  </span>
+                  <span className="text-[10px] text-slate-500">
+                    Hỗ trợ JPEG, PNG, WEBP, SVG (Max: 10MB) · Tự động lưu trữ cục bộ hoặc Cloud CDN
+                  </span>
+                </div>
+              ) : (
+                <div className="flex items-center justify-center gap-2 text-cyan-400 text-xs py-2">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Đang tải ảnh lên hệ thống...</span>
+                </div>
+              )}
+            </label>
+          </div>
 
           {/* Live Image Preview Box */}
           {formData.thumbnail_url && (
@@ -467,7 +381,7 @@ export default function ProductForm({
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-1.5 text-xs font-semibold text-emerald-400">
                     <CheckCircle className="w-3.5 h-3.5" />
-                    <span>Ảnh hiển thị hợp lệ</span>
+                    <span>{formData.thumbnail_url.startsWith('http') ? 'Ảnh đã lưu trên Cloud CDN' : 'Ảnh đã lưu vào máy cục bộ'}</span>
                   </div>
                   <p className="text-[10px] text-slate-400 font-mono truncate mt-0.5">
                     {formData.thumbnail_url}

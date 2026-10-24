@@ -116,7 +116,8 @@ export default function ProductForm({
       const data = await res.json();
       if (!data.success) throw new Error(data.message || 'Lỗi tải ảnh');
 
-      setFormData((prev) => ({ ...prev, thumbnail_url: data.data.image_url }));
+      const imgUrl = data.url || data.data?.image_url;
+      setFormData((prev) => ({ ...prev, thumbnail_url: imgUrl }));
       showToast('Tải ảnh lên thành công!', 'success');
     } catch (err) {
       showToast(err.message || 'Không thể tải ảnh lên', 'error');

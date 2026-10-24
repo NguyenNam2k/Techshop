@@ -8,7 +8,8 @@ import {
   AlertCircle,
   Check,
   Laptop,
-  Plus
+  Plus,
+  Images
 } from 'lucide-react';
 
 function ProductTable({
@@ -19,7 +20,8 @@ function ProductTable({
   onEdit,
   onQuickStock,
   onDelete,
-  onOpenCreate
+  onOpenCreate,
+  onOpenGallery
 }) {
   const {
     page = 1,
@@ -134,9 +136,9 @@ function ProductTable({
                       <div className="flex items-center gap-3">
                         {/* Thumbnail */}
                         <div className="w-11 h-11 rounded-xl bg-slate-800 border border-slate-700/80 overflow-hidden shrink-0 flex items-center justify-center group-hover:border-cyan-500/40 transition-colors">
-                          {prod.thumbnail || prod.image_url ? (
+                          {prod.thumbnail_url || prod.thumbnail || prod.image_url ? (
                             <img
-                              src={prod.thumbnail || prod.image_url}
+                              src={prod.thumbnail_url || prod.thumbnail || prod.image_url}
                               alt={prod.name}
                               className="w-full h-full object-cover"
                               onError={(e) => {
@@ -147,7 +149,7 @@ function ProductTable({
                           ) : null}
                           <div
                             className={`w-full h-full flex items-center justify-center text-slate-500 ${
-                              prod.thumbnail || prod.image_url ? 'hidden' : ''
+                              prod.thumbnail_url || prod.thumbnail || prod.image_url ? 'hidden' : ''
                             }`}
                           >
                             <Laptop className="w-5 h-5 text-slate-400" />
@@ -235,6 +237,18 @@ function ProductTable({
                     {/* Actions */}
                     <td className="py-3.5 px-4 text-right whitespace-nowrap">
                       <div className="inline-flex items-center gap-1.5">
+                        {/* Gallery Button */}
+                        {onOpenGallery && (
+                          <button
+                            type="button"
+                            onClick={() => onOpenGallery(prod)}
+                            className="p-1.5 rounded-lg bg-slate-800 hover:bg-emerald-500/20 text-slate-300 hover:text-emerald-400 border border-slate-700/60 hover:border-emerald-500/40 transition-all cursor-pointer"
+                            title="Bộ sưu tập ảnh Cloud"
+                          >
+                            <Images className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+
                         {/* Edit Button */}
                         <button
                           type="button"

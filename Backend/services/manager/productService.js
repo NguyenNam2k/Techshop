@@ -3,6 +3,7 @@ const CategoryRepository = require('../../repositories/manager/categoryRepositor
 const LogRepository = require('../../repositories/admin/logRepository');
 const BaseRepository = require('../../repositories/baseRepository');
 const { pool } = require('../../config/database');
+const { deleteFromCloud } = require('../../config/cloudinary');
 
 /**
  * Product Service
@@ -781,9 +782,9 @@ class ProductService {
   }
 
   /**
-   * Add image to product gallery
+   * Add image to product gallery (supporting Cloudinary public_id)
    */
-  static async addProductImage(productId, { image_url, angle_label = 'Góc nhìn khác', is_primary = false, variant_id = null }) {
+  static async addProductImage(productId, { image_url, public_id = null, angle_label = 'Góc nhìn khác', is_primary = false, variant_id = null }) {
     const prodId = parseInt(productId, 10);
     if (!prodId) throw new Error('ID thiết bị không hợp lệ.');
     if (!image_url || !image_url.trim()) throw new Error('Đường dẫn hình ảnh không được để trống.');
@@ -793,6 +794,7 @@ class ProductService {
       product_id: prodId,
       variant_id,
       image_url: cleanUrl,
+      public_id: public_id ? public_id.trim() : null,
       angle_label: angle_label.trim(),
       is_primary: Boolean(is_primary)
     });
@@ -805,24 +807,33 @@ class ProductService {
       success: true,
       imageId,
       image_url: cleanUrl,
+      public_id,
       message: 'Thêm hình ảnh cho sản phẩm thành công!'
     };
   }
 
   /**
-   * Delete product image
+   * Delete product image and remove asset from Cloudinary
    */
   static async deleteProductImage(productId, imageId) {
     const prodId = parseInt(productId, 10);
     const imgId = parseInt(imageId, 10);
     if (!prodId || !imgId) throw new Error('Tham số không hợp lệ.');
 
+    const imageRecord = await ProductRepository.findImageById(imgId);
+    if (!imageRecord) throw new Error('Không tìm thấy hình ảnh để xóa.');
+
+    // Xóa file trên Cloudinary nếu có public_id
+    if (imageRecord.public_id) {
+      await deleteFromCloud(imageRecord.public_id);
+    }
+
     const deleted = await ProductRepository.deleteProductImage(imgId);
-    if (!deleted) throw new Error('Không tìm thấy hình ảnh để xóa.');
+    if (!deleted) throw new Error('Không thể xóa hình ảnh khỏi cơ sở dữ liệu.');
 
     return {
       success: true,
-      message: 'Đã xóa hình ảnh thành công.'
+      message: 'Đã xóa hình ảnh thành công khỏi hệ thống.'
     };
   }
 

@@ -840,6 +840,38 @@ class ProductRepository extends BaseRepository {
   }
 
   /**
+   * Find a single image record by ID
+   */
+  static async findImageById(imageId, connection = null) {
+    const executor = connection || pool;
+    const [rows] = await executor.query(
+      `SELECT * FROM product_images WHERE id = ?`,
+      [imageId]
+    );
+    return rows[0] || null;
+  }
+
+  /**
+   * Insert a new image for product gallery
+   */
+  static async insertProductImage(imageData, connection = null) {
+    const executor = connection || pool;
+    const [result] = await executor.query(
+      `INSERT INTO product_images (product_id, variant_id, image_url, public_id, angle_label, is_primary) 
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      [
+        imageData.product_id,
+        imageData.variant_id || null,
+        imageData.image_url,
+        imageData.public_id || null,
+        imageData.angle_label || 'Góc nhìn chi tiết',
+        imageData.is_primary ? 1 : 0
+      ]
+    );
+    return result.insertId;
+  }
+
+  /**
    * Delete product image by ID
    */
   static async deleteProductImage(imageId, connection = null) {

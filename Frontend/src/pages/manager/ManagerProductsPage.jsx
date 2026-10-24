@@ -23,6 +23,7 @@ import QuickStockModal from '../../components/manager/QuickStockModal';
 import CategoryModal from '../../components/manager/CategoryModal';
 import InventoryLogsModal from '../../components/manager/InventoryLogsModal';
 import DeleteConfirmModal from '../../components/manager/DeleteConfirmModal';
+import ProductGalleryModal from '../../components/manager/ProductGalleryModal';
 import ToastNotification from '../../components/manager/ToastNotification';
 
 function ManagerProductsPage() {
@@ -77,6 +78,9 @@ function ManagerProductsPage() {
 
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deletingProduct, setDeletingProduct] = useState(null);
+
+  const [showGalleryModal, setShowGalleryModal] = useState(false);
+  const [galleryProduct, setGalleryProduct] = useState(null);
 
   // Toast Notifications
   const [toasts, setToasts] = useState([]);
@@ -267,6 +271,12 @@ function ManagerProductsPage() {
     }
   };
 
+  // Open Product Image Gallery Modal
+  const handleOpenGallery = (product) => {
+    setGalleryProduct(product);
+    setShowGalleryModal(true);
+  };
+
   // Create Category
   const handleCreateCategory = async (name) => {
     setActionLoading(true);
@@ -404,6 +414,7 @@ function ManagerProductsPage() {
             onQuickStock={handleOpenQuickStock}
             onDelete={handleOpenDelete}
             onOpenCreate={handleOpenCreate}
+            onOpenGallery={handleOpenGallery}
           />
         </main>
       </div>
@@ -457,6 +468,18 @@ function ManagerProductsPage() {
         onConfirmDelete={handleConfirmDelete}
         onOpenQuickStock={(p) => handleOpenQuickStock(p)}
         loading={actionLoading}
+      />
+
+      <ProductGalleryModal
+        isOpen={showGalleryModal}
+        onClose={() => {
+          setShowGalleryModal(false);
+          setGalleryProduct(null);
+        }}
+        product={galleryProduct}
+        onGalleryUpdated={() => {
+          fetchProducts();
+        }}
       />
     </div>
   );

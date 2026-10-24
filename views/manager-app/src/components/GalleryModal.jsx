@@ -104,7 +104,6 @@ export default function GalleryModal({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           image_url: upData.url || upData.data?.image_url,
-          public_id: upData.public_id || null,
           angle_label: newAngleLabel.trim() || 'Ảnh chụp thực tế',
           is_primary: images.length === 0 ? 1 : 0
         })

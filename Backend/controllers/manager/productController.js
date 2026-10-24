@@ -1,7 +1,6 @@
 const path = require('path');
 const fs = require('fs');
 const ProductService = require('../../services/manager/productService');
-const { isConfigured, uploadBufferToCloud } = require('../../config/cloudinary');
 
 /**
  * Product Controller
@@ -419,7 +418,7 @@ class ProductController {
 
   /**
    * POST /api/products/upload-image
-   * Handles image upload via Multer memoryStorage to Cloudinary (or local disk fallback)
+   * Handles image upload via Multer
    */
   static async uploadImage(req, res, next) {
     try {
@@ -430,41 +429,13 @@ class ProductController {
         });
       }
 
-      // Tải trực tiếp lên Cloudinary nếu đã cấu hình
-      if (isConfigured) {
-        const cloudResult = await uploadBufferToCloud(req.file.buffer, 'techshop/products');
-        return res.status(200).json({
-          success: true,
-          message: 'Tải hình ảnh lên Cloudinary thành công!',
-          url: cloudResult.secure_url,
-          public_id: cloudResult.public_id,
-          format: cloudResult.format,
-          size: cloudResult.bytes,
-          storage: 'cloudinary'
-        });
-      }
-
-      // Dự phòng lưu cục bộ nếu chưa cấu hình Cloudinary trong .env
-      const uploadDir = path.join(__dirname, '..', '..', 'public', 'uploads', 'products');
-      if (!fs.existsSync(uploadDir)) {
-        fs.mkdirSync(uploadDir, { recursive: true });
-      }
-
-      const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-      const ext = path.extname(req.file.originalname) || '.jpg';
-      const filename = `product-${uniqueSuffix}${ext}`;
-      const filePath = path.join(uploadDir, filename);
-
-      await fs.promises.writeFile(filePath, req.file.buffer);
-      const imageUrl = `/uploads/products/${filename}`;
-
+      const imageUrl = `/uploads/products/${req.file.filename}`;
       return res.status(200).json({
         success: true,
-        message: 'Tải hình ảnh lên máy chủ cục bộ thành công (Chưa cấu hình Cloudinary)!',
+        message: 'Tải hình ảnh lên thành công!',
         url: imageUrl,
-        filename,
-        size: req.file.size,
-        storage: 'local'
+        filename: req.file.filename,
+        size: req.file.size
       });
     } catch (error) {
       next(error);
@@ -493,12 +464,11 @@ class ProductController {
   static async addProductImage(req, res, next) {
     try {
       const { id } = req.params;
-      const { image_url, angle_label, is_primary, public_id } = req.body;
+      const { image_url, angle_label, is_primary } = req.body;
       const result = await ProductService.addProductImage(id, {
         image_url,
         angle_label,
-        is_primary,
-        public_id
+        is_primary
       });
       return res.status(201).json(result);
     } catch (error) {

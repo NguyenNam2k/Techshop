@@ -35,6 +35,7 @@ import {
 } from 'lucide-react';
 import { api } from '../../services/api';
 import { useCart } from '../../context/CartContext';
+import ProductImage from '../../components/common/ProductImage';
 
 const formatVND = (n) =>
   new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(n || 0);
@@ -256,14 +257,8 @@ function ProductCard({ product, onAddToCart, onNavigate }) {
     >
       <div className="space-y-3">
         <div className="relative h-44 rounded-xl bg-slate-900 border border-slate-800/80 overflow-hidden flex items-center justify-center p-3">
-          <img
-            src={
-              product.thumbnail_url ||
-              product.image_url ||
-              product.images?.[0]?.image_url ||
-              'https://images.unsplash.com/photo-1587202372775-e229f172b9d7?w=400'
-            }
-            alt={product.name}
+          <ProductImage
+            product={product}
             className="max-h-full max-w-full object-contain group-hover:scale-105 transition-transform duration-300"
           />
           {discountPercent > 0 && (
@@ -766,12 +761,8 @@ export default function HomePage() {
                       }}
                       className="p-2.5 rounded-xl bg-slate-950 border border-slate-800/80 hover:border-sky-500/50 hover:bg-slate-900 transition cursor-pointer group/mini flex items-center gap-2.5"
                     >
-                      <img
-                        src={
-                          prod.thumbnail_url ||
-                          'https://images.unsplash.com/photo-1587202372775-e229f172b9d7?w=200'
-                        }
-                        alt={prod.name}
+                      <ProductImage
+                        product={prod}
                         className="w-12 h-12 object-contain rounded-lg bg-slate-900 p-1 border border-slate-800 shrink-0 group-hover/mini:scale-105 transition-transform"
                       />
                       <div className="min-w-0">

@@ -345,8 +345,8 @@ function CatalogPage() {
 
           {/* Mobile Drawer Filter Sidebar */}
           {mobileFilterOpen && (
-            <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm lg:hidden flex justify-end">
-              <div className="w-80 max-w-full h-full bg-slate-800 p-4 overflow-y-auto shadow-2xl">
+            <div onClick={() => setMobileFilterOpen(false)} className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm lg:hidden flex justify-end">
+              <div onClick={(e) => e.stopPropagation()} className="w-80 max-w-[85vw] h-full bg-slate-800 p-4 overflow-y-auto shadow-2xl">
                 <FilterSidebar
                   metadata={metadata}
                   filters={{

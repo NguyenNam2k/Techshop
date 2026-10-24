@@ -199,20 +199,18 @@ const ProductDetailPage = () => {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 py-8 space-y-10">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
-          {/* Cột trái: Thư viện ảnh + Thông số kỹ thuật */}
-          <div className="lg:col-span-7 space-y-8">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-10 items-start">
+          {/* Cột trái: Thư viện ảnh */}
+          <div className="lg:col-span-7 space-y-6">
             <ProductGallery
               product={product}
               selectedVariant={selectedVariant}
               onVariantSelect={setSelectedVariant}
             />
-
-            <ProductSpecsTable specifications={product.specifications} />
           </div>
 
-          {/* Cột phải: Thông tin giá, Chọn biến thể, Nút mua */}
-          <div className="lg:col-span-5 space-y-6">
+          {/* Cột phải: Thông tin giá, Chọn biến thể, Nút mua (Sticky on desktop, right below gallery on mobile) */}
+          <div className="lg:col-span-5 space-y-6 lg:sticky lg:top-28">
             <div>
               <div className="flex items-center gap-2 text-xs font-mono text-slate-400 mb-1.5">
                 <span className="font-bold text-sky-400 uppercase tracking-wider bg-sky-500/10 px-2 py-0.5 rounded border border-sky-500/20">
@@ -326,6 +324,11 @@ const ProductDetailPage = () => {
                 <span className="font-medium">Bảo hành chính hãng 1 đổi 1 trong 30 ngày nếu có lỗi NSX</span>
               </div>
             </div>
+          </div>
+
+          {/* Thông số kỹ thuật (Dưới ảnh trên desktop, dưới nút mua trên mobile) */}
+          <div className="lg:col-span-7 space-y-8">
+            <ProductSpecsTable specifications={product.specifications} />
           </div>
         </div>
 

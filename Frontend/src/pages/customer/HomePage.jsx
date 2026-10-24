@@ -252,10 +252,10 @@ function ProductCard({ product, onAddToCart, onNavigate }) {
   return (
     <div
       onClick={() => onNavigate(product)}
-      className="bg-slate-950 rounded-2xl border border-slate-800 hover:border-sky-500/60 p-4 transition-all duration-300 flex flex-col justify-between group cursor-pointer shadow-sm hover:shadow-xl relative"
+      className="bg-slate-950 rounded-2xl border border-slate-800 hover:border-sky-500/60 p-3 sm:p-4 transition-all duration-300 flex flex-col justify-between group cursor-pointer shadow-sm hover:shadow-xl hover:shadow-sky-500/10 motion-card glow-card-hover relative active:scale-[0.98]"
     >
       <div className="space-y-3">
-        <div className="relative h-44 rounded-xl bg-slate-900 border border-slate-800/80 overflow-hidden flex items-center justify-center p-3">
+        <div className="relative h-36 sm:h-44 rounded-xl bg-slate-900 border border-slate-800/80 overflow-hidden flex items-center justify-center p-2.5 sm:p-3">
           <img
             src={
               product.thumbnail_url ||
@@ -264,7 +264,7 @@ function ProductCard({ product, onAddToCart, onNavigate }) {
               'https://images.unsplash.com/photo-1587202372775-e229f172b9d7?w=400'
             }
             alt={product.name}
-            className="max-h-full max-w-full object-contain group-hover:scale-105 transition-transform duration-300"
+            className="max-h-full max-w-full object-contain group-hover:scale-110 transition-transform duration-500 ease-out"
           />
           {discountPercent > 0 && (
             <span className="absolute top-2.5 left-2.5 px-2 py-0.5 text-[10px] font-extrabold rounded-lg bg-rose-600 text-white shadow-sm">
@@ -320,7 +320,7 @@ function ProductCard({ product, onAddToCart, onNavigate }) {
           type="button"
           onClick={(e) => onAddToCart(e, product)}
           title="Thêm vào giỏ hàng"
-          className="p-2.5 bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-400 hover:to-blue-500 text-white rounded-xl shadow-md transition cursor-pointer flex items-center justify-center active:scale-95"
+          className="p-2 sm:p-2.5 bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-400 hover:to-blue-500 text-white rounded-xl shadow-md transition-all cursor-pointer flex items-center justify-center active:scale-90 hover:scale-105 hover:shadow-sky-500/25"
         >
           <ShoppingCart className="w-4 h-4" />
         </button>
@@ -834,7 +834,7 @@ export default function HomePage() {
         )}
 
         {/* Mobile: Horizontal scrollable categories */}
-        <div className="lg:hidden flex gap-2 overflow-x-auto no-scrollbar pb-1">
+        <div className="lg:hidden flex gap-2 overflow-x-auto no-scrollbar pb-2 px-1">
           {FULL_CATEGORIES.map((cat) => {
             const Icon = cat.icon;
             const isSelected = selectedCategory?.slug === cat.slug;
@@ -846,7 +846,11 @@ export default function HomePage() {
                 onClick={() => {
                   navigate(`/catalog?category=${cat.slug}`);
                 }}
-                className="shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-xl border border-slate-800 bg-slate-900 text-slate-200 text-xs font-bold cursor-pointer shadow-sm hover:border-sky-500/50 hover:text-sky-400 transition"
+                className={`shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-xl border text-xs font-bold cursor-pointer shadow-sm active:scale-95 transition-all ${
+                  isSelected
+                    ? 'border-sky-500/60 bg-sky-500/15 text-sky-400'
+                    : 'border-slate-800 bg-slate-900/90 text-slate-200 hover:border-sky-500/40 hover:text-sky-300'
+                }`}
               >
                 <Icon className={`w-3.5 h-3.5 ${cat.color}`} />
                 <span>{cat.name.split(' - ')[0]}</span>
@@ -1061,13 +1065,13 @@ export default function HomePage() {
         </div>
 
         {loading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-5">
             {[1, 2, 3, 4].map((i) => (
               <div key={i} className="h-80 rounded-2xl bg-slate-950 animate-pulse border border-slate-800" />
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-5">
             {flashSaleProducts.map((prod) => (
               <ProductCard
                 key={prod.id}
@@ -1126,7 +1130,7 @@ export default function HomePage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
           {pcBuilds.map((build) => (
             <div
               key={build.id}
@@ -1231,7 +1235,7 @@ export default function HomePage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-5">
           {laptopProducts.map((prod) => (
             <ProductCard
               key={prod.id}
@@ -1286,7 +1290,7 @@ export default function HomePage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-5">
           {partProducts.map((prod) => (
             <ProductCard
               key={prod.id}
@@ -1325,7 +1329,7 @@ export default function HomePage() {
           </Link>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-5">
           {monitorProducts.map((prod) => (
             <ProductCard
               key={prod.id}
@@ -1379,7 +1383,7 @@ export default function HomePage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-5">
           {gearProducts.map((prod) => (
             <ProductCard
               key={prod.id}

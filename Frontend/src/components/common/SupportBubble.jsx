@@ -97,10 +97,10 @@ export default function SupportBubble() {
   };
 
   return (
-    <div className="fixed bottom-6 right-6 z-40 select-none">
+    <div className="fixed bottom-3 right-3 sm:bottom-6 sm:right-6 z-40 select-none safe-bottom">
       {/* Floating Chat Window (When Open) */}
       {isOpen && (
-        <div className="dark dark-locked w-[350px] sm:w-[390px] h-[520px] max-h-[85vh] bg-slate-900 border border-slate-700/80 rounded-3xl shadow-2xl shadow-black/90 flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+        <div className="dark dark-locked w-[calc(100vw-1.5rem)] sm:w-[390px] h-[min(520px,calc(100vh-5rem))] max-h-[85vh] bg-slate-900 border border-slate-700/80 rounded-3xl shadow-2xl shadow-black/90 flex flex-col overflow-hidden motion-pop">
           {/* Header */}
           <div className="bg-gradient-to-r from-sky-600 via-blue-600 to-indigo-600 p-4 text-white flex items-center justify-between shrink-0">
             <div className="flex items-center gap-3">

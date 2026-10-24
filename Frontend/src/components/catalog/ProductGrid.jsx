@@ -4,11 +4,11 @@ function ProductGrid({ products, loading, onResetFilters }) {
   // Skeleton Loading State
   if (loading) {
     return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-5">
+      <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 md:gap-5">
         {Array.from({ length: 8 }).map((_, i) => (
           <div
             key={i}
-            className="bg-slate-800 rounded-2xl border border-slate-700/60 p-4 h-80 animate-pulse flex flex-col justify-between"
+            className="motion-shimmer bg-slate-800 rounded-2xl border border-slate-700/60 p-3 sm:p-4 h-72 sm:h-80 animate-pulse flex flex-col justify-between"
           >
             <div className="w-full h-40 bg-slate-700/60 rounded-xl" />
             <div className="space-y-2 mt-4">
@@ -51,7 +51,7 @@ function ProductGrid({ products, loading, onResetFilters }) {
 
   // Render Grid
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-5">
+    <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 md:gap-5">
       {products.map((product) => (
         <ProductCard key={product.id} product={product} />
       ))}

@@ -5,6 +5,9 @@ require('dotenv').config();
  * MySQL Connection Pool Configuration
  * Utilizes mysql2/promise for async/await transactions and queries
  */
+const isRemoteDb = Boolean(process.env.DB_HOST && !['localhost', '127.0.0.1'].includes(process.env.DB_HOST));
+const isSslEnabled = process.env.DB_SSL === 'true' || (process.env.DB_SSL !== 'false' && isRemoteDb);
+
 const pool = mysql.createPool({
   host: process.env.DB_HOST || 'localhost',
   user: process.env.DB_USER || 'root',
@@ -17,7 +20,8 @@ const pool = mysql.createPool({
   enableKeepAlive: true,
   keepAliveInitialDelay: 0,
   dateStrings: true,
-  timezone: '+07:00'
+  timezone: '+07:00',
+  ssl: isSslEnabled ? { minVersion: 'TLSv1.2', rejectUnauthorized: process.env.DB_SSL_REJECT_UNAUTHORIZED !== 'false' } : undefined
 });
 
 /**

@@ -116,6 +116,10 @@ html[data-theme="light"] :is(footer, .dark-locked) {
 @layer base {
   html {
     scroll-behavior: smooth;
+    font-family: 'Be Vietnam Pro', 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
   }
 
   html {
@@ -123,11 +127,13 @@ html[data-theme="light"] :is(footer, .dark-locked) {
   }
 
   body {
-    @apply antialiased transition-colors duration-200;
+    @apply antialiased transition-colors duration-200 font-sans;
     background-color: rgb(var(--slate-950));
     color: rgb(var(--slate-100));
     min-width: 320px;
     overflow-x: hidden;
+    font-family: 'Be Vietnam Pro', 'Inter', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    letter-spacing: -0.011em;
   }
 
   button,
@@ -136,6 +142,7 @@ html[data-theme="light"] :is(footer, .dark-locked) {
   select,
   textarea {
     -webkit-tap-highlight-color: transparent;
+    font-family: inherit;
   }
 
   button,
@@ -290,6 +297,187 @@ html[data-theme="light"] .hover\:text-slate-950:hover {
   }
 }
 
+/* ========================================================================= */
+/* ANIMATIONS & HIỆU ỨNG THỊ GIÁC TECH/GAMING HIỆN ĐẠI                       */
+/* ========================================================================= */
+
+/* 1. Luồng ánh sáng Cyber Aura thở nhịp nhàng */
+@keyframes pulse-aura {
+  0%, 100% {
+    transform: scale(1) translate(0, 0);
+    opacity: 0.35;
+  }
+  50% {
+    transform: scale(1.22) translate(14px, -10px);
+    opacity: 0.7;
+  }
+}
+
+.animate-pulse-aura {
+  animation: pulse-aura 6.5s ease-in-out infinite alternate;
+}
+
+/* 2. Dải chữ đổi màu ánh quang liên tục (Gradient Text Shift) */
+@keyframes gradient-text-shift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.animate-gradient-text {
+  background-size: 250% 250% !important;
+  animation: gradient-text-shift 4s ease-in-out infinite;
+}
+
+/* 3. Dàn PC Gaming lơ lửng 3D mượt mà kèm Neon Drop Shadow */
+@keyframes float-pc-rig {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+    filter: drop-shadow(0 15px 25px rgba(2, 132, 199, 0.35)) drop-shadow(0 0 18px rgba(6, 182, 212, 0.25));
+  }
+  50% {
+    transform: translateY(-8px) rotate(0.4deg);
+    filter: drop-shadow(0 25px 35px rgba(2, 132, 199, 0.55)) drop-shadow(0 0 30px rgba(139, 92, 246, 0.4));
+  }
+}
+
+.animate-float-pc,
+.animate-float {
+  animation: float-pc-rig 5s ease-in-out infinite;
+}
+
+/* 4. Tia sáng bóng lướt qua khi rê chuột vào Card & Nút bấm */
+.btn-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-shimmer::before {
+  content: '';
+  position: absolute;
+  top: -60%;
+  left: -70%;
+  width: 240%;
+  height: 220%;
+  background: linear-gradient(
+    115deg,
+    transparent 35%,
+    rgba(255, 255, 255, 0.22) 50%,
+    transparent 65%
+  );
+  transform: translateX(-100%);
+  transition: transform 0.65s cubic-bezier(0.22, 1, 0.36, 1);
+  pointer-events: none;
+  z-index: 20;
+}
+
+.btn-shimmer:hover::before {
+  transform: translateX(100%);
+}
+
+/* 5. Hiệu ứng phát quang Neon Viền cho 3 Thẻ Tiện Ích */
+.glow-card-blue {
+  transition: transform 320ms cubic-bezier(0.22, 1, 0.36, 1),
+              box-shadow 320ms cubic-bezier(0.22, 1, 0.36, 1),
+              border-color 320ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.glow-card-blue:hover {
+  transform: translateY(-6px);
+  border-color: rgba(96, 165, 250, 0.65) !important;
+  box-shadow: 0 14px 35px -4px rgba(37, 99, 235, 0.4), 0 0 22px rgba(59, 130, 246, 0.25);
+}
+
+.glow-card-rose {
+  transition: transform 320ms cubic-bezier(0.22, 1, 0.36, 1),
+              box-shadow 320ms cubic-bezier(0.22, 1, 0.36, 1),
+              border-color 320ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.glow-card-rose:hover {
+  transform: translateY(-6px);
+  border-color: rgba(251, 113, 133, 0.7) !important;
+  box-shadow: 0 14px 35px -4px rgba(225, 29, 72, 0.45), 0 0 22px rgba(244, 63, 94, 0.25);
+}
+
+.glow-card-hover {
+  transition: transform 320ms cubic-bezier(0.22, 1, 0.36, 1),
+              box-shadow 320ms cubic-bezier(0.22, 1, 0.36, 1),
+              border-color 320ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.glow-card-hover:hover {
+  transform: translateY(-6px);
+  border-color: rgba(56, 189, 248, 0.55) !important;
+  box-shadow: 0 14px 35px -4px rgba(6, 182, 212, 0.25), 0 0 18px rgba(56, 189, 248, 0.15);
+}
+
+/* 6. Nhịp thở phát sáng nút CTA "Xây Dựng Cấu Hình PC" */
+@keyframes button-glow-pulse {
+  0%, 100% {
+    box-shadow: 0 8px 24px -2px rgba(14, 165, 233, 0.4), 0 0 14px rgba(56, 189, 248, 0.2);
+  }
+  50% {
+    box-shadow: 0 10px 32px 2px rgba(14, 165, 233, 0.65), 0 0 24px rgba(56, 189, 248, 0.5);
+  }
+}
+
+.animate-btn-pulse {
+  animation: button-glow-pulse 3s ease-in-out infinite;
+}
+
+/* 7. Ngọn lửa Flash Sale cháy rực rỡ và đập nhịp */
+@keyframes flame-glow {
+  0%, 100% {
+    filter: drop-shadow(0 0 3px rgba(244, 63, 94, 0.6));
+    transform: scale(1);
+  }
+  50% {
+    filter: drop-shadow(0 0 10px rgba(239, 68, 68, 0.95)) drop-shadow(0 0 15px rgba(251, 146, 60, 0.8));
+    transform: scale(1.1);
+  }
+}
+
+.animate-flame-pulse {
+  animation: flame-glow 1.8s ease-in-out infinite;
+}
+
+/* 8. Đèn tín hiệu trực tiếp (Live Beacon) cho đếm ngược */
+@keyframes live-beacon {
+  0% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+  }
+  70% {
+    transform: scale(1);
+    box-shadow: 0 0 0 6px rgba(239, 68, 68, 0);
+  }
+  100% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+  }
+}
+
+.animate-live-beacon {
+  animation: live-beacon 2s infinite;
+}
+
+/* 9. Badge viền phát sáng nhẹ */
+.glow-badge {
+  box-shadow: 0 0 12px -2px rgba(56, 189, 248, 0.25);
+  transition: all 0.3s ease;
+}
+
+.glow-badge:hover {
+  box-shadow: 0 0 18px 2px rgba(56, 189, 248, 0.45);
+}
+
 @keyframes motion-pop {
   0% {
     opacity: 0;
@@ -346,40 +534,4 @@ html[data-theme="light"] .hover\:text-slate-950:hover {
   .motion-card:active {
     transform: none;
   }
-}
-@keyframes float-slow {
-  0%, 100% {
-    transform: translateY(0px);
-  }
-  50% {
-    transform: translateY(-6px);
-  }
-}
-
-@keyframes glow-pulse {
-  0%, 100% {
-    opacity: 0.4;
-    filter: drop-shadow(0 0 15px rgba(56, 189, 248, 0.3));
-  }
-  50% {
-    opacity: 0.8;
-    filter: drop-shadow(0 0 25px rgba(56, 189, 248, 0.6));
-  }
-}
-
-.animate-float {
-  animation: float-slow 4s ease-in-out infinite;
-}
-
-.animate-glow {
-  animation: glow-pulse 3s ease-in-out infinite;
-}
-
-.glow-card-hover {
-  transition: all 300ms cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-.glow-card-hover:hover {
-  border-color: rgba(56, 189, 248, 0.5);
-  box-shadow: 0 10px 30px -5px rgba(56, 189, 248, 0.2);
 }

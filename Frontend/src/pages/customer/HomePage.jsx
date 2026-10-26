@@ -649,7 +649,7 @@ export default function HomePage() {
                   }`}
                 >
                   <div className="flex items-center gap-2.5 truncate">
-                    <Icon className={`w-4 h-4 ${cat.color} shrink-0`} />
+                    <Icon className={`w-4 h-4 ${cat.color} shrink-0 group-hover:scale-110 group-hover:rotate-3 transition-transform duration-200`} />
                     <span className="text-xs font-semibold truncate group-hover:text-sky-400 transition-colors">
                       {cat.name}
                     </span>
@@ -862,20 +862,27 @@ export default function HomePage() {
         {/* Cột Phải: Poster Siêu Sale (2nd image) + 3 Banners Tiện Ích (1st image) */}
         <div className="space-y-4 min-w-0">
           {/* Poster Siêu Sale Build PC (Ảnh 2) */}
-          <section className="relative overflow-hidden rounded-3xl bg-slate-900 border border-slate-800 shadow-xl p-6 sm:p-8 md:p-10 flex items-center min-h-[430px]">
+          <section className="relative overflow-hidden rounded-3xl bg-slate-900 border border-slate-800 shadow-xl p-6 sm:p-8 md:p-10 flex items-center min-h-[430px] group">
+            {/* Ambient Animated Cyber Glow Lights */}
+            <div className="absolute -top-24 -right-24 w-96 h-96 bg-sky-500/20 rounded-full blur-3xl pointer-events-none animate-pulse-aura" />
+            <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-indigo-500/15 rounded-full blur-3xl pointer-events-none animate-pulse-aura" style={{ animationDelay: '2.5s' }} />
             <div className="absolute -top-24 -right-24 w-96 h-96 bg-sky-500/15 rounded-full blur-3xl pointer-events-none" />
             <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
 
             <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center w-full">
               <div className="lg:col-span-7 space-y-4">
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-sky-500/15 text-sky-400 text-xs font-bold border border-sky-500/30 w-fit">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-sky-500/15 text-sky-400 text-xs font-bold border border-sky-500/30 w-fit glow-badge">
+                  <span className="relative flex h-2 w-2 mr-0.5">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500"></span>
+                  </span>
                   <Flame className="w-3.5 h-3.5 text-rose-500 fill-rose-500 animate-pulse" />
                   <span>Chương Trình Ưu Đãi Công Nghệ 2026</span>
                 </div>
 
-                <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black text-slate-100 tracking-tight leading-tight">
+                <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold text-slate-100 tracking-normal sm:tracking-tight leading-tight">
                   SIÊU SALE BUILD PC <br />
-                  <span className="text-sky-400">GIẢM ĐẾN 20%</span>
+                  <span className="bg-gradient-to-r from-sky-400 via-cyan-300 to-blue-400 bg-clip-text text-transparent animate-gradient-text inline-block">GIẢM ĐẾN 20%</span>
                 </h1>
 
                 <p className="text-slate-300 text-xs sm:text-sm leading-relaxed max-w-lg font-medium">
@@ -885,15 +892,15 @@ export default function HomePage() {
                 <div className="flex flex-wrap gap-3 pt-2">
                   <Link
                     to="/build-pc"
-                    className="px-5 py-3 bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-400 hover:to-blue-500 text-white font-extrabold text-xs uppercase tracking-wider rounded-xl shadow-lg shadow-sky-500/25 transition flex items-center gap-2 cursor-pointer active:scale-95"
+                    className="btn-shimmer animate-btn-pulse px-5 py-3 bg-gradient-to-r from-sky-500 via-sky-400 to-blue-600 hover:from-sky-400 hover:to-blue-500 text-white font-extrabold text-xs uppercase tracking-wider rounded-xl shadow-lg shadow-sky-500/25 hover:shadow-sky-400/40 hover:scale-[1.02] transition-all flex items-center gap-2 cursor-pointer active:scale-95 group/btn"
                   >
-                    <Wrench className="w-4 h-4" />
+                    <Wrench className="w-4 h-4 group-hover/btn:rotate-45 transition-transform duration-300" />
                     <span>Xây Dựng Cấu Hình PC Ngay</span>
                   </Link>
 
                   <Link
                     to="/products/14"
-                    className="px-5 py-3 bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-slate-100 font-bold text-xs uppercase tracking-wider rounded-xl transition cursor-pointer border border-slate-700 active:scale-95 flex items-center gap-1.5"
+                    className="px-5 py-3 bg-slate-800/90 hover:bg-slate-750 text-slate-200 hover:text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer border border-slate-700 hover:border-slate-600 active:scale-95 flex items-center gap-1.5 hover:shadow-md group/link"
                   >
                     <span>Xem Chi Tiết Sản Phẩm</span>
                     <ArrowRight className="w-3.5 h-3.5" />
@@ -922,7 +929,7 @@ export default function HomePage() {
                   <img
                     src="https://images.unsplash.com/photo-1587202372775-e229f172b9d7?w=800&auto=format&fit=crop&q=80"
                     alt="PC Gaming High End"
-                    className="relative z-10 max-h-[300px] w-auto object-contain filter drop-shadow-[0_15px_30px_rgba(2,132,199,0.3)] hover:scale-105 transition-transform duration-500"
+                    className="relative z-10 max-h-[310px] w-auto object-contain animate-float-pc hover:scale-105 transition-transform duration-500 cursor-pointer"
                   />
                 </div>
               </div>
@@ -934,7 +941,7 @@ export default function HomePage() {
             {/* Banner 1: Build PC Trả Góp 0% */}
             <Link
               to="/build-pc"
-              className="relative overflow-hidden rounded-2xl p-4 bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-700 text-white shadow-md hover:shadow-xl transition-all duration-300 group flex flex-col justify-between min-h-[115px] active:scale-[0.99] border border-blue-400/20"
+              className="relative overflow-hidden rounded-2xl p-4 bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 text-white shadow-md hover:shadow-xl hover:shadow-blue-600/25 transition-all duration-300 group flex flex-col justify-between min-h-[120px] active:scale-[0.99] border border-blue-400/25 hover:border-blue-400/50 glow-card-blue hover:-translate-y-1.5 btn-shimmer"
             >
               <div className="relative z-10 space-y-1">
                 <h4 className="font-extrabold text-sm sm:text-base leading-tight tracking-tight text-white drop-shadow-sm">
@@ -951,7 +958,7 @@ export default function HomePage() {
               </div>
 
               {/* Watermark Icon */}
-              <Wrench className="absolute -right-3 -bottom-3 w-20 h-20 text-white/15 pointer-events-none group-hover:scale-110 group-hover:rotate-6 transition-transform duration-300" />
+              <Wrench className="absolute -right-3 -bottom-3 w-20 h-20 text-white/15 pointer-events-none group-hover:scale-125 group-hover:rotate-12 transition-transform duration-500 ease-out" />
             </Link>
 
             {/* Banner 2: Laptop Gaming Giảm Đến 7 Triệu */}
@@ -959,7 +966,7 @@ export default function HomePage() {
               onClick={() => {
                 navigate('/catalog?category=laptops');
               }}
-              className="relative overflow-hidden rounded-2xl p-4 bg-slate-900 hover:bg-slate-850 text-white shadow-md hover:shadow-xl transition-all duration-300 group flex flex-col justify-between min-h-[115px] active:scale-[0.99] border border-slate-800 hover:border-slate-700 cursor-pointer"
+              className="relative overflow-hidden rounded-2xl p-4 bg-slate-900 hover:bg-slate-850 text-white shadow-md hover:shadow-xl hover:shadow-sky-500/10 transition-all duration-300 group flex flex-col justify-between min-h-[120px] active:scale-[0.99] border border-slate-800 hover:border-sky-500/40 glow-card-hover hover:-translate-y-1.5 cursor-pointer btn-shimmer"
             >
               <div className="relative z-10 space-y-1">
                 <h4 className="font-extrabold text-sm sm:text-base leading-tight tracking-tight text-slate-100 group-hover:text-sky-400 transition-colors">
@@ -976,7 +983,7 @@ export default function HomePage() {
               </div>
 
               {/* Watermark Icon */}
-              <Laptop className="absolute -right-3 -bottom-3 w-20 h-20 text-slate-700/25 pointer-events-none group-hover:scale-110 group-hover:-rotate-6 transition-transform duration-300" />
+              <Laptop className="absolute -right-3 -bottom-3 w-20 h-20 text-slate-700/25 pointer-events-none group-hover:scale-125 group-hover:-rotate-12 transition-transform duration-500 ease-out" />
             </div>
 
             {/* Banner 3: Gear Esports Chính Hãng */}
@@ -984,7 +991,7 @@ export default function HomePage() {
               onClick={() => {
                 navigate('/catalog?category=keyboards');
               }}
-              className="relative overflow-hidden rounded-2xl p-4 bg-gradient-to-r from-red-600 via-rose-600 to-orange-500 text-white shadow-md hover:shadow-xl transition-all duration-300 group flex flex-col justify-between min-h-[115px] active:scale-[0.99] border border-rose-400/20 cursor-pointer"
+              className="relative overflow-hidden rounded-2xl p-4 bg-gradient-to-br from-red-600 via-rose-600 to-orange-500 text-white shadow-md hover:shadow-xl hover:shadow-rose-600/25 transition-all duration-300 group flex flex-col justify-between min-h-[120px] active:scale-[0.99] border border-rose-400/30 hover:border-rose-400/60 glow-card-rose hover:-translate-y-1.5 cursor-pointer btn-shimmer"
             >
               <div className="relative z-10 space-y-1">
                 <h4 className="font-extrabold text-sm sm:text-base leading-tight tracking-tight text-white drop-shadow-sm">
@@ -1001,7 +1008,7 @@ export default function HomePage() {
               </div>
 
               {/* Watermark Icon */}
-              <Mouse className="absolute -right-3 -bottom-3 w-20 h-20 text-white/15 pointer-events-none group-hover:scale-110 group-hover:rotate-6 transition-transform duration-300" />
+              <Mouse className="absolute -right-3 -bottom-3 w-20 h-20 text-white/15 pointer-events-none group-hover:scale-125 group-hover:rotate-12 transition-transform duration-500 ease-out" />
             </div>
           </div>
         </div>
@@ -1040,7 +1047,7 @@ export default function HomePage() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-800">
           <div className="flex items-center gap-3">
             <div className="p-2.5 bg-rose-500/10 border border-rose-500/30 text-rose-500 rounded-2xl">
-              <Flame className="w-6 h-6 fill-rose-500 animate-bounce" />
+              <Flame className="w-6 h-6 fill-rose-500 animate-flame-pulse" />
             </div>
             <div>
               <h2 className="text-xl font-black text-slate-100 uppercase tracking-tight flex items-center gap-2">
@@ -1055,8 +1062,12 @@ export default function HomePage() {
             </div>
           </div>
 
-          <div className="flex items-center gap-2 bg-slate-950 px-4 py-2 rounded-2xl text-xs font-bold font-mono border border-slate-800">
-            <Clock className="w-4 h-4 text-sky-400 animate-spin" />
+          <div className="flex items-center gap-2.5 bg-slate-950 px-4 py-2 rounded-2xl text-xs font-bold font-mono border border-slate-800 shadow-inner">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500"></span>
+            </span>
+            <Clock className="w-4 h-4 text-sky-400 animate-pulse" />
             <span className="text-slate-400">Kết thúc sau:</span>
             <span className="text-sky-400 text-sm tracking-wider font-extrabold">
               {formatCountdown(timeLeft)}

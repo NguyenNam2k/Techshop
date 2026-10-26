@@ -103,6 +103,26 @@ export default {
   darkMode: 'class',
   theme: {
     extend: {
+      fontFamily: {
+        sans: [
+          '"Be Vietnam Pro"',
+          'Inter',
+          'ui-sans-serif',
+          'system-ui',
+          '-apple-system',
+          'BlinkMacSystemFont',
+          '"Segoe UI"',
+          'Roboto',
+          '"Helvetica Neue"',
+          'Arial',
+          'sans-serif',
+          '"Apple Color Emoji"',
+          '"Segoe UI Emoji"',
+          '"Segoe UI Symbol"',
+          '"Noto Color Emoji"'
+        ],
+        heading: ['"Be Vietnam Pro"', 'Inter', 'sans-serif']
+      },
       colors: {
         ...themeColors,
         'cyber-cyan': '#06b6d4',

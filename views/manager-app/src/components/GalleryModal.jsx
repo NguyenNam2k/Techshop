@@ -8,7 +8,8 @@ import {
   Trash2,
   Maximize2,
   Loader2,
-  Image as ImageIcon
+  Image as ImageIcon,
+  AlertCircle
 } from 'lucide-react';
 import { showToast } from './Toast';
 
@@ -25,6 +26,7 @@ export default function GalleryModal({
   const [newImageUrl, setNewImageUrl] = useState('');
   const [newAngleLabel, setNewAngleLabel] = useState('Góc nhìn chi tiết');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [uploadError, setUploadError] = useState('');
 
   const fetchImages = async () => {
     if (!productId) return;
@@ -45,6 +47,7 @@ export default function GalleryModal({
   useEffect(() => {
     if (isOpen && productId) {
       fetchImages();
+      setUploadError('');
     }
   }, [isOpen, productId]);
 
@@ -52,6 +55,7 @@ export default function GalleryModal({
 
   const handleAddImage = async (e) => {
     e?.preventDefault();
+    setUploadError('');
     if (!newImageUrl.trim()) {
       showToast('Vui lòng nhập link ảnh hoặc tải tệp lên!', 'warning');
       return;
@@ -83,8 +87,37 @@ export default function GalleryModal({
   };
 
   const handleFileUpload = async (e) => {
-    const file = e.target.files?.[0];
+    const inputElement = e.target;
+    const file = inputElement.files?.[0];
     if (!file) return;
+
+    setUploadError('');
+
+    // Danh sách định dạng ảnh hợp lệ
+    const validExtensions = ['.jpg', '.jpeg', '.png', '.webp', '.gif', '.svg', '.avif'];
+    const fileName = (file.name || '').toLowerCase();
+    const hasValidExt = validExtensions.some((ext) => fileName.endsWith(ext));
+    const isImageMime = file.type && file.type.startsWith('image/');
+
+    // 1. Kiểm tra định dạng tệp ảnh
+    if (!isImageMime && !hasValidExt) {
+      const errMsg = `Tệp "${file.name}" không phải là ảnh hợp lệ! Vui lòng chọn tệp: JPG, PNG, WEBP, GIF, SVG, AVIF.`;
+      setUploadError(errMsg);
+      showToast(errMsg, 'error');
+      inputElement.value = '';
+      return;
+    }
+
+    // 2. Kiểm tra dung lượng tối đa (10MB)
+    const MAX_SIZE = 10 * 1024 * 1024;
+    if (file.size > MAX_SIZE) {
+      const sizeMB = (file.size / (1024 * 1024)).toFixed(1);
+      const errMsg = `Dung lượng tệp (${sizeMB}MB) vượt quá giới hạn tối đa 10MB! Vui lòng chọn ảnh nhẹ hơn.`;
+      setUploadError(errMsg);
+      showToast(errMsg, 'error');
+      inputElement.value = '';
+      return;
+    }
 
     const uploadData = new FormData();
     uploadData.append('image', file);
@@ -95,8 +128,19 @@ export default function GalleryModal({
         method: 'POST',
         body: uploadData
       });
-      const upData = await upRes.json();
-      if (!upData.success) throw new Error(upData.message || 'Lỗi tải ảnh');
+
+      const contentType = upRes.headers.get('content-type') || '';
+      let upData;
+      if (contentType.includes('application/json')) {
+        upData = await upRes.json();
+      } else {
+        const text = await upRes.text();
+        throw new Error(text || 'Máy chủ không thể xử lý tệp này.');
+      }
+
+      if (!upRes.ok || !upData.success) {
+        throw new Error(upData.message || 'Lỗi khi tải ảnh lên máy chủ.');
+      }
 
       // Add to gallery directly
       const addRes = await fetch(`/api/products/${productId}/images`, {
@@ -112,12 +156,15 @@ export default function GalleryModal({
       if (!addJson.success) throw new Error(addJson.message || 'Lỗi lưu ảnh');
 
       showToast('Tải ảnh và lưu vào bộ sưu tập thành công!', 'success');
+      setUploadError('');
       fetchImages();
       onImagesUpdated?.();
     } catch (err) {
-      showToast(err.message || 'Không thể tải ảnh', 'error');
+      const errMsg = err.message || 'Không thể tải ảnh';
+      setUploadError(errMsg);
+      showToast(errMsg, 'error');
     } finally {
-      e.target.value = '';
+      inputElement.value = '';
     }
   };
 
@@ -231,18 +278,33 @@ export default function GalleryModal({
 
                 <label
                   className="py-1.5 px-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-lg text-xs cursor-pointer flex items-center justify-center"
-                  title="Tải ảnh từ máy tính"
+                  title="Tải ảnh từ máy tính (JPG, PNG, WEBP, GIF, SVG - Tối đa 10MB)"
                 >
                   <Upload className="w-3.5 h-3.5" />
                   <input
                     type="file"
-                    accept="image/*"
+                    accept="image/*,.jpg,.jpeg,.png,.webp,.gif,.svg,.avif"
                     onChange={handleFileUpload}
                     className="hidden"
                   />
                 </label>
               </div>
             </div>
+
+            {uploadError && (
+              <div className="p-2.5 bg-rose-950/80 border border-rose-500/50 rounded-lg text-rose-200 text-xs flex items-start gap-2 shadow animate-fade-in">
+                <AlertCircle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
+                <div className="flex-1 font-medium">{uploadError}</div>
+                <button
+                  type="button"
+                  onClick={() => setUploadError('')}
+                  className="p-0.5 rounded text-rose-400 hover:text-white hover:bg-rose-900/60 transition"
+                  title="Đóng thông báo"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </div>
+            )}
           </form>
         </div>
 

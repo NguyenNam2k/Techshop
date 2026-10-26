@@ -54,7 +54,7 @@ async function seedProducts() {
       model_code: 'GA403UI-QS026W',
       base_price: 49990000,
       description: 'Laptop gaming mỏng nhẹ hàng đầu với màn hình OLED 3K 120Hz, chip Ryzen 9 AI và RTX 4070.',
-      thumbnail_url: 'https://images.unsplash.com/photo-1593642632823-8f785ba67e45?auto=format&fit=crop&w=600&q=80',
+      thumbnail_url: 'https://res.cloudinary.com/zrnhpe6p/image/upload/v1792997621/techshop/products/thumb-asus-rog-zephyrus-g14-2026.jpg',
       warranty_months: 24,
       status: 'active',
       variants: [
@@ -70,7 +70,7 @@ async function seedProducts() {
       model_code: 'MUW63SA/A',
       base_price: 89990000,
       description: 'Sức mạnh vượt trội cho tác vụ đồ họa và lập trình chuyên nghiệp cùng thời lượng pin 22 giờ.',
-      thumbnail_url: 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?auto=format&fit=crop&w=600&q=80',
+      thumbnail_url: 'https://res.cloudinary.com/zrnhpe6p/image/upload/v1792997622/techshop/products/thumb-macbook-pro-16-inch-m3-max.jpg',
       warranty_months: 12,
       status: 'active',
       variants: [
@@ -86,7 +86,7 @@ async function seedProducts() {
       model_code: '16IRX9H',
       base_price: 62990000,
       description: 'Cỗ máy gaming đỉnh cao trang bị Intel Core i9-14900HX, RTX 4080 và tản nhiệt buồng hơi Legion Coldfront.',
-      thumbnail_url: 'https://images.unsplash.com/photo-1603302576837-37561b2e2302?auto=format&fit=crop&w=600&q=80',
+      thumbnail_url: 'https://res.cloudinary.com/zrnhpe6p/image/upload/v1792997623/techshop/products/thumb-lenovo-legion-pro-7i-gen-9.jpg',
       warranty_months: 36,
       status: 'active',
       variants: [
@@ -101,7 +101,7 @@ async function seedProducts() {
       model_code: 'Q1P-M1',
       base_price: 4590000,
       description: 'Bàn phím cơ full nhôm CNC 75%, gasket mount, kết nối Bluetooth 5.1 & Type-C, switch Banana tactile mượt mà.',
-      thumbnail_url: 'https://images.unsplash.com/photo-1587829741301-dc798b83add3?auto=format&fit=crop&w=600&q=80',
+      thumbnail_url: 'https://res.cloudinary.com/zrnhpe6p/image/upload/v1792997623/techshop/products/thumb-ban-phim-co-keychron-q1-pro.jpg',
       warranty_months: 12,
       status: 'active',
       variants: [
@@ -117,7 +117,7 @@ async function seedProducts() {
       model_code: 'MOD007-HE',
       base_price: 3690000,
       description: 'Bàn phím cơ switch từ tính Magnetic Switch, tính năng Rapid Trigger siêu nhạy cho game thủ FPS.',
-      thumbnail_url: 'https://images.unsplash.com/photo-1618384887929-16ec33fab9ef?auto=format&fit=crop&w=600&q=80',
+      thumbnail_url: 'https://res.cloudinary.com/zrnhpe6p/image/upload/v1792997624/techshop/products/thumb-ban-phim-co-akko-mod007v3-he.jpg',
       warranty_months: 12,
       status: 'active',
       variants: [
@@ -132,7 +132,7 @@ async function seedProducts() {
       model_code: 'G-PXS2',
       base_price: 3890000,
       description: 'Huyền thoại chuột esports thế hệ mới trọng lượng 60g, cảm biến HERO 2 32.000 DPI, switch lai quang-cơ LIGHTFORCE.',
-      thumbnail_url: 'https://images.unsplash.com/photo-1615663245857-ac93bb7c39e7?auto=format&fit=crop&w=600&q=80',
+      thumbnail_url: 'https://res.cloudinary.com/zrnhpe6p/image/upload/v1792997625/techshop/products/thumb-chuot-gaming-logitech-g-pro-x-superlight-2.jpg',
       warranty_months: 24,
       status: 'active',
       variants: [
@@ -149,7 +149,7 @@ async function seedProducts() {
       model_code: 'RZ01-0512',
       base_price: 3990000,
       description: 'Chuột đối xứng siêu nhẹ 54g, công nghệ không dây HyperPolling 8000Hz thực sự, cảm biến Focus Pro 35K Gen 2.',
-      thumbnail_url: 'https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?auto=format&fit=crop&w=600&q=80',
+      thumbnail_url: 'https://res.cloudinary.com/zrnhpe6p/image/upload/v1792997626/techshop/products/thumb-chuot-gaming-razer-viper-v3-pro.jpg',
       warranty_months: 24,
       status: 'active',
       variants: [
@@ -164,7 +164,7 @@ async function seedProducts() {
       model_code: '61520',
       base_price: 8990000,
       description: 'Hệ thống âm thanh Nova Pro đỉnh cao, khử tiếng ồn chủ động ANC, 2 pin thay nóng liên tục không bao giờ hết pin.',
-      thumbnail_url: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=600&q=80',
+      thumbnail_url: 'https://res.cloudinary.com/zrnhpe6p/image/upload/v1792997626/techshop/products/thumb-tai-nghe-steelseries-arctis-nova-pro-wireless.jpg',
       warranty_months: 24,
       status: 'active',
       variants: [
@@ -179,7 +179,7 @@ async function seedProducts() {
       model_code: 'AW3423DWF',
       base_price: 26900000,
       description: 'Màn hình cong 34 inch Quantum Dot OLED, độ phân giải WQHD 3440x1440, tần số quét 165Hz 0.1ms cho màu đen tuyệt đối.',
-      thumbnail_url: 'https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?auto=format&fit=crop&w=600&q=80',
+      thumbnail_url: 'https://res.cloudinary.com/zrnhpe6p/image/upload/v1792997627/techshop/products/thumb-man-hinh-dell-alienware-aw3423dwf.jpg',
       warranty_months: 36,
       status: 'active',
       variants: [
@@ -194,7 +194,7 @@ async function seedProducts() {
       model_code: '27GR95QE',
       base_price: 18900000,
       description: 'Màn hình gaming OLED 27 inch 2K QHD (2560x1440), tần số quét 240Hz, phản hồi 0.03ms mượt mà.',
-      thumbnail_url: 'https://images.unsplash.com/photo-1586210579191-33b45e38fa2c?auto=format&fit=crop&w=600&q=80',
+      thumbnail_url: 'https://res.cloudinary.com/zrnhpe6p/image/upload/v1792997269/techshop/products/prod-thumb-man-hinh-lg-ultragear-27gr95qe-b-oled-1792997266539-845354_hht4ik.jpg',
       warranty_months: 24,
       status: 'active',
       variants: [

@@ -18,6 +18,7 @@ import { useCart } from '../../context/CartContext';
 import { useAuth } from '../../context/AuthContext';
 import AuthRequiredModal from '../../components/common/AuthRequiredModal';
 import { api, withTransientRetry } from '../../services/api';
+import { getCategoryDisplayName } from '../../constants/categories';
 
 const DEFAULT_PRODUCT_SLUG = 'asus-rog-zephyrus-g16-2024-oled-intel-core-ultra-9-rtx-4080-17';
 
@@ -176,16 +177,19 @@ const ProductDetailPage = () => {
         <div className="max-w-7xl mx-auto px-4 py-3">
           <nav className="flex items-center gap-2 text-xs text-slate-400 font-medium">
             <Link
-              to={`/products/${DEFAULT_PRODUCT_SLUG}`}
+              to="/catalog"
               className="cursor-pointer flex items-center gap-1 transition-colors text-slate-300 hover:text-sky-500 font-medium"
             >
               <Home className="w-3.5 h-3.5" />
-              <span>Cửa hàng</span>
+              <span>Sản phẩm</span>
             </Link>
             <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
-            <span className="text-slate-300">
-              {product.category_name || 'Linh kiện & Thiết bị'}
-            </span>
+            <Link
+              to={`/catalog?category=${product.category_slug || ''}`}
+              className="text-slate-300 hover:text-sky-400 transition-colors font-medium"
+            >
+              {product.category_name || getCategoryDisplayName(product.category_slug)}
+            </Link>
             <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
             <span className="text-slate-100 font-bold truncate max-w-xs sm:max-w-md">
               {product.name}

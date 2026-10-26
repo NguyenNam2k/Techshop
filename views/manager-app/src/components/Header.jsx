@@ -1,5 +1,5 @@
 import React from 'react';
-import { ChevronRight, PlusCircle, UserCog, RefreshCw, Sun, Moon } from 'lucide-react';
+import { ChevronRight, PlusCircle, UserCog, RefreshCw, Sun, Moon, LogOut } from 'lucide-react';
 
 const viewTitles = {
   products: 'Danh Sách Thiết Bị Công Nghệ',
@@ -12,7 +12,14 @@ const viewTitles = {
   staffs: 'Phân Quyền & Quản Lý Nhân Sự'
 };
 
-export default function Header({ activeView = 'products', onSelectView, theme = 'dark', onToggleTheme }) {
+export default function Header({
+  activeView = 'products',
+  onSelectView,
+  theme = 'dark',
+  onToggleTheme,
+  user,
+  onOpenLogoutModal
+}) {
   return (
     <header className="h-16 px-8 border-b border-slate-800 bg-[#0f172a]/70 backdrop-blur-md flex items-center justify-between sticky top-0 z-30">
       <div className="flex items-center gap-3 text-sm text-slate-400">
@@ -81,6 +88,33 @@ export default function Header({ activeView = 'products', onSelectView, theme = 
             <span>Phân quyền nhân sự</span>
           </button>
         )}
+
+        {/* User Card & Nút Đăng Xuất trên Header chuẩn hóa theo Storefront / Admin */}
+        <div className="flex items-center gap-2.5 pl-3 border-l border-slate-800">
+          <div className="flex items-center gap-2.5 px-3 py-1.5 rounded-xl bg-slate-900/80 border border-slate-800 text-xs shadow-sm">
+            <div className="w-6 h-6 rounded-lg bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center text-cyan-300 font-bold text-[11px]">
+              {user?.name ? user.name.charAt(0).toUpperCase() : 'M'}
+            </div>
+            <div className="hidden sm:block text-left">
+              <div className="text-slate-200 font-semibold text-xs leading-tight truncate max-w-[120px]">
+                {user?.name || 'Quản lý'}
+              </div>
+              <div className="text-[10px] text-cyan-400 font-mono leading-none uppercase">
+                {user?.role || 'Manager'}
+              </div>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={onOpenLogoutModal}
+            title="Đăng xuất khỏi hệ thống"
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold text-rose-400 hover:text-rose-300 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 transition-all cursor-pointer shadow-sm active:scale-95"
+          >
+            <LogOut className="w-3.5 h-3.5" />
+            <span className="hidden md:inline">Đăng xuất</span>
+          </button>
+        </div>
       </div>
     </header>
   );

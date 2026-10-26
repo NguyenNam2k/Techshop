@@ -13,7 +13,8 @@ import {
   ArrowLeft,
   X,
   Layers,
-  Info
+  Info,
+  AlertCircle
 } from 'lucide-react';
 import { showToast } from '../components/Toast';
 
@@ -47,6 +48,7 @@ export default function CreateProductView({
   const [formData, setFormData] = useState(initialFormData);
   const [imageInputMode, setImageInputMode] = useState('url'); // 'url' | 'upload'
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadError, setUploadError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
@@ -93,16 +95,35 @@ export default function CreateProductView({
   };
 
   const handleFileUpload = async (e) => {
-    const file = e.target.files?.[0];
+    const inputElement = e.target;
+    const file = inputElement.files?.[0];
     if (!file) return;
 
-    if (!file.type.startsWith('image/')) {
-      showToast('Vui lòng chỉ tải lên tệp hình ảnh!', 'error');
+    setUploadError('');
+
+    // Danh sách định dạng ảnh hợp lệ
+    const validExtensions = ['.jpg', '.jpeg', '.png', '.webp', '.gif', '.svg', '.avif'];
+    const fileName = (file.name || '').toLowerCase();
+    const hasValidExt = validExtensions.some((ext) => fileName.endsWith(ext));
+    const isImageMime = file.type && file.type.startsWith('image/');
+
+    // 1. Kiểm tra định dạng tệp ảnh
+    if (!isImageMime && !hasValidExt) {
+      const errMsg = `Tệp "${file.name}" không phải là ảnh hợp lệ! Vui lòng chọn tệp: JPG, PNG, WEBP, GIF, SVG, AVIF.`;
+      setUploadError(errMsg);
+      showToast(errMsg, 'error');
+      inputElement.value = '';
       return;
     }
 
-    if (file.size > 10 * 1024 * 1024) {
-      showToast('Kích thước ảnh tối đa là 10MB!', 'error');
+    // 2. Kiểm tra dung lượng tối đa (10MB)
+    const MAX_SIZE = 10 * 1024 * 1024;
+    if (file.size > MAX_SIZE) {
+      const sizeMB = (file.size / (1024 * 1024)).toFixed(1);
+      const errMsg = `Dung lượng tệp (${sizeMB}MB) vượt quá giới hạn tối đa 10MB! Vui lòng chọn ảnh nhẹ hơn.`;
+      setUploadError(errMsg);
+      showToast(errMsg, 'error');
+      inputElement.value = '';
       return;
     }
 
@@ -115,17 +136,31 @@ export default function CreateProductView({
         method: 'POST',
         body: uploadData
       });
-      const data = await res.json();
-      if (!data.success) throw new Error(data.message || 'Lỗi tải ảnh');
+
+      const contentType = res.headers.get('content-type') || '';
+      let data;
+      if (contentType.includes('application/json')) {
+        data = await res.json();
+      } else {
+        const text = await res.text();
+        throw new Error(text || 'Máy chủ không thể xử lý tệp này.');
+      }
+
+      if (!res.ok || !data.success) {
+        throw new Error(data.message || 'Lỗi khi tải ảnh lên máy chủ.');
+      }
 
       const imgUrl = data.url || data.data?.image_url;
       setFormData((prev) => ({ ...prev, thumbnail_url: imgUrl }));
-      showToast('Tải ảnh lên thành công!', 'success');
+      setUploadError('');
+      showToast('Tải ảnh đại diện lên thành công!', 'success');
     } catch (err) {
-      showToast(err.message || 'Không thể tải ảnh lên', 'error');
+      const errMsg = err.message || 'Không thể tải ảnh lên hệ thống';
+      setUploadError(errMsg);
+      showToast(errMsg, 'error');
     } finally {
       setIsUploading(false);
-      e.target.value = '';
+      inputElement.value = '';
     }
   };
 
@@ -461,31 +496,48 @@ export default function CreateProductView({
                   </div>
                 </div>
               ) : (
-                /* Mode 2: Local File Upload */
-                <label className="relative block border-2 border-dashed border-slate-700 hover:border-cyan-500/50 rounded-xl p-4 text-center cursor-pointer transition-all bg-slate-800/40">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleFileUpload}
-                    className="hidden"
-                  />
-                  {!isUploading ? (
-                    <div className="flex flex-col items-center justify-center gap-1.5 text-slate-400">
-                      <UploadCloud className="w-8 h-8 text-cyan-400 mb-0.5" />
-                      <span className="text-xs font-medium text-slate-200">
-                        Nhấn để chọn ảnh từ máy tính
-                      </span>
-                      <span className="text-[10px] text-slate-500">
-                        Tự động lưu vào /public/uploads/products/ (Max: 10MB)
-                      </span>
-                    </div>
-                  ) : (
-                    <div className="flex items-center justify-center gap-2 text-cyan-400 text-xs py-3">
-                      <Loader2 className="w-5 h-5 animate-spin" />
-                      <span>Đang tải ảnh lên hệ thống...</span>
+                <div className="space-y-3">
+                  <label className="relative block border-2 border-dashed border-slate-700 hover:border-cyan-500/50 rounded-xl p-4 text-center cursor-pointer transition-all bg-slate-800/40">
+                    <input
+                      type="file"
+                      accept="image/*,.jpg,.jpeg,.png,.webp,.gif,.svg,.avif"
+                      onChange={handleFileUpload}
+                      className="hidden"
+                    />
+                    {!isUploading ? (
+                      <div className="flex flex-col items-center justify-center gap-1.5 text-slate-400">
+                        <UploadCloud className="w-8 h-8 text-cyan-400 mb-0.5" />
+                        <span className="text-xs font-medium text-slate-200">
+                          Nhấn để chọn ảnh từ máy tính
+                        </span>
+                        <span className="text-[10px] text-slate-500">
+                          Hỗ trợ JPG, PNG, WEBP, GIF, SVG (Tối đa 10MB)
+                        </span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-center gap-2 text-cyan-400 text-xs py-3">
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                        <span>Đang tải ảnh lên hệ thống...</span>
+                      </div>
+                    )}
+                  </label>
+
+                  {/* Thông báo lỗi trực quan ngay dưới ô chọn file */}
+                  {uploadError && (
+                    <div className="p-3 bg-rose-950/80 border border-rose-500/50 rounded-xl text-rose-200 text-xs flex items-start gap-2.5 shadow-lg shadow-rose-950/40 animate-fade-in">
+                      <AlertCircle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
+                      <div className="flex-1 font-medium leading-relaxed">{uploadError}</div>
+                      <button
+                        type="button"
+                        onClick={() => setUploadError('')}
+                        className="p-1 rounded text-rose-400 hover:text-white hover:bg-rose-900/60 transition"
+                        title="Đóng thông báo"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
                     </div>
                   )}
-                </label>
+                </div>
               )}
 
               {/* Live Preview */}

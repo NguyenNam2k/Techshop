@@ -2,7 +2,6 @@ const cloudinary = require('cloudinary').v2;
 const { Readable } = require('stream');
 require('dotenv').config();
 
-// Kiểm tra xem đã cung cấp đầy đủ thông tin xác thực Cloudinary chưa
 const isConfigured = Boolean(
   process.env.CLOUDINARY_CLOUD_NAME &&
   process.env.CLOUDINARY_API_KEY &&
@@ -19,10 +18,35 @@ if (isConfigured) {
 }
 
 /**
+ * Tải file từ máy tính lên Cloudinary CDN (Được sử dụng bởi Product Controller của Dương)
+ * @param {string} filePath - Đường dẫn file cục bộ
+ * @param {string} folder - Thư mục trên Cloudinary (mặc định: 'techshop/products')
+ * @returns {Promise<{ secure_url: string, public_id: string }>}
+ */
+async function uploadToCloudinary(filePath, folder = 'techshop/products') {
+  if (!isConfigured) {
+    throw new Error('Chưa cấu hình thông tin xác thực Cloudinary trong file .env');
+  }
+
+  const result = await cloudinary.uploader.upload(filePath, {
+    folder,
+    resource_type: 'image',
+    use_filename: true,
+    unique_filename: true,
+    overwrite: false
+  });
+
+  return {
+    secure_url: result.secure_url,
+    public_id: result.public_id
+  };
+}
+
+/**
  * Tải trực tiếp buffer hình ảnh lên Cloudinary
  * @param {Buffer} buffer - Buffer dữ liệu file ảnh từ multer memoryStorage
  * @param {string} [folder='techshop/products'] - Thư mục lưu trữ trên Cloudinary
- * @param {object} [options={}] - Các tùy chọn bổ sung (tags, transformation...)
+ * @param {object} [options={}] - Các tùy chọn bổ sung
  * @returns {Promise<{ secure_url: string, public_id: string, format: string, bytes: number }>}
  */
 const uploadBufferToCloud = (buffer, folder = 'techshop/products', options = {}) => {
@@ -79,6 +103,8 @@ const deleteFromCloud = async (publicId) => {
 module.exports = {
   cloudinary,
   isConfigured,
+  isCloudinaryConfigured: () => isConfigured,
+  uploadToCloudinary,
   uploadBufferToCloud,
   deleteFromCloud
 };

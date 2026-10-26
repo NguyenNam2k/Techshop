@@ -21,7 +21,8 @@ export default function Sidebar({
   staffCount = 0,
   onOpenLogoutModal,
   theme = 'dark',
-  onToggleTheme
+  onToggleTheme,
+  user
 }) {
   const navItems = [
     {
@@ -209,31 +210,43 @@ export default function Sidebar({
         </div>
       </div>
 
-      {/* Database Status & Logout Card */}
+      {/* Database Status & Logout Card (Đồng bộ chuẩn hóa giống Admin & Customer) */}
       <div className="p-4 border-t border-slate-800/80 bg-slate-900/60 space-y-3">
-        <div>
-          <div className="flex items-center gap-2 mb-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
-            <span className="text-xs font-semibold text-slate-300">MySQL Connection Pool</span>
+        {/* User Card */}
+        <div className="flex items-center gap-3 px-1 py-0.5">
+          <div className="w-9 h-9 rounded-xl bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center text-cyan-300 font-bold text-sm shadow-sm">
+            {user?.name ? user.name.charAt(0).toUpperCase() : 'M'}
           </div>
-          <div className="flex justify-between items-center text-[11px] text-slate-400 font-mono">
-            <span>Database:</span>
-            <span className="text-cyan-400">techshop_db</span>
-          </div>
-          <div className="flex justify-between items-center text-[11px] text-slate-400 font-mono mt-1">
-            <span>Engine:</span>
-            <span className="text-slate-300">InnoDB ACID</span>
+          <div className="flex-1 min-w-0">
+            <p className="text-white text-xs font-semibold truncate">{user?.name || 'Quản lý'}</p>
+            <p className="text-[10px] text-cyan-400 font-mono truncate uppercase">{user?.role || 'Manager'}</p>
           </div>
         </div>
 
         <button
           type="button"
           onClick={onOpenLogoutModal}
-          className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold text-rose-400 hover:text-rose-300 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 transition-all"
+          className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl text-xs font-semibold text-rose-400 hover:text-rose-300 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 transition-all cursor-pointer shadow-sm active:scale-98"
         >
           <LogOut className="w-3.5 h-3.5" />
           <span>Đăng xuất (Logout)</span>
         </button>
+
+        {/* Database Status */}
+        <div className="pt-2 border-t border-slate-800/60">
+          <div className="flex items-center gap-2 mb-1.5">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            <span className="text-[11px] font-semibold text-slate-300">MySQL Connection Pool</span>
+          </div>
+          <div className="flex justify-between items-center text-[10px] text-slate-400 font-mono">
+            <span>Database:</span>
+            <span className="text-cyan-400">techshop_db</span>
+          </div>
+          <div className="flex justify-between items-center text-[10px] text-slate-400 font-mono mt-0.5">
+            <span>Engine:</span>
+            <span className="text-slate-300">InnoDB ACID</span>
+          </div>
+        </div>
       </div>
     </aside>
   );

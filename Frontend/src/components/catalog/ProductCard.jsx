@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import ProductImage from '../common/ProductImage';
+import { getCategoryDisplayName } from '../../constants/categories';
 
 function formatVND(amount) {
   if (!amount && amount !== 0) return '0 ₫';
@@ -58,7 +59,7 @@ function ProductCard({ product }) {
               {brand}
             </span>
             <span className="text-[11px] text-slate-400 truncate">
-              {category?.name}
+              {getCategoryDisplayName(category?.name || category?.slug)}
             </span>
           </div>
 

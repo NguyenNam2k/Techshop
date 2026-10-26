@@ -1,7 +1,7 @@
 import React from 'react';
 import { LogOut } from 'lucide-react';
 
-export default function LogoutModal({ isOpen, onClose }) {
+export default function LogoutModal({ isOpen, onClose, onConfirm, user }) {
   if (!isOpen) return null;
 
   return (
@@ -13,24 +13,26 @@ export default function LogoutModal({ isOpen, onClose }) {
         <div>
           <h3 className="text-base font-bold text-white">Xác Nhận Đăng Xuất</h3>
           <p className="text-xs text-slate-400 mt-1">
-            Bạn có chắc chắn muốn kết thúc phiên làm việc của Quản Lý (Manager)?
+            Bạn có chắc chắn muốn kết thúc phiên làm việc của{' '}
+            <span className="text-cyan-400 font-semibold">{user?.name || 'Quản Lý (Manager)'}</span>?
           </p>
         </div>
         <div className="flex items-center justify-center gap-3 pt-2">
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold"
+            className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition cursor-pointer active:scale-95"
           >
             Ở lại
           </button>
-          <a
-            href="/logout"
-            className="px-5 py-2 rounded-lg bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold shadow-lg shadow-rose-600/30 flex items-center gap-1.5"
+          <button
+            type="button"
+            onClick={onConfirm}
+            className="px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold shadow-lg shadow-rose-600/30 flex items-center gap-1.5 transition cursor-pointer active:scale-95"
           >
             <LogOut className="w-3.5 h-3.5" />
             <span>Đăng xuất ngay</span>
-          </a>
+          </button>
         </div>
       </div>
     </div>

@@ -10,7 +10,7 @@
     "dev:frontend": "npm --prefix Frontend run dev",
     "build:frontend": "npm --prefix Frontend install --include=dev && npm --prefix Frontend run build",
     "build:client": "npm --prefix Frontend install --include=dev && npm --prefix Frontend run build",
-    "build:manager": "npm --prefix views/manager-app run build",
+    "build:manager": "npm --prefix views/manager-app install --include=dev && npm --prefix views/manager-app run build",
     "frontend": "npm --prefix Frontend run dev",
     "client": "npm --prefix Frontend run dev",
     "kill:ports": "powershell -NoProfile -Command \"Get-NetTCPConnection -LocalPort 3000,5000,5173 -ErrorAction SilentlyContinue | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue }\"",

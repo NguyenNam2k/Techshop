@@ -111,7 +111,7 @@ class ProductService {
       const finalImages = imageRows.length > 0 ? imageRows : [
         {
           id: 0,
-          image_url: product.thumbnail_url || 'https://images.unsplash.com/photo-1587829741301-dc798b83add3?w=800&q=80',
+          image_url: product.thumbnail_url || '/placeholder.svg',
           angle_label: 'Chính diện',
           is_primary: true,
           sort_order: 1

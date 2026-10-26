@@ -17,7 +17,29 @@ import CouponsView from './views/CouponsView';
 import ReportsView from './views/ReportsView';
 import StaffsView from './views/StaffsView';
 
-export default function App() {
+export default function App({ user: propUser, onLogout: propLogout }) {
+  // Resolve current user (từ AuthContext props hoặc localStorage fallback)
+  const currentUser = propUser || (() => {
+    try {
+      const saved = localStorage.getItem('user');
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
+  })();
+
+  const handleExecuteLogout = () => {
+    if (propLogout) {
+      propLogout();
+    } else {
+      try {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+      } catch (e) {}
+      window.location.href = '/login';
+    }
+  };
+
   // Theme State ('dark' | 'light') - synchronized with main branch techshop_theme standard
   const [theme, setTheme] = useState(() => {
     try {
@@ -45,16 +67,14 @@ export default function App() {
   }, [theme]);
 
   const toggleTheme = () => {
-    setTheme(prev => {
-      const next = prev === 'light' ? 'dark' : 'light';
-      showToast(
-        next === 'light'
-          ? 'Đã chuyển sang giao diện Sáng'
-          : 'Đã chuyển sang giao diện Tối',
-        'info'
-      );
-      return next;
-    });
+    const nextTheme = theme === 'light' ? 'dark' : 'light';
+    setTheme(nextTheme);
+    showToast(
+      nextTheme === 'light'
+        ? 'Đã chuyển sang giao diện Sáng'
+        : 'Đã chuyển sang giao diện Tối',
+      'info'
+    );
   };
 
   // Navigation / View State
@@ -298,6 +318,7 @@ export default function App() {
         onOpenLogoutModal={() => setIsLogoutModalOpen(true)}
         theme={theme}
         onToggleTheme={toggleTheme}
+        user={currentUser}
       />
 
       {/* MAIN DASHBOARD CONTENT AREA */}
@@ -308,6 +329,8 @@ export default function App() {
           onSelectView={handleSelectView}
           theme={theme}
           onToggleTheme={toggleTheme}
+          user={currentUser}
+          onOpenLogoutModal={() => setIsLogoutModalOpen(true)}
         />
 
         {/* BODY CONTAINER */}
@@ -393,14 +416,8 @@ export default function App() {
 
           {/* VIEW 5: INVENTORY LOGS & AUDIT (DEDICATED FULL-SCREEN VIEW) */}
           {activeView === 'inventory-logs' && <InventoryLogsView />}
-
-          {/* VIEW 6: COUPONS & PROMOTIONS (DEDICATED FULL-SCREEN VIEW) */}
           {activeView === 'coupons' && <CouponsView />}
-
-          {/* VIEW 7: MONTHLY REPORTS (DEDICATED FULL-SCREEN VIEW) */}
           {activeView === 'reports' && <ReportsView />}
-
-          {/* VIEW 8: STAFFS & ROLES (DEDICATED FULL-SCREEN VIEW) */}
           {activeView === 'staffs' && (
             <StaffsView onStaffUpdated={() => loadStaffs()} />
           )}
@@ -431,7 +448,9 @@ export default function App() {
       {/* LOGOUT CONFIRMATION MODAL */}
       <LogoutModal
         isOpen={isLogoutModalOpen}
+        user={currentUser}
         onClose={() => setIsLogoutModalOpen(false)}
+        onConfirm={handleExecuteLogout}
       />
     </div>
   );

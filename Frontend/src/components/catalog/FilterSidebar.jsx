@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { CATEGORY_MAP, getCategoryDisplayName, getCategoryInfo } from '../../constants/categories';
 
 function FilterSidebar({
   metadata,
@@ -38,6 +39,11 @@ function FilterSidebar({
 
   const { categories = [], brands = [], priceRange = { min: 0, max: 100000000 } } = metadata || {};
 
+  // Sử dụng danh sách từ server hoặc fallback sang danh mục chuẩn để không bao giờ bị trống
+  const availableCategories = (categories && categories.length > 0)
+    ? categories
+    : Object.values(CATEGORY_MAP);
+
   // Xử lý chọn/bỏ chọn Brand
   const handleBrandToggle = (brand) => {
     const currentBrands = filters.brands ? filters.brands.split(',').filter(Boolean) : [];
@@ -67,7 +73,7 @@ function FilterSidebar({
         {onCloseMobile && (
           <button
             onClick={onCloseMobile}
-            className="lg:hidden text-slate-400 hover:text-white text-base font-bold"
+            className="lg:hidden text-slate-400 hover:text-white text-base font-bold cursor-pointer"
           >
             ✕
           </button>
@@ -81,43 +87,51 @@ function FilterSidebar({
           {filters.category && (
             <button
               onClick={() => onFilterChange('category', '')}
-              className="text-[11px] text-blue-400 hover:text-blue-300 font-normal lowercase"
+              className="text-[11px] text-blue-400 hover:text-blue-300 font-normal lowercase cursor-pointer"
             >
               xóa
             </button>
           )}
         </h3>
-        <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1 text-sm">
+        <div className="space-y-1.5 max-h-56 overflow-y-auto pr-1 text-sm no-scrollbar">
           <button
             type="button"
             onClick={() => onFilterChange('category', '')}
-            className={`w-full text-left px-3 py-1.5 rounded-xl text-xs font-medium transition flex items-center justify-between ${
+            className={`w-full text-left px-3 py-1.5 rounded-xl text-xs font-medium transition flex items-center justify-between cursor-pointer ${
               !filters.category
                 ? 'bg-blue-600/20 text-blue-400 font-semibold border border-blue-500/30'
                 : 'text-slate-300 hover:bg-slate-700/50'
             }`}
           >
-            <span>Tất cả danh mục</span>
+            <span>🛍️ Tất cả danh mục</span>
           </button>
-          {categories.map((cat) => {
-            const isSelected = filters.category === cat.slug || filters.category === String(cat.id);
+          {availableCategories.map((cat) => {
+            const slug = cat.slug || cat.id;
+            const isSelected = filters.category === slug || filters.category === String(cat.id);
+            const displayName = getCategoryDisplayName(slug, categories);
+            const info = getCategoryInfo(slug);
+            const icon = cat.icon_url || info?.icon || '📁';
+
             return (
               <button
-                key={cat.id}
+                key={cat.id || slug}
                 type="button"
-                onClick={() => onFilterChange('category', cat.slug)}
-                className={`w-full text-left px-3 py-1.5 rounded-xl text-xs font-medium transition flex items-center justify-between ${
+                onClick={() => onFilterChange('category', slug)}
+                className={`w-full text-left px-3 py-1.5 rounded-xl text-xs font-medium transition flex items-center justify-between cursor-pointer ${
                   isSelected
                     ? 'bg-blue-600/20 text-blue-400 font-semibold border border-blue-500/30'
                     : 'text-slate-300 hover:bg-slate-700/50'
                 }`}
               >
-                <span className="truncate flex items-center gap-1.5">
-                  <span>{cat.icon_url || '📁'}</span> {cat.name}
+                <span className="truncate flex items-center gap-2">
+                  <span className="text-sm shrink-0">{icon}</span>
+                  <span className="truncate">{displayName}</span>
                 </span>
-                <span className="text-[10px] text-slate-400 bg-slate-900/60 px-1.5 py-0.5 rounded-full">
-                  {cat.product_count}
-                </span>
+                {cat.product_count !== undefined && (
+                  <span className="text-[10px] text-slate-400 bg-slate-900/60 px-1.5 py-0.5 rounded-full shrink-0">
+                    {cat.product_count}
+                  </span>
+                )}
               </button>
             );
           })}
@@ -131,7 +145,7 @@ function FilterSidebar({
           {selectedBrandsList.length > 0 && (
             <button
               onClick={() => onFilterChange('brands', '')}
-              className="text-[11px] text-blue-400 hover:text-blue-300"
+              className="text-[11px] text-blue-400 hover:text-blue-300 cursor-pointer"
             >
               xóa ({selectedBrandsList.length})
             </button>
@@ -161,7 +175,7 @@ function FilterSidebar({
                   type="checkbox"
                   checked={checked}
                   onChange={() => handleBrandToggle(brand)}
-                  className="rounded border-slate-600 bg-slate-900 text-blue-600 focus:ring-blue-500 w-3.5 h-3.5 accent-blue-600"
+                  className="rounded border-slate-600 bg-slate-900 text-blue-600 focus:ring-blue-500 w-3.5 h-3.5 accent-blue-600 cursor-pointer"
                 />
                 <span className={checked ? 'text-blue-300 font-semibold' : 'text-slate-300'}>
                   {brand}
@@ -182,7 +196,7 @@ function FilterSidebar({
             <button
               type="button"
               onClick={handleClearPrice}
-              className="text-[11px] text-blue-400 hover:text-blue-300 font-normal lowercase"
+              className="text-[11px] text-blue-400 hover:text-blue-300 font-normal lowercase cursor-pointer"
             >
               xóa giá
             </button>
@@ -277,7 +291,7 @@ function FilterSidebar({
         <button
           type="button"
           onClick={onResetFilters}
-          className="w-full py-2 bg-slate-700/50 hover:bg-red-500/10 hover:text-red-300 hover:border-red-500/30 text-slate-400 border border-slate-700 rounded-xl text-xs font-semibold transition"
+          className="w-full py-2 bg-slate-700/50 hover:bg-red-500/10 hover:text-red-300 hover:border-red-500/30 text-slate-400 border border-slate-700 rounded-xl text-xs font-semibold transition cursor-pointer"
         >
           🔄 Xóa tất cả bộ lọc
         </button>

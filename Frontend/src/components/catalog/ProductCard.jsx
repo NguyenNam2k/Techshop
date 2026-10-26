@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import ProductImage from '../common/ProductImage';
 
 function formatVND(amount) {
   if (!amount && amount !== 0) return '0 ₫';
@@ -41,10 +42,9 @@ function ProductCard({ product }) {
 
       {/* Image Thumbnail */}
       <div className="w-full h-48 bg-slate-900/60 overflow-hidden flex items-center justify-center p-3 relative">
-        <img
-          src={thumbnail_url || 'https://via.placeholder.com/400x300?text=TechShop'}
+        <ProductImage
+          product={product}
           alt={name}
-          loading="lazy"
           className="w-full h-full object-contain group-hover:scale-108 transition-transform duration-500 ease-out"
         />
       </div>

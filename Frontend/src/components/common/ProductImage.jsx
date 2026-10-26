@@ -1,17 +1,39 @@
 import React, { useState, useEffect } from 'react';
 import { Laptop } from 'lucide-react';
 
+const CLOUDINARY_CLOUD_NAME = import.meta.env?.VITE_CLOUDINARY_CLOUD_NAME || 'zrnhpe6p';
 const DEFAULT_FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1587202372775-e229f172b9d7?w=400&auto=format&fit=crop&q=80';
 
 /**
+ * Chuẩn hóa URL ảnh:
+ * - Nếu là URL tuyệt đối (http/https/data:/...) -> giữ nguyên
+ * - Nếu là đường dẫn tương đối nội bộ (/...) -> giữ nguyên
+ * - Nếu là Cloudinary public_id hoặc tên ảnh trong kho (ví dụ: 'products/xyz' hoặc 'products/laptop.jpg')
+ *   -> Tự động gắn tiền tố CDN Cloudinary của nhóm: https://res.cloudinary.com/zrnhpe6p/image/upload/...
+ */
+export function resolveImageUrl(path, cloudName = CLOUDINARY_CLOUD_NAME) {
+  if (!path || typeof path !== 'string') return null;
+  const trimmed = path.trim();
+  if (!trimmed) return null;
+
+  if (/^(https?:|data:|\/\/)/i.test(trimmed) || trimmed.startsWith('/')) {
+    return trimmed;
+  }
+
+  return `https://res.cloudinary.com/${cloudName}/image/upload/${trimmed}`;
+}
+
+/**
  * Component ProductImage thông minh:
- * - Tự động trích xuất ảnh chuẩn từ `product.thumbnail_url`, `product.image_url`, hoặc `product.images[0]`.
+ * - Tự động trích xuất ảnh chuẩn từ `product.thumbnail_url`, `product.image_url`, `product.image`, hoặc `product.images[0]`.
+ * - Tự động nhận diện và ghép URL Cloudinary nhóm (`zrnhpe6p`) nếu dữ liệu truyền vào là public_id / tên ảnh.
  * - Tự động chuyển sang ảnh dự phòng (Fallback) nếu ảnh Cloud hoặc mạng bị lỗi tải.
  * - Hiển thị icon placeholder công nghệ nếu hoàn toàn không có ảnh.
  * 
  * Cách dùng:
  *   <ProductImage product={product} className="..." />
  *   <ProductImage src="https://..." alt="iPhone 18" />
+ *   <ProductImage src="products/macbook-pro" alt="MacBook" />
  */
 function ProductImage({
   product = null,
@@ -25,14 +47,16 @@ function ProductImage({
   ...props
 }) {
   // 1. Tự động tìm nguồn ảnh tốt nhất từ object product hoặc src truyền vào
-  const resolvedSrc =
+  const rawSrc =
     src ||
     product?.thumbnail_url ||
     product?.image_url ||
     product?.thumbnail ||
+    product?.image ||
     product?.images?.[0]?.image_url ||
     null;
 
+  const resolvedSrc = resolveImageUrl(rawSrc);
   const resolvedAlt = alt || product?.name || 'Sản phẩm TechShop';
 
   const [currentSrc, setCurrentSrc] = useState(resolvedSrc || fallbackSrc);

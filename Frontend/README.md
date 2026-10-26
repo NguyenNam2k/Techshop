@@ -35,9 +35,9 @@ To start the development server:
 npm run dev
 ```
 
-The frontend will be available at http://localhost:3000 (required for Google OAuth authorized JavaScript origins).
+The frontend will be available at http://localhost:5173
 
-The frontend dev server is configured to proxy API requests to http://127.0.0.1:5000/api, so make sure the backend is running on port 5000.
+The frontend is configured to proxy API requests to http://localhost:3000/api, so make sure the backend is running on that port.
 
 ### Building for Production
 
@@ -58,47 +58,60 @@ npm run preview
 ```
 frontend/
 ├── src/
-│   ├── assets/
-│   ├── components/
-│   │   ├── catalog/
-│   │   ├── common/
-│   │   ├── manager/
-│   │   ├── pc-build/
-│   │   └── product-detail/
-│   │       ├── ColorSelector.jsx
-│   │       ├── ImageGallery.jsx
-│   │       ├── PriceCard.jsx
-│   │       ├── QuantitySelector.jsx
-│   │       ├── SpecTable.jsx
-│   │       └── StockBadge.jsx
-│   ├── context/
-│   ├── data/
-│   ├── hooks/
-│   ├── pages/
-│   ├── services/
-│   ├── utils/
-│   ├── App.jsx
-│   ├── index.css
-│   └── main.jsx
-├── index.html
-├── package.json
-├── tailwind.config.js
-└── vite.config.js
+│   ├── assets/           # Static assets
+│   ├── components/       # Reusable components
+│   │   └── pdp/          # Product Detail Page components
+│   │       ├── ProductGallery.jsx
+│   │       ├── VariantSelector.jsx
+│   │       ├── ProductSpecsTable.jsx
+│   │       └── AddToCartSection.jsx
+│   ├── pages/            # Page components
+│   │   └── ProductDetailPage.jsx
+│   ├── services/         # Service layers (API clients)
+│   ├── App.jsx           # Main app component with routing
+│   ├── main.jsx          # Entry point
+│   └── index.css         # Tailwind imports
+├── public/               # Static files served directly
+├── index.html            # HTML template
+├── vite.config.js        # Vite configuration
+├── tailwind.config.js    # Tailwind CSS configuration
+├── postcss.config.js     # PostCSS configuration
+└── package.json          # Dependencies and scripts
 ```
 
-## State Management
+## Design System
 
-- `selectedColor`: Currently selected color variant
-- `selectedSpecs`: Currently selected technical specifications
-- `quantity`: Quantity to purchase
-- `product`: Product data fetched from API
-- `loading`: Loading state for API requests
-- `error`: Error state for API requests
+### Colors (Cyberpunk Dark Theme)
+- Background: Slate-900 (#0f172a)
+- Accent: Cyber-cyan (#06b6d4)
+- Accent: Neon-violet (#8b5cf6)
+- Text: Slate-200 (#e2e8f0) to Slate-500 (#64748b)
 
-## Form Validation
+### Typography
+- Headings: Plus Jakarta Sans (default)
+- Body/Mono: JetBrains Mono (for technical specs)
 
-- Quantity bounds checking (minimum 1, maximum available stock)
-- Required specification selection before adding to cart
+## Components
+
+### ProductGallery
+- High-resolution image viewport with zoom hover effect
+- Horizontal thumbnail carousel with angle badges
+- Smooth transitions between images
+
+### VariantSelector
+- Color swatch chips with color codes
+- Technical specification version buttons
+- Real-time variant information display
+
+### ProductSpecsTable
+- Clean 2-column key-value table
+- Grouped specification sections
+- Monospace font for technical accuracy
+
+### AddToCartSection
+- Numeric quantity counter (1-stock limit)
+- Add to Cart and Buy Now buttons
+- Live stock status indicators
 - Disabled states for out-of-stock items
 
 ## API Integration
@@ -111,8 +124,7 @@ Example endpoints:
 
 ## Environment Variables
 
-- `VITE_API_BASE_URL`: Base URL for API requests (leave blank for local Vite proxy forwarding to http://127.0.0.1:5000)
-- `VITE_DEV_API_TARGET`: Local proxy target (defaults to http://127.0.0.1:5000)
+- `VITE_API_URL`: Base URL for API requests (defaults to http://localhost:3000/api)
 
 ## Browser Support
 

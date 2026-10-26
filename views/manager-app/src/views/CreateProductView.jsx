@@ -13,9 +13,18 @@ import {
   ArrowLeft,
   X,
   Layers,
-  Info
+  Info,
+  AlertCircle
 } from 'lucide-react';
 import { showToast } from '../components/Toast';
+
+const IMAGE_PRESETS = {
+  keyboard: 'https://images.unsplash.com/photo-1587829741301-dc798b83add3?auto=format&fit=crop&w=600&q=80',
+  mouse: 'https://images.unsplash.com/photo-1615663245857-ac93bb7c39e7?auto=format&fit=crop&w=600&q=80',
+  laptop: 'https://images.unsplash.com/photo-1593642632823-8f785ba67e45?auto=format&fit=crop&w=600&q=80',
+  monitor: 'https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?auto=format&fit=crop&w=600&q=80',
+  gpu: 'https://images.unsplash.com/photo-1591799264318-7e6ef8ddb7ea?auto=format&fit=crop&w=600&q=80'
+};
 
 const initialFormData = {
   id: '',
@@ -37,7 +46,9 @@ export default function CreateProductView({
   onOpenImageViewer
 }) {
   const [formData, setFormData] = useState(initialFormData);
+  const [imageInputMode, setImageInputMode] = useState('url'); // 'url' | 'upload'
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadError, setUploadError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
@@ -72,21 +83,47 @@ export default function CreateProductView({
     showToast(`Đã tự tạo SKU: ${sku}`, 'success');
   };
 
+  const handleApplyPreset = (type) => {
+    if (IMAGE_PRESETS[type]) {
+      setFormData((prev) => ({ ...prev, thumbnail_url: IMAGE_PRESETS[type] }));
+      showToast(`Đã áp dụng mẫu ảnh ${type}`, 'info');
+    }
+  };
+
   const handleClearThumbnail = () => {
     setFormData((prev) => ({ ...prev, thumbnail_url: '' }));
   };
 
   const handleFileUpload = async (e) => {
-    const file = e.target.files?.[0];
+    const inputElement = e.target;
+    const file = inputElement.files?.[0];
     if (!file) return;
 
-    if (!file.type.startsWith('image/')) {
-      showToast('Vui lòng chỉ tải lên tệp hình ảnh!', 'error');
+    setUploadError('');
+
+    // Danh sách định dạng ảnh hợp lệ
+    const validExtensions = ['.jpg', '.jpeg', '.png', '.webp', '.gif', '.svg', '.avif'];
+    const fileName = (file.name || '').toLowerCase();
+    const hasValidExt = validExtensions.some((ext) => fileName.endsWith(ext));
+    const isImageMime = file.type && file.type.startsWith('image/');
+
+    // 1. Kiểm tra định dạng tệp ảnh
+    if (!isImageMime && !hasValidExt) {
+      const errMsg = `Tệp "${file.name}" không phải là ảnh hợp lệ! Vui lòng chọn tệp: JPG, PNG, WEBP, GIF, SVG, AVIF.`;
+      setUploadError(errMsg);
+      showToast(errMsg, 'error');
+      inputElement.value = '';
       return;
     }
 
-    if (file.size > 10 * 1024 * 1024) {
-      showToast('Kích thước ảnh tối đa là 10MB!', 'error');
+    // 2. Kiểm tra dung lượng tối đa (10MB)
+    const MAX_SIZE = 10 * 1024 * 1024;
+    if (file.size > MAX_SIZE) {
+      const sizeMB = (file.size / (1024 * 1024)).toFixed(1);
+      const errMsg = `Dung lượng tệp (${sizeMB}MB) vượt quá giới hạn tối đa 10MB! Vui lòng chọn ảnh nhẹ hơn.`;
+      setUploadError(errMsg);
+      showToast(errMsg, 'error');
+      inputElement.value = '';
       return;
     }
 
@@ -99,22 +136,31 @@ export default function CreateProductView({
         method: 'POST',
         body: uploadData
       });
-      const data = await res.json();
-      if (!data.success) throw new Error(data.message || 'Lỗi tải ảnh');
+
+      const contentType = res.headers.get('content-type') || '';
+      let data;
+      if (contentType.includes('application/json')) {
+        data = await res.json();
+      } else {
+        const text = await res.text();
+        throw new Error(text || 'Máy chủ không thể xử lý tệp này.');
+      }
+
+      if (!res.ok || !data.success) {
+        throw new Error(data.message || 'Lỗi khi tải ảnh lên máy chủ.');
+      }
 
       const imgUrl = data.url || data.data?.image_url;
       setFormData((prev) => ({ ...prev, thumbnail_url: imgUrl }));
-      showToast(
-        data.storage === 'cloudinary'
-          ? 'Đã tải ảnh lên Cloudinary CDN thành công!'
-          : 'Đã tải ảnh và lưu vào máy cục bộ thành công!',
-        'success'
-      );
+      setUploadError('');
+      showToast('Tải ảnh đại diện lên thành công!', 'success');
     } catch (err) {
-      showToast(err.message || 'Không thể tải ảnh lên', 'error');
+      const errMsg = err.message || 'Không thể tải ảnh lên hệ thống';
+      setUploadError(errMsg);
+      showToast(errMsg, 'error');
     } finally {
       setIsUploading(false);
-      e.target.value = '';
+      inputElement.value = '';
     }
   };
 
@@ -353,45 +399,146 @@ export default function CreateProductView({
               </div>
             </div>
 
-            {/* Image Upload Card (Lưu máy / Cloud) */}
+            {/* Image Upload / URL Card */}
             <div className="glass-card rounded-2xl p-6 border border-slate-800 space-y-4">
               <div className="flex items-center justify-between border-b border-slate-800/80 pb-3">
                 <h3 className="text-sm font-bold text-white flex items-center gap-2">
                   <ImageIcon className="w-4 h-4 text-cyan-400" />
                   <span>3. Hình Ảnh Đại Diện (Thumbnail)</span>
                 </h3>
-                <span className="text-[10px] font-mono text-cyan-400/80 bg-cyan-950/60 px-2 py-0.5 rounded border border-cyan-800/40">
-                  Lưu máy / Cloudinary
-                </span>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => setImageInputMode('url')}
+                    className={`text-[10px] font-medium px-2 py-0.5 rounded transition-all ${
+                      imageInputMode === 'url'
+                        ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30'
+                        : 'bg-slate-800 text-slate-400 hover:text-white border border-slate-700'
+                    }`}
+                  >
+                    Link URL
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setImageInputMode('upload')}
+                    className={`text-[10px] font-medium px-2 py-0.5 rounded transition-all ${
+                      imageInputMode === 'upload'
+                        ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30'
+                        : 'bg-slate-800 text-slate-400 hover:text-white border border-slate-700'
+                    }`}
+                  >
+                    Tải Tệp Lên
+                  </button>
+                </div>
               </div>
 
-              {/* Upload file từ máy tính */}
-              <div className="space-y-2">
-                <label className="relative block border-2 border-dashed border-slate-700 hover:border-cyan-500/50 rounded-xl p-4 text-center cursor-pointer transition-all bg-slate-800/40">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleFileUpload}
-                    className="hidden"
-                  />
-                  {!isUploading ? (
-                    <div className="flex flex-col items-center justify-center gap-1.5 text-slate-400">
-                      <UploadCloud className="w-8 h-8 text-cyan-400 mb-0.5" />
-                      <span className="text-xs font-medium text-slate-200">
-                        Nhấn để chọn ảnh từ máy tính
-                      </span>
-                      <span className="text-[10px] text-slate-500">
-                        Hỗ trợ JPEG, PNG, WEBP, SVG (Max: 10MB) · Tự động lưu trữ cục bộ hoặc Cloud CDN
-                      </span>
-                    </div>
-                  ) : (
-                    <div className="flex items-center justify-center gap-2 text-cyan-400 text-xs py-3">
-                      <Loader2 className="w-5 h-5 animate-spin" />
-                      <span>Đang tải ảnh lên hệ thống...</span>
+              {/* Mode 1: URL Input */}
+              {imageInputMode === 'url' ? (
+                <div className="space-y-2">
+                  <div className="relative">
+                    <input
+                      type="url"
+                      name="thumbnail_url"
+                      value={formData.thumbnail_url}
+                      onChange={handleChange}
+                      placeholder="https://images.unsplash.com/... hoặc /uploads/products/..."
+                      className="w-full pl-3.5 pr-8 py-2.5 text-xs bg-slate-800/90 border border-slate-700 rounded-xl text-white placeholder-slate-500 font-mono focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 transition-all"
+                    />
+                    {formData.thumbnail_url && (
+                      <button
+                        type="button"
+                        onClick={handleClearThumbnail}
+                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-rose-400 p-1"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Sample presets */}
+                  <div className="flex items-center gap-1.5 flex-wrap text-[10px] text-slate-400 pt-0.5">
+                    <span className="text-slate-500 font-mono">Gợi ý mẫu:</span>
+                    <button
+                      type="button"
+                      onClick={() => handleApplyPreset('keyboard')}
+                      className="px-2 py-0.5 rounded bg-slate-800 hover:bg-cyan-950 text-slate-300 hover:text-cyan-300 border border-slate-700/60 transition-all"
+                    >
+                      Bàn phím
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleApplyPreset('mouse')}
+                      className="px-2 py-0.5 rounded bg-slate-800 hover:bg-cyan-950 text-slate-300 hover:text-cyan-300 border border-slate-700/60 transition-all"
+                    >
+                      Chuột
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleApplyPreset('laptop')}
+                      className="px-2 py-0.5 rounded bg-slate-800 hover:bg-cyan-950 text-slate-300 hover:text-cyan-300 border border-slate-700/60 transition-all"
+                    >
+                      Laptop
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleApplyPreset('monitor')}
+                      className="px-2 py-0.5 rounded bg-slate-800 hover:bg-cyan-950 text-slate-300 hover:text-cyan-300 border border-slate-700/60 transition-all"
+                    >
+                      Màn hình
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleApplyPreset('gpu')}
+                      className="px-2 py-0.5 rounded bg-slate-800 hover:bg-cyan-950 text-slate-300 hover:text-cyan-300 border border-slate-700/60 transition-all"
+                    >
+                      Card GPU
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <label className="relative block border-2 border-dashed border-slate-700 hover:border-cyan-500/50 rounded-xl p-4 text-center cursor-pointer transition-all bg-slate-800/40">
+                    <input
+                      type="file"
+                      accept="image/*,.jpg,.jpeg,.png,.webp,.gif,.svg,.avif"
+                      onChange={handleFileUpload}
+                      className="hidden"
+                    />
+                    {!isUploading ? (
+                      <div className="flex flex-col items-center justify-center gap-1.5 text-slate-400">
+                        <UploadCloud className="w-8 h-8 text-cyan-400 mb-0.5" />
+                        <span className="text-xs font-medium text-slate-200">
+                          Nhấn để chọn ảnh từ máy tính
+                        </span>
+                        <span className="text-[10px] text-slate-500">
+                          Hỗ trợ JPG, PNG, WEBP, GIF, SVG (Tối đa 10MB)
+                        </span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-center gap-2 text-cyan-400 text-xs py-3">
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                        <span>Đang tải ảnh lên hệ thống...</span>
+                      </div>
+                    )}
+                  </label>
+
+                  {/* Thông báo lỗi trực quan ngay dưới ô chọn file */}
+                  {uploadError && (
+                    <div className="p-3 bg-rose-950/80 border border-rose-500/50 rounded-xl text-rose-200 text-xs flex items-start gap-2.5 shadow-lg shadow-rose-950/40 animate-fade-in">
+                      <AlertCircle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
+                      <div className="flex-1 font-medium leading-relaxed">{uploadError}</div>
+                      <button
+                        type="button"
+                        onClick={() => setUploadError('')}
+                        className="p-1 rounded text-rose-400 hover:text-white hover:bg-rose-900/60 transition"
+                        title="Đóng thông báo"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
                     </div>
                   )}
-                </label>
-              </div>
+                </div>
+              )}
 
               {/* Live Preview */}
               {formData.thumbnail_url && (
@@ -409,7 +556,7 @@ export default function CreateProductView({
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-1.5 text-xs font-semibold text-emerald-400">
                       <CheckCircle className="w-3.5 h-3.5" />
-                      <span>{formData.thumbnail_url.startsWith('http') ? 'Ảnh đã lưu trên Cloud CDN' : 'Ảnh đã lưu vào máy cục bộ'}</span>
+                      <span>Ảnh hiển thị hợp lệ</span>
                     </div>
                     <p className="text-[10px] text-slate-400 font-mono truncate mt-0.5">
                       {formData.thumbnail_url}

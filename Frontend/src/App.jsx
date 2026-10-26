@@ -59,11 +59,8 @@ function AppContent() {
       return <Navigate to="/manager/products" replace />;
     }
 
-    // 3. Customer không được phép vào trang của Admin hoặc Manager
-    if (
-      userRole === 'customer' &&
-      (location.pathname.startsWith('/admin') || location.pathname.startsWith('/manager'))
-    ) {
+    // 3. Customer không được phép vào trang của Admin
+    if (userRole === 'customer' && location.pathname.startsWith('/admin')) {
       return <Navigate to="/catalog" replace />;
     }
   }
@@ -145,16 +142,10 @@ function AppContent() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
 
-          {/* Manager routes (Chỉ Manager & Staff được phép truy cập) */}
+          {/* Manager routes - Giao diện Manager Portal từ nhánh feature/manager-duong */}
           <Route path="/manager" element={<Navigate to="/manager/products" replace />} />
-          <Route
-            path="/manager/products"
-            element={
-              <ProtectedRoute allowedRoles={['manager', 'staff']}>
-                <ManagerProductsPage />
-              </ProtectedRoute>
-            }
-          />
+          <Route path="/manager/products" element={<ManagerProductsPage />} />
+          <Route path="/manager/*" element={<ManagerProductsPage />} />
           <Route path="/admin/products" element={<Navigate to="/manager/products" replace />} />
 
           {/* Admin routes (Chỉ Admin được phép truy cập) */}

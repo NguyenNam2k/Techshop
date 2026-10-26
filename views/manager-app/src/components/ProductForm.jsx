@@ -11,7 +11,8 @@ import {
   Trash2,
   Check,
   RotateCcw,
-  X
+  X,
+  AlertCircle
 } from 'lucide-react';
 import { showToast } from './Toast';
 
@@ -46,6 +47,7 @@ export default function ProductForm({
   const [imageInputMode, setImageInputMode] = useState('url'); // 'url' | 'upload'
   const [isUploading, setIsUploading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [uploadError, setUploadError] = useState('');
 
   useEffect(() => {
     if (editingProduct) {
@@ -60,8 +62,10 @@ export default function ProductForm({
         description: editingProduct.description || '',
         thumbnail_url: editingProduct.thumbnail_url || ''
       });
+      setUploadError('');
     } else {
       setFormData(initialFormData);
+      setUploadError('');
     }
   }, [editingProduct]);
 
@@ -82,25 +86,46 @@ export default function ProductForm({
   const handleApplyPreset = (type) => {
     if (IMAGE_PRESETS[type]) {
       setFormData((prev) => ({ ...prev, thumbnail_url: IMAGE_PRESETS[type] }));
+      setUploadError('');
       showToast(`Đã áp dụng mẫu ảnh ${type}`, 'info');
     }
   };
 
   const handleClearThumbnail = () => {
     setFormData((prev) => ({ ...prev, thumbnail_url: '' }));
+    setUploadError('');
   };
 
   const handleFileUpload = async (e) => {
-    const file = e.target.files?.[0];
+    const inputElement = e.target;
+    const file = inputElement.files?.[0];
     if (!file) return;
 
-    if (!file.type.startsWith('image/')) {
-      showToast('Vui lòng chỉ tải lên tệp hình ảnh!', 'error');
+    setUploadError('');
+
+    // Danh sách định dạng ảnh hợp lệ
+    const validExtensions = ['.jpg', '.jpeg', '.png', '.webp', '.gif', '.svg', '.avif'];
+    const fileName = (file.name || '').toLowerCase();
+    const hasValidExt = validExtensions.some((ext) => fileName.endsWith(ext));
+    const isImageMime = file.type && file.type.startsWith('image/');
+
+    // 1. Kiểm tra định dạng tệp ảnh
+    if (!isImageMime && !hasValidExt) {
+      const errMsg = `Tệp "${file.name}" không phải là ảnh hợp lệ! Vui lòng chọn tệp: JPG, PNG, WEBP, GIF, SVG, AVIF.`;
+      setUploadError(errMsg);
+      showToast(errMsg, 'error');
+      inputElement.value = '';
       return;
     }
 
-    if (file.size > 10 * 1024 * 1024) {
-      showToast('Kích thước ảnh tối đa là 10MB!', 'error');
+    // 2. Kiểm tra dung lượng tối đa (10MB)
+    const MAX_SIZE = 10 * 1024 * 1024;
+    if (file.size > MAX_SIZE) {
+      const sizeMB = (file.size / (1024 * 1024)).toFixed(1);
+      const errMsg = `Dung lượng tệp (${sizeMB}MB) vượt quá giới hạn tối đa 10MB! Vui lòng chọn ảnh nhẹ hơn.`;
+      setUploadError(errMsg);
+      showToast(errMsg, 'error');
+      inputElement.value = '';
       return;
     }
 
@@ -113,16 +138,31 @@ export default function ProductForm({
         method: 'POST',
         body: uploadData
       });
-      const data = await res.json();
-      if (!data.success) throw new Error(data.message || 'Lỗi tải ảnh');
 
-      setFormData((prev) => ({ ...prev, thumbnail_url: data.data.image_url }));
-      showToast('Tải ảnh lên thành công!', 'success');
+      const contentType = res.headers.get('content-type') || '';
+      let data;
+      if (contentType.includes('application/json')) {
+        data = await res.json();
+      } else {
+        const text = await res.text();
+        throw new Error(text || 'Máy chủ không thể xử lý tệp này.');
+      }
+
+      if (!res.ok || !data.success) {
+        throw new Error(data.message || 'Lỗi khi tải ảnh lên máy chủ.');
+      }
+
+      const imgUrl = data.url || data.data?.image_url;
+      setFormData((prev) => ({ ...prev, thumbnail_url: imgUrl }));
+      setUploadError('');
+      showToast('Tải ảnh đại diện lên thành công!', 'success');
     } catch (err) {
-      showToast(err.message || 'Không thể tải ảnh lên', 'error');
+      const errMsg = err.message || 'Không thể tải ảnh lên hệ thống';
+      setUploadError(errMsg);
+      showToast(errMsg, 'error');
     } finally {
       setIsUploading(false);
-      e.target.value = '';
+      inputElement.value = '';
     }
   };
 
@@ -324,45 +364,147 @@ export default function ProductForm({
           ></textarea>
         </div>
 
-        {/* Field 8: Hình ảnh thiết bị (Chỉ tải tệp từ máy - Lưu máy / Cloud) */}
+        {/* Field 8: Hình ảnh thiết bị (Thumbnail & Upload) */}
         <div className="border-t border-slate-800/80 pt-3">
           <div className="flex items-center justify-between mb-1.5">
             <label className="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
               <ImageIcon className="w-3.5 h-3.5 text-cyan-400" />
               <span>8. Hình Ảnh Đại Diện (Thumbnail)</span>
             </label>
-            <span className="text-[10px] font-mono text-cyan-400/80 bg-cyan-950/60 px-2 py-0.5 rounded border border-cyan-800/40">
-              Lưu máy / Cloudinary
-            </span>
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => setImageInputMode('url')}
+                className={`text-[10px] font-medium px-2 py-0.5 rounded transition-all ${
+                  imageInputMode === 'url'
+                    ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30'
+                    : 'bg-slate-800 text-slate-400 hover:text-white border border-slate-700'
+                }`}
+              >
+                Link URL
+              </button>
+              <button
+                type="button"
+                onClick={() => setImageInputMode('upload')}
+                className={`text-[10px] font-medium px-2 py-0.5 rounded transition-all ${
+                  imageInputMode === 'upload'
+                    ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30'
+                    : 'bg-slate-800 text-slate-400 hover:text-white border border-slate-700'
+                }`}
+              >
+                Tải Tệp Lên
+              </button>
+            </div>
           </div>
 
-          {/* Upload từ máy tính */}
-          <div className="space-y-1.5">
-            <label className="relative block border-2 border-dashed border-slate-700 hover:border-cyan-500/50 rounded-xl p-3.5 text-center cursor-pointer transition-all bg-slate-800/40">
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleFileUpload}
-                className="hidden"
-              />
-              {!isUploading ? (
-                <div className="flex flex-col items-center justify-center gap-1 text-slate-400">
-                  <UploadCloud className="w-6 h-6 text-cyan-400 mb-0.5" />
-                  <span className="text-xs font-medium text-slate-200">
-                    Nhấn để chọn ảnh từ máy tính
-                  </span>
-                  <span className="text-[10px] text-slate-500">
-                    Hỗ trợ JPEG, PNG, WEBP, SVG (Max: 10MB) · Tự động lưu trữ cục bộ hoặc Cloud CDN
-                  </span>
-                </div>
-              ) : (
-                <div className="flex items-center justify-center gap-2 text-cyan-400 text-xs py-2">
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>Đang tải ảnh lên hệ thống...</span>
+          {/* Mode 1: URL Input */}
+          {imageInputMode === 'url' ? (
+            <div className="space-y-1.5">
+              <div className="relative">
+                <input
+                  type="url"
+                  name="thumbnail_url"
+                  value={formData.thumbnail_url}
+                  onChange={handleChange}
+                  placeholder="https://images.unsplash.com/... hoặc /uploads/products/..."
+                  className="w-full pl-3.5 pr-8 py-2 text-xs bg-slate-800/90 border border-slate-700 rounded-xl text-white placeholder-slate-500 font-mono focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 transition-all"
+                />
+                {formData.thumbnail_url && (
+                  <button
+                    type="button"
+                    onClick={handleClearThumbnail}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-rose-400 p-0.5"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+
+              {/* Quick image sample presets */}
+              <div className="flex items-center gap-1 flex-wrap text-[10px] text-slate-400 pt-0.5">
+                <span className="text-slate-500 font-mono">Gợi ý mẫu:</span>
+                <button
+                  type="button"
+                  onClick={() => handleApplyPreset('keyboard')}
+                  className="px-1.5 py-0.5 rounded bg-slate-800 hover:bg-cyan-950 text-slate-300 hover:text-cyan-300 border border-slate-700/60 transition-all"
+                >
+                  Bàn phím
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleApplyPreset('mouse')}
+                  className="px-1.5 py-0.5 rounded bg-slate-800 hover:bg-cyan-950 text-slate-300 hover:text-cyan-300 border border-slate-700/60 transition-all"
+                >
+                  Chuột
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleApplyPreset('laptop')}
+                  className="px-1.5 py-0.5 rounded bg-slate-800 hover:bg-cyan-950 text-slate-300 hover:text-cyan-300 border border-slate-700/60 transition-all"
+                >
+                  Laptop
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleApplyPreset('monitor')}
+                  className="px-1.5 py-0.5 rounded bg-slate-800 hover:bg-cyan-950 text-slate-300 hover:text-cyan-300 border border-slate-700/60 transition-all"
+                >
+                  Màn hình
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleApplyPreset('gpu')}
+                  className="px-1.5 py-0.5 rounded bg-slate-800 hover:bg-cyan-950 text-slate-300 hover:text-cyan-300 border border-slate-700/60 transition-all"
+                >
+                  Card GPU
+                </button>
+              </div>
+            </div>
+          ) : (
+            /* Mode 2: Local File Upload */
+            <div className="space-y-2">
+              <label className="relative block border-2 border-dashed border-slate-700 hover:border-cyan-500/50 rounded-xl p-3.5 text-center cursor-pointer transition-all bg-slate-800/40">
+                <input
+                  type="file"
+                  accept="image/*,.jpg,.jpeg,.png,.webp,.gif,.svg,.avif"
+                  onChange={handleFileUpload}
+                  className="hidden"
+                />
+                {!isUploading ? (
+                  <div className="flex flex-col items-center justify-center gap-1 text-slate-400">
+                    <UploadCloud className="w-6 h-6 text-cyan-400 mb-0.5" />
+                    <span className="text-xs font-medium text-slate-200">
+                      Nhấn để chọn ảnh từ máy tính
+                    </span>
+                    <span className="text-[10px] text-slate-500">
+                      Hỗ trợ JPG, PNG, WEBP, GIF, SVG (Tối đa 10MB)
+                    </span>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-center gap-2 text-cyan-400 text-xs py-2">
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Đang tải ảnh lên hệ thống...</span>
+                  </div>
+                )}
+              </label>
+
+              {/* Thông báo lỗi trực quan ngay dưới ô upload */}
+              {uploadError && (
+                <div className="p-2.5 bg-rose-950/80 border border-rose-500/50 rounded-xl text-rose-200 text-xs flex items-start gap-2 shadow-lg shadow-rose-950/40 animate-fade-in">
+                  <AlertCircle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
+                  <div className="flex-1 font-medium leading-relaxed">{uploadError}</div>
+                  <button
+                    type="button"
+                    onClick={() => setUploadError('')}
+                    className="p-0.5 rounded text-rose-400 hover:text-white hover:bg-rose-900/60 transition"
+                    title="Đóng thông báo"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
                 </div>
               )}
-            </label>
-          </div>
+            </div>
+          )}
 
           {/* Live Image Preview Box */}
           {formData.thumbnail_url && (
@@ -381,7 +523,7 @@ export default function ProductForm({
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-1.5 text-xs font-semibold text-emerald-400">
                     <CheckCircle className="w-3.5 h-3.5" />
-                    <span>{formData.thumbnail_url.startsWith('http') ? 'Ảnh đã lưu trên Cloud CDN' : 'Ảnh đã lưu vào máy cục bộ'}</span>
+                    <span>Ảnh hiển thị hợp lệ</span>
                   </div>
                   <p className="text-[10px] text-slate-400 font-mono truncate mt-0.5">
                     {formData.thumbnail_url}

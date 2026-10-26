@@ -89,21 +89,35 @@ function ProductFormModal({
   };
 
   const handleFileUpload = async (e) => {
-    const file = e.target.files?.[0];
+    const inputElement = e.target;
+    const file = inputElement.files?.[0];
     if (!file) return;
 
-    if (!file.type.startsWith('image/')) {
-      setErrorMsg('Vui lòng chỉ tải lên tệp hình ảnh!');
+    setErrorMsg('');
+
+    // Danh sách định dạng ảnh hợp lệ
+    const validExtensions = ['.jpg', '.jpeg', '.png', '.webp', '.gif', '.svg', '.avif'];
+    const fileName = (file.name || '').toLowerCase();
+    const hasValidExt = validExtensions.some((ext) => fileName.endsWith(ext));
+    const isImageMime = file.type && file.type.startsWith('image/');
+
+    // 1. Kiểm tra định dạng tệp ảnh
+    if (!isImageMime && !hasValidExt) {
+      setErrorMsg(`Tệp "${file.name}" không phải là ảnh hợp lệ! Vui lòng chọn tệp: JPG, PNG, WEBP, GIF, SVG, AVIF.`);
+      inputElement.value = '';
       return;
     }
 
-    if (file.size > 10 * 1024 * 1024) {
-      setErrorMsg('Kích thước ảnh tối đa là 10MB!');
+    // 2. Kiểm tra dung lượng tối đa (10MB)
+    const MAX_SIZE = 10 * 1024 * 1024;
+    if (file.size > MAX_SIZE) {
+      const sizeMB = (file.size / (1024 * 1024)).toFixed(1);
+      setErrorMsg(`Dung lượng tệp (${sizeMB}MB) vượt quá giới hạn tối đa 10MB! Vui lòng chọn ảnh nhẹ hơn.`);
+      inputElement.value = '';
       return;
     }
 
     setIsUploading(true);
-    setErrorMsg('');
     const uploadData = new FormData();
     uploadData.append('image', file);
 
@@ -112,16 +126,28 @@ function ProductFormModal({
         method: 'POST',
         body: uploadData
       });
-      const data = await res.json();
-      if (!data.success) throw new Error(data.message || 'Lỗi tải ảnh');
+
+      const contentType = res.headers.get('content-type') || '';
+      let data;
+      if (contentType.includes('application/json')) {
+        data = await res.json();
+      } else {
+        const text = await res.text();
+        throw new Error(text || 'Máy chủ không thể xử lý tệp này.');
+      }
+
+      if (!res.ok || !data.success) {
+        throw new Error(data.message || 'Lỗi tải ảnh lên máy chủ.');
+      }
 
       const uploadedUrl = data.url || data.data?.image_url;
       setFormData((prev) => ({ ...prev, thumbnail_url: uploadedUrl }));
+      setErrorMsg('');
     } catch (err) {
       setErrorMsg(err.message || 'Không thể tải ảnh lên');
     } finally {
       setIsUploading(false);
-      e.target.value = '';
+      inputElement.value = '';
     }
   };
 
@@ -377,7 +403,7 @@ function ProductFormModal({
             <label className="relative block border-2 border-dashed border-slate-700 hover:border-cyan-500/50 rounded-xl p-3 text-center cursor-pointer transition-all bg-slate-800/40">
               <input
                 type="file"
-                accept="image/*"
+                accept="image/*,.jpg,.jpeg,.png,.webp,.gif,.svg,.avif"
                 onChange={handleFileUpload}
                 className="hidden"
               />

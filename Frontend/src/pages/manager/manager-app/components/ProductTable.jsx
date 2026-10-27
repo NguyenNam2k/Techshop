@@ -135,6 +135,7 @@ export default function ProductTable({
               onChange={(e) => onFilterChange({ limit: Number(e.target.value), page: 1 })}
               className="w-full px-3 py-2 text-xs bg-white dark:bg-slate-800/80 border border-sky-200 dark:border-slate-700/80 rounded-xl text-slate-900 dark:text-slate-100 focus:outline-none focus:border-sky-400 transition-all cursor-pointer shadow-xs"
             >
+              <option value="1">1 / trang</option>
               <option value="5">5 / trang</option>
               <option value="10">10 / trang</option>
               <option value="20">20 / trang</option>
@@ -211,9 +212,8 @@ export default function ProductTable({
                             />
                           ) : null}
                           <div
-                            className={`${
-                              prod.thumbnail_url ? 'hidden' : ''
-                            } w-full h-full flex items-center justify-center bg-slate-800 text-slate-500 group-hover:text-cyan-400 transition-colors`}
+                            className={`${prod.thumbnail_url ? 'hidden' : ''
+                              } w-full h-full flex items-center justify-center bg-slate-800 text-slate-500 group-hover:text-cyan-400 transition-colors`}
                           >
                             <ImageIcon className="w-5 h-5" />
                           </div>

@@ -28,15 +28,6 @@ class ProductController {
    */
   static renderManagerPage(req, res, next) {
     try {
-      const reactAppDist = path.join(__dirname, '..', '..', '..', 'views', 'manager-app', 'dist', 'index.html');
-
-      if (fs.existsSync(reactAppDist)) {
-        res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
-        res.setHeader('Pragma', 'no-cache');
-        res.setHeader('Expires', '0');
-        return res.sendFile(reactAppDist);
-      }
-
       const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:3000';
       return res.redirect(`${FRONTEND_URL}/manager/products`);
     } catch (error) {

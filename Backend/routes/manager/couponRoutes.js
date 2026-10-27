@@ -1,6 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const CouponController = require('../../controllers/manager/couponController');
+const couponSrcController = require('../../src/controllers/coupon.controller');
+
+router.post('/validate', couponSrcController.validateCoupon);
 
 /**
  * Coupon Management API Routes

@@ -227,9 +227,9 @@ function RegisterPage() {
         <Link to="/" className="flex items-center gap-1.5 text-sky-400 hover:text-sky-300 transition">
           <span>← Về Trang Chủ</span>
         </Link>
-        <Link to="/catalog" className="text-slate-400 hover:text-slate-200 transition">
+        {/* <Link to="/catalog" className="text-slate-400 hover:text-slate-200 transition">
           🛍️ Xem Catalog Sản Phẩm
-        </Link>
+        </Link> */}
       </div>
 
       <div className="w-full max-w-md bg-slate-900 rounded-3xl shadow-2xl border border-slate-800 overflow-hidden">

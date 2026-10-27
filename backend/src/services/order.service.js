@@ -712,7 +712,63 @@ async function requestOrderCancellation(customerId, orderCode, reason) {
   }
 }
 
+async function cancelUnpaidOrder(orderCode) {
+  const cleanCode = String(orderCode || '').trim();
+  if (!cleanCode) return { success: false, message: 'Mã đơn hàng không hợp lệ.' };
+
+  const connection = await pool.getConnection();
+  try {
+    await connection.beginTransaction();
+    const [rows] = await connection.query(
+      `SELECT id, payment_status, shipping_status FROM orders WHERE order_code = ? LIMIT 1 FOR UPDATE`,
+      [cleanCode]
+    );
+    if (!rows.length) {
+      await connection.rollback();
+      return { success: false, message: 'Không tìm thấy đơn hàng.' };
+    }
+    const order = rows[0];
+
+    // Chỉ hủy nếu đơn hàng chưa được thanh toán thành công
+    if (order.payment_status === 'paid') {
+      await connection.rollback();
+      return { success: false, message: 'Đơn hàng đã được thanh toán, không thể hủy draft.' };
+    }
+
+    // Hoàn trả lại tồn kho sản phẩm
+    const [items] = await connection.query(
+      `SELECT variant_id, quantity FROM order_items WHERE order_id = ?`,
+      [order.id]
+    );
+    for (const item of items) {
+      if (item.variant_id && item.quantity > 0) {
+        await connection.query(
+          `UPDATE product_variants
+           SET stock = stock + ?,
+               status = CASE WHEN stock + ? > 0 THEN 'available' ELSE status END,
+               updated_at = NOW()
+           WHERE id = ?`,
+          [item.quantity, item.quantity, item.variant_id]
+        );
+      }
+    }
+
+    // Xóa order_items và orders để không lưu vào danh sách đơn hàng
+    await connection.query('DELETE FROM order_items WHERE order_id = ?', [order.id]);
+    await connection.query('DELETE FROM orders WHERE id = ?', [order.id]);
+
+    await connection.commit();
+    return { success: true, message: 'Đã hủy đơn hàng chưa thanh toán và hoàn lại giỏ hàng.' };
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
+  }
+}
+
 module.exports = {
+  cancelUnpaidOrder,
   createOrder,
   getOrderByCode,
   getCustomerOrders,

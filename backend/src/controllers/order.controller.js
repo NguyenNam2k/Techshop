@@ -75,7 +75,22 @@ async function getOrdersList(req, res) {
   }
 }
 
+async function cancelUnpaidOrder(req, res) {
+  try {
+    const orderCode = String(req.params.orderCode || '').trim();
+    if (!orderCode) {
+      return res.status(400).json({ success: false, message: 'Mã đơn hàng không hợp lệ.' });
+    }
+    const result = await orderService.cancelUnpaidOrder(orderCode);
+    return res.status(200).json(result);
+  } catch (error) {
+    console.error('Error in cancelUnpaidOrder controller:', error);
+    return res.status(500).json({ success: false, message: 'Lỗi khi hủy đơn hàng chưa thanh toán.' });
+  }
+}
+
 module.exports = {
+  cancelUnpaidOrder,
   createOrder,
   getOrderDetail,
   getOrdersList

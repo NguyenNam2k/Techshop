@@ -241,6 +241,14 @@ export default function Header() {
                 <button
                   type="submit"
                   title="Tìm kiếm ngay (🔍)"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    const q = searchText.trim();
+                    if (!q) return;
+                    setIsSearchOpen(false);
+                    setActiveIndex(-1);
+                    navigate(`/catalog?q=${encodeURIComponent(q)}`);
+                  }}
                   className="p-1.5 rounded-lg bg-sky-500/20 hover:bg-sky-500 text-sky-400 hover:text-slate-950 border border-sky-500/30 hover:border-sky-400 active:scale-95 transition cursor-pointer flex items-center justify-center shadow-sm"
                 >
                   <Search className="w-4 h-4" />
@@ -274,7 +282,10 @@ export default function Header() {
                     </span>
                     <span className="text-[10px] text-slate-500 font-mono">↑↓ Chọn · Enter Mở</span>
                   </div>
-                  <div className="max-h-80 overflow-y-auto p-1.5 space-y-1">
+                  <div
+                    className="max-h-80 overflow-y-auto p-1.5 space-y-1"
+                    onMouseLeave={() => setActiveIndex(-1)}
+                  >
                     {searchResults.map((item, idx) => {
                       const isHighlighted = idx === activeIndex;
                       return (

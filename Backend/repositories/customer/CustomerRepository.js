@@ -13,15 +13,15 @@ const CustomerRepository = {
 
   findByAccount: async (account) => {
     const [rows] = await db.query(
-      'SELECT id, username, email, password_hash, name, status FROM customers WHERE username = ? OR email = ?',
-      [account, account]
+      'SELECT id, username, email, password_hash, name, status FROM customers WHERE username = ?',
+      [account]
     );
     return rows[0] || null;
   },
   
   findByEmailForLogin: async (email) => {
     const [rows] = await db.query(
-      'SELECT id, username, email, password_hash, name, status FROM customers WHERE email = ?',
+      'SELECT id, username, email, password_hash, name, status FROM customers WHERE username = ?',
       [email]
     );
     return rows[0] || null;
@@ -47,12 +47,7 @@ const CustomerRepository = {
   },
 
   createFromGoogle: async (customerData) => {
-    const { name, email, google_id, avatar_url, status = 'active' } = customerData;
-    let username = customerData.username;
-    if (!username && email) {
-      const base = email.split('@')[0].toLowerCase().replace(/[^a-z0-9_]/g, '') || 'google_user';
-      username = `${base}_${Date.now().toString().slice(-4)}`;
-    }
+    const { name, username, email, google_id, avatar_url, status = 'active' } = customerData;
     const [result] = await db.query(
       'INSERT INTO customers (name, username, email, google_id, avatar_url, password_hash, status) VALUES (?, ?, ?, ?, ?, NULL, ?)',
       [name, username, email, google_id, avatar_url, status]

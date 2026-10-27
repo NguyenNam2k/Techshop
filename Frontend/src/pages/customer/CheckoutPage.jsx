@@ -292,38 +292,38 @@ const CheckoutPage = () => {
       });
 
       if (response.success && response.data) {
-        setCreatedOrder(response.data);
-        try {
-          const prevOrders = JSON.parse(localStorage.getItem('techshop_orders') || '[]');
-          const formatted = {
-            orderId: response.data.orderCode || `ORD-${Date.now().toString().slice(-4)}`,
-            date: new Date().toLocaleString('vi-VN', { dateStyle: 'short', timeStyle: 'short' }),
-            phase: 0,
-            statusLabel: 'Chờ xác nhận',
-            carrier: 'GIAO HÀNG NHANH (GHN)',
-            trackingCode: `GHN${Date.now().toString().slice(-9)}`,
-            paymentMethod:
-              formData.paymentMethod === 'vietqr_banking'
-                ? 'VietQR Banking Auto'
-                : 'COD (Thanh toán khi nhận)',
-            total: Number(response.data.totalAmount || finalTotal),
-            items: cartItems.map((item) => ({
-              id: item.productId || item.id,
-              name: item.name,
-              variant: item.variant,
-              quantity: item.quantity,
-              price: item.price,
-              image: item.image
-            }))
-          };
-          localStorage.setItem('techshop_orders', JSON.stringify([formatted, ...prevOrders]));
-        } catch {
-          // ignore storage error
-        }
-        await clearCart();
         if (formData.paymentMethod === 'vietqr_banking' && response.data.vietQR) {
+          // Với VietQR: chỉ mở modal thanh toán, CHƯA xóa giỏ hàng và CHƯA lưu vào "Đơn hàng của tôi"
+          // để nếu khách đóng modal thì vẫn quay về y nguyên Checkout page.
+          setCreatedOrder(response.data);
           setIsVietqrModalOpen(true);
         } else {
+          // Với COD: Lưu đơn hàng và xóa giỏ hàng ngay lập tức
+          try {
+            const prevOrders = JSON.parse(localStorage.getItem('techshop_orders') || '[]');
+            const formatted = {
+              orderId: response.data.orderCode || `ORD-${Date.now().toString().slice(-4)}`,
+              date: new Date().toLocaleString('vi-VN', { dateStyle: 'short', timeStyle: 'short' }),
+              phase: 0,
+              statusLabel: 'Chờ xác nhận',
+              carrier: 'GIAO HÀNG NHANH (GHN)',
+              trackingCode: `GHN${Date.now().toString().slice(-9)}`,
+              paymentMethod: 'COD (Thanh toán khi nhận)',
+              total: Number(response.data.totalAmount || finalTotal),
+              items: cartItems.map((item) => ({
+                id: item.productId || item.id,
+                name: item.name,
+                variant: item.variant,
+                quantity: item.quantity,
+                price: item.price,
+                image: item.image
+              }))
+            };
+            localStorage.setItem('techshop_orders', JSON.stringify([formatted, ...prevOrders]));
+          } catch {
+            // ignore storage error
+          }
+          await clearCart();
           navigate(`/success/${response.data.orderCode}`, { replace: true });
         }
       } else {
@@ -338,6 +338,52 @@ const CheckoutPage = () => {
     }
   };
 
+  // Xử lý khi thanh toán VietQR thành công: lúc này mới lưu đơn và xóa giỏ hàng
+  const handlePaymentSuccess = async (targetOrder) => {
+    const order = targetOrder || createdOrder;
+    if (!order) return;
+    try {
+      const prevOrders = JSON.parse(localStorage.getItem('techshop_orders') || '[]');
+      const formatted = {
+        orderId: order.orderCode || `ORD-${Date.now().toString().slice(-4)}`,
+        date: new Date().toLocaleString('vi-VN', { dateStyle: 'short', timeStyle: 'short' }),
+        phase: 1,
+        statusLabel: 'Đã thanh toán',
+        carrier: 'GIAO HÀNG NHANH (GHN)',
+        trackingCode: `GHN${Date.now().toString().slice(-9)}`,
+        paymentMethod: 'VietQR Banking Auto',
+        total: Number(order.finalAmount || order.totalAmount || finalTotal),
+        items: cartItems.map((item) => ({
+          id: item.productId || item.id,
+          name: item.name,
+          variant: item.variant,
+          quantity: item.quantity,
+          price: item.price,
+          image: item.image
+        }))
+      };
+      localStorage.setItem('techshop_orders', JSON.stringify([formatted, ...prevOrders]));
+    } catch {
+      // ignore
+    }
+    await clearCart();
+    navigate(`/success/${order.orderCode}`, { replace: true });
+  };
+
+  // Xử lý khi khách chưa muốn thanh toán vội mà nhấn "Đóng" hoặc Hủy
+  // -> Hủy draft đơn hàng chưa thanh toán trong DB, giữ nguyên giỏ hàng và form checkout
+  const handleCancelVietqr = async () => {
+    if (createdOrder?.orderCode) {
+      try {
+        await api.cancelUnpaidOrder(createdOrder.orderCode);
+      } catch (err) {
+        console.warn('Hủy draft đơn hàng lỗi:', err);
+      }
+    }
+    setIsVietqrModalOpen(false);
+    setCreatedOrder(null);
+  };
+
   // Poll backend mỗi 3s; khi đã nhận tiền thì tự động chuyển sang /success
   useEffect(() => {
     if (!createdOrder || createdOrder.paymentMethod !== 'vietqr_banking') return undefined;
@@ -346,7 +392,7 @@ const CheckoutPage = () => {
       try {
         const status = await api.getPaymentStatus(createdOrder.orderCode);
         if (!cancelled && status?.paid) {
-          navigate(`/success/${createdOrder.orderCode}`, { replace: true });
+          await handlePaymentSuccess(createdOrder);
         }
       } catch {
         // bỏ qua lỗi mạng tạm thời, lần poll sau sẽ thử lại
@@ -358,14 +404,14 @@ const CheckoutPage = () => {
       cancelled = true;
       clearInterval(timer);
     };
-  }, [createdOrder, navigate]);
+  }, [createdOrder]);
 
   const handleSimulatePaymentFromWaiting = async () => {
     if (!createdOrder?.orderCode) return;
     try {
       setSimulatingWaiting(true);
       await api.simulatePayment(createdOrder.orderCode);
-      navigate(`/success/${createdOrder.orderCode}`, { replace: true });
+      await handlePaymentSuccess(createdOrder);
     } catch (err) {
       console.error('Lỗi giả lập thanh toán:', err);
     } finally {
@@ -452,22 +498,23 @@ const CheckoutPage = () => {
                   <span>Mở mã QR Thanh Toán</span>
                 </button>
               )}
-              <Link
-                to="/profile/orders"
-                className="flex-1 py-3.5 px-5 rounded-xl bg-slate-800 border border-slate-700 hover:bg-slate-700 text-slate-200 font-bold text-center transition text-sm"
+              <button
+                type="button"
+                onClick={handleCancelVietqr}
+                className="flex-1 py-3.5 px-5 rounded-xl bg-slate-800 border border-slate-700 hover:bg-slate-700 text-slate-300 font-bold text-center transition text-sm cursor-pointer"
               >
-                Xem Đơn Hàng Của Tôi
-              </Link>
+                ← Hủy &amp; Quay lại Checkout
+              </button>
             </div>
           </div>
         </div>
 
         <VietqrModal
           isOpen={isVietqrModalOpen}
-          onClose={() => setIsVietqrModalOpen(false)}
+          onClose={handleCancelVietqr}
           vietQRData={createdOrder.vietQR}
           orderCode={createdOrder.orderCode}
-          onPaymentSuccess={() => navigate(`/success/${createdOrder.orderCode}`, { replace: true })}
+          onPaymentSuccess={() => handlePaymentSuccess(createdOrder)}
         />
       </div>
     );

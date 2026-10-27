@@ -221,6 +221,16 @@ export const api = {
     return res.data;
   },
 
+  async cancelUnpaidOrder(orderCode) {
+    try {
+      const res = await apiClient.post(`/api/orders/${encodeURIComponent(orderCode)}/cancel-unpaid`);
+      return res.data;
+    } catch (e) {
+      console.warn('cancelUnpaidOrder warning:', e?.message);
+      return { success: false };
+    }
+  },
+
   async getOrder(orderCode) {
     const res = await apiClient.get(`/api/orders/${encodeURIComponent(orderCode)}`);
     return res.data;

@@ -60,6 +60,15 @@ async function initDatabaseSchema() {
       `);
     }
 
+    // 2b. Ensure username column exists in customers, managers, staffs
+    for (const tbl of ['customers', 'managers', 'staffs']) {
+      try {
+        await connection.query(`ALTER TABLE \`${tbl}\` ADD COLUMN \`username\` VARCHAR(50) NULL UNIQUE AFTER \`id\``);
+      } catch (e) {
+        // Column already exists or error handled
+      }
+    }
+
     // 3. Ensure permissions column exists in staffs table
     try {
       await connection.query("ALTER TABLE `staffs` ADD COLUMN `permissions` JSON NULL");

@@ -40,6 +40,7 @@ CREATE TABLE `guests` (
 CREATE TABLE `customers` (
     `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     `name` VARCHAR(100) NOT NULL,
+    `username` VARCHAR(50) NULL UNIQUE,
     `email` VARCHAR(150) NOT NULL UNIQUE,
     `password_hash` VARCHAR(255) NULL,
     `phone` VARCHAR(20) NULL,
@@ -71,6 +72,7 @@ CREATE TABLE `admins` (
 
 CREATE TABLE `managers` (
     `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    `username` VARCHAR(50) NULL UNIQUE,
     `manager_code` VARCHAR(20) NOT NULL UNIQUE,
     `admin_id` INT UNSIGNED NULL,
     `full_name` VARCHAR(100) NOT NULL,
@@ -90,6 +92,7 @@ CREATE TABLE `managers` (
 
 CREATE TABLE `staffs` (
     `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    `username` VARCHAR(50) NULL UNIQUE,
     `staff_code` VARCHAR(20) NOT NULL UNIQUE,
     `manager_id` INT UNSIGNED NULL,
     `full_name` VARCHAR(100) NOT NULL,

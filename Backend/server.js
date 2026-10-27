@@ -17,7 +17,7 @@ app.use(express.urlencoded({ extended: true }));
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:3000';
 
 // Đường dẫn tài nguyên tĩnh
-const frontendDistPath = path.join(__dirname, '../Frontend/dist');
+const frontendDistPath = path.join(__dirname, '../frontend/dist');
 const legacyPublicPath = path.join(__dirname, '../public');
 
 // 1. Ưu tiên phục vụ Giao diện Khách hàng Storefront (React SPA) từ Frontend/dist

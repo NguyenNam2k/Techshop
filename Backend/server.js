@@ -44,11 +44,23 @@ const reportRoutes = require('./routes/manager/reportRoutes');
 const logRoutes = require('./routes/admin/logRoutes');
 const roleRoutes = require('./routes/admin/roleRoutes');
 const permissionRoutes = require('./routes/admin/permissionRoutes');
-const orderRoutes = require('./src/routes/order.routes');
-const paymentRoutes = require('./src/routes/payment.routes');
-const shippingRoutes = require('./src/routes/shipping.routes');
-const cartRoutes = require('./src/routes/cart.routes');
-const customerProfileRoutes = require('./src/routes/customer.routes');
+// Helper load routes từ thư mục src (hỗ trợ cả Windows và Linux khi phân tách Backend / backend)
+const loadBackendSrcRoute = (relPath) => {
+  try {
+    return require(relPath);
+  } catch (err) {
+    if (err.code === 'MODULE_NOT_FOUND') {
+      return require(path.join(__dirname, '../backend', relPath.replace(/^\.\//, '')));
+    }
+    throw err;
+  }
+};
+
+const orderRoutes = loadBackendSrcRoute('./src/routes/order.routes');
+const paymentRoutes = loadBackendSrcRoute('./src/routes/payment.routes');
+const shippingRoutes = loadBackendSrcRoute('./src/routes/shipping.routes');
+const cartRoutes = loadBackendSrcRoute('./src/routes/cart.routes');
+const customerProfileRoutes = loadBackendSrcRoute('./src/routes/customer.routes');
 const { testConnection } = require('./config/database');
 
 // 3. Phục vụ Manager App SPA nếu đã build dist (Duong's Manager Portal)

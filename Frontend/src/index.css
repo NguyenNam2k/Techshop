@@ -85,7 +85,7 @@ html.light {
 }
 
 /* Footer luôn bị khóa về Dark theme */
-html[data-theme="light"] :is(footer, .dark-locked) {
+html[data-theme="light"] .dark-locked {
   color-scheme: dark;
   --slate-50: 248 250 252;
   --slate-100: 241 245 249;
@@ -200,38 +200,87 @@ html[data-theme="light"] .text-slate-700 {
   color: #334155 !important;
 }
 
-/* CHỈ giữ chữ trắng trên NÚT BẤM (button, a, pill) có nền màu đặc hoặc gradient, hoặc bên trong footer */
-html[data-theme="light"] :is(footer, .dark-locked) .text-white,
-html[data-theme="light"] :is(footer, .dark-locked).text-white,
-html[data-theme="light"] button:is([class*="bg-sky-"],
-  [class*="bg-blue-"],
-  [class*="bg-indigo-"],
-  [class*="bg-emerald-"],
-  [class*="bg-rose-"],
-  [class*="bg-red-"],
-  [class*="bg-gradient-"]) .text-white,
-html[data-theme="light"] button:is([class*="bg-sky-"],
-  [class*="bg-blue-"],
-  [class*="bg-indigo-"],
-  [class*="bg-emerald-"],
-  [class*="bg-rose-"],
-  [class*="bg-red-"],
-  [class*="bg-gradient-"]).text-white,
-html[data-theme="light"] a:is([class*="bg-sky-"],
-  [class*="bg-blue-"],
-  [class*="bg-indigo-"],
-  [class*="bg-emerald-"],
-  [class*="bg-rose-"],
-  [class*="bg-red-"],
-  [class*="bg-gradient-"]) .text-white,
-html[data-theme="light"] a:is([class*="bg-sky-"],
-  [class*="bg-blue-"],
-  [class*="bg-indigo-"],
-  [class*="bg-emerald-"],
-  [class*="bg-rose-"],
-  [class*="bg-red-"],
-  [class*="bg-gradient-"]).text-white {
+/* GIỮ CHỮ TRẮNG CHO TẤT CẢ CONTAINER CÓ NỀN MÀU ĐẶC HOẶC GRADIENT TRONG LIGHT THEME */
+html[data-theme="light"] .\!text-white,
+html[data-theme="light"] [class*="!text-white"] {
   color: #ffffff !important;
+}
+
+html[data-theme="light"] .dark-locked .text-white,
+html[data-theme="light"] .dark-locked.text-white,
+html[data-theme="light"] :is(
+  button, a, div, section, span, p, h1, h2, h3, h4, h5, h6,
+  [class*="bg-sky-500"], [class*="bg-sky-600"], [class*="bg-sky-700"],
+  [class*="bg-blue-500"], [class*="bg-blue-600"], [class*="bg-blue-700"],
+  [class*="bg-indigo-500"], [class*="bg-indigo-600"], [class*="bg-indigo-700"],
+  [class*="bg-emerald-500"], [class*="bg-emerald-600"], [class*="bg-emerald-700"],
+  [class*="bg-rose-500"], [class*="bg-rose-600"], [class*="bg-rose-700"],
+  [class*="bg-red-500"], [class*="bg-red-600"], [class*="bg-red-700"],
+  [class*="bg-gradient-"],
+  [class*="from-sky-"],
+  [class*="from-blue-"],
+  [class*="from-indigo-"],
+  [class*="from-red-"],
+  [class*="from-rose-"]
+) .text-white,
+html[data-theme="light"] :is(
+  [class*="bg-sky-500"], [class*="bg-sky-600"], [class*="bg-sky-700"],
+  [class*="bg-blue-500"], [class*="bg-blue-600"], [class*="bg-blue-700"],
+  [class*="bg-indigo-500"], [class*="bg-indigo-600"], [class*="bg-indigo-700"],
+  [class*="bg-emerald-500"], [class*="bg-emerald-600"], [class*="bg-emerald-700"],
+  [class*="bg-rose-500"], [class*="bg-rose-600"], [class*="bg-rose-700"],
+  [class*="bg-red-500"], [class*="bg-red-600"], [class*="bg-red-700"],
+  [class*="bg-gradient-"],
+  [class*="from-sky-"],
+  [class*="from-blue-"],
+  [class*="from-indigo-"],
+  [class*="from-red-"],
+  [class*="from-rose-"]
+).text-white {
+  color: #ffffff !important;
+}
+
+/* Các tiêu đề và văn bản bên trong banner nền gradient/màu đặc: Luôn trắng và sáng rõ */
+html[data-theme="light"] :is(
+  [class*="bg-gradient-"],
+  [class*="from-sky-"],
+  [class*="from-blue-"],
+  [class*="from-indigo-"],
+  [class*="from-red-"],
+  [class*="from-rose-"]
+) :is(h1, h2, h3, h4, h5, h6, .drop-shadow-sm) {
+  color: #ffffff !important;
+}
+
+html[data-theme="light"] :is(
+  [class*="bg-gradient-"],
+  [class*="from-sky-"],
+  [class*="from-blue-"],
+  [class*="from-indigo-"],
+  [class*="from-red-"],
+  [class*="from-rose-"]
+) p:not([class*="text-slate-"]):not([class*="text-gray-"]) {
+  color: #ffffff !important;
+}
+
+/* Phụ đề trên nền xanh/đỏ */
+html[data-theme="light"] :is([class*="bg-gradient-"], [class*="from-sky-"], [class*="from-blue-"]) :is(.text-sky-100, [class*="text-sky-100"], .text-blue-100, [class*="text-blue-100"]) {
+  color: #e0f2fe !important;
+}
+html[data-theme="light"] :is([class*="bg-gradient-"], [class*="from-sky-"], [class*="from-blue-"]) :is(.text-sky-200, [class*="text-sky-200"], .text-blue-200, [class*="text-blue-200"]) {
+  color: #bae6fd !important;
+}
+html[data-theme="light"] :is([class*="bg-gradient-"], [class*="from-red-"], [class*="from-rose-"]) :is(.text-rose-100, [class*="text-rose-100"]) {
+  color: #ffe4e6 !important;
+}
+
+/* Nút trắng bên trong banner gradient: giữ chữ màu xanh brand đậm đà */
+html[data-theme="light"] :is([class*="bg-gradient-"], [class*="from-sky-"], [class*="from-blue-"]) :is(a, button):is(.bg-white, [class*="bg-white"]) {
+  background-color: #ffffff !important;
+  color: #0369a1 !important;
+}
+html[data-theme="light"] :is([class*="bg-gradient-"], [class*="from-sky-"], [class*="from-blue-"]) :is(a, button):is(.bg-white, [class*="bg-white"]) * {
+  color: #0369a1 !important;
 }
 
 /* Chữ màu tối trên nút vàng/cam sáng */

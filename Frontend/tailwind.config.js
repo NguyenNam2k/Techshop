@@ -138,7 +138,7 @@ export default {
         ':root': buildVars('dark'),
         [L]: { ...buildVars('light'), 'color-scheme': 'light' },
         // Footer luôn giữ giao diện tối
-        [`${L} :is(footer, .dark-locked)`]: { ...buildVars('dark'), 'color-scheme': 'dark' },
+        [`${L} .dark-locked`]: { ...buildVars('dark'), 'color-scheme': 'dark' },
 
         // Bóng đổ đen đậm quá nặng trên nền sáng
         [`${L} [class*="shadow-black"]`]: { '--tw-shadow-color': 'rgb(15 23 42 / 0.22)' },
@@ -159,7 +159,7 @@ export default {
         // 5) bề mặt slate nằm trong nền màu -> tối
         [`${forWhite(`${L} ${SOLID} ${SLATE_SURFACE}`)}`]: { color: DARK_TEXT },
         // Footer: luôn trắng như cũ
-        [`${forWhiteSelf(`${L} :is(footer, .dark-locked)`)}, ${forWhite(`${L} :is(footer, .dark-locked)`)}`]: {
+        [`${forWhiteSelf(`${L} .dark-locked`)}, ${forWhite(`${L} .dark-locked`)}`]: {
           color: '#ffffff'
         }
       });

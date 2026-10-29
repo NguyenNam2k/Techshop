@@ -11,107 +11,181 @@ import {
   ZoomOut
 } from 'lucide-react';
 
-// Fallback complementary angle library for products with only 1 image in DB
+// Thư viện các góc chụp thực tế & infographic bổ trợ theo từng nhóm sản phẩm
 const CATEGORY_ANGLE_FALLBACKS = {
   laptops: [
     {
-      angle_label: 'Mặt sau & Khe tản nhiệt',
+      angle_label: 'Màn hình OLED viền mỏng & Tần số quét cao',
+      image_url: 'https://images.unsplash.com/photo-1603302576837-37561b2e2302?w=1000&auto=format&fit=crop&q=85'
+    },
+    {
+      angle_label: 'Bàn phím LED RGB & Cụm Touchpad phủ kính',
       image_url: 'https://images.unsplash.com/photo-1588872657578-7efd1f1555ed?w=1000&auto=format&fit=crop&q=85'
     },
     {
-      angle_label: 'Bàn phím LED & Touchpad',
+      angle_label: 'Mặt sau & Khe tản nhiệt Arc Flow 3 quạt',
       image_url: 'https://images.unsplash.com/photo-1593642632823-8f785ba67e45?w=1000&auto=format&fit=crop&q=85'
     },
     {
-      angle_label: 'Góc nghiêng 45° siêu mỏng',
+      angle_label: 'Sơ đồ cổng kết nối 2 bên (Thunderbolt 4, HDMI 2.1)',
       image_url: 'https://images.unsplash.com/photo-1591799264318-7e6ef8ddb7ea?w=1000&auto=format&fit=crop&q=85'
     },
     {
-      angle_label: 'Cổng kết nối & Độ mỏng CNC',
+      angle_label: 'Góc nghiêng 45° tôn vinh độ mỏng nhôm CNC',
       image_url: 'https://images.unsplash.com/photo-1587202372775-e229f172b9d7?w=1000&auto=format&fit=crop&q=85'
+    },
+    {
+      angle_label: 'Trọn bộ sạc nhanh GaN & Hộp Fullbox phụ kiện',
+      image_url: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=1000&auto=format&fit=crop&q=85'
     }
   ],
   gpus: [
     {
-      angle_label: 'Mặt lưng Backplate kim loại',
+      angle_label: 'Mặt trước hệ thống quạt Axial-tech làm mát',
       image_url: 'https://images.unsplash.com/photo-1587202372775-e229f172b9d7?w=1000&auto=format&fit=crop&q=85'
     },
     {
-      angle_label: 'Cổng xuất hình HDMI/DisplayPort',
+      angle_label: 'Mặt lưng Backplate nhôm phay xước bảo vệ PCB',
+      image_url: 'https://images.unsplash.com/photo-1587202372634-32705e3bf49c?w=1000&auto=format&fit=crop&q=85'
+    },
+    {
+      angle_label: 'Cổng xuất hình chuẩn HDMI 2.1a / DisplayPort 1.4a',
       image_url: 'https://images.unsplash.com/photo-1591799264318-7e6ef8ddb7ea?w=1000&auto=format&fit=crop&q=85'
     },
     {
-      angle_label: 'Hệ thống lá nhôm & Ống đồng',
-      image_url: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=1000&auto=format&fit=crop&q=85'
-    }
-  ],
-  cpus: [
-    {
-      angle_label: 'Mặt trước IHS khắc laser',
-      image_url: 'https://images.unsplash.com/photo-1591799264318-7e6ef8ddb7ea?w=1000&auto=format&fit=crop&q=85'
-    },
-    {
-      angle_label: 'Chân tiếp xúc Socket mạ vàng',
+      angle_label: 'Đầu cấp nguồn 16-pin 12VHPWR & Buồng hơi Vapor Chamber',
       image_url: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=1000&auto=format&fit=crop&q=85'
     },
     {
-      angle_label: 'Vỏ hộp Box chính hãng',
-      image_url: 'https://images.unsplash.com/photo-1587202372775-e229f172b9d7?w=1000&auto=format&fit=crop&q=85'
+      angle_label: 'Đèn LED ARGB đồng bộ Aura Sync rực rỡ',
+      image_url: 'https://images.unsplash.com/photo-1563770660941-20978e870e26?w=1000&auto=format&fit=crop&q=85'
+    },
+    {
+      angle_label: 'Trọn bộ hộp chính hãng kèm thanh đỡ chống xệ VGA',
+      image_url: 'https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?w=1000&auto=format&fit=crop&q=85'
     }
   ],
   monitors: [
     {
-      angle_label: 'Mặt sau & Khe LED Ambient',
+      angle_label: 'Trực diện màn hình viền siêu mỏng 3 cạnh sắc nét',
       image_url: 'https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?w=1000&auto=format&fit=crop&q=85'
     },
     {
-      angle_label: 'Chân đế công thái học xoay nâng',
+      angle_label: 'Mặt sau tích hợp đèn Ambient Light & Khe tản nhiệt',
+      image_url: 'https://images.unsplash.com/photo-1547119957-637f8679db1e?w=1000&auto=format&fit=crop&q=85'
+    },
+    {
+      angle_label: 'Chân đế công thái học Ergo nâng hạ, xoay dọc 90°',
+      image_url: 'https://images.unsplash.com/photo-1585792180666-f7347c490ee2?w=1000&auto=format&fit=crop&q=85'
+    },
+    {
+      angle_label: 'Cụm cổng kết nối đa năng (Type-C PD, HDMI 2.1, DP)',
       image_url: 'https://images.unsplash.com/photo-1547658719-da2b51169166?w=1000&auto=format&fit=crop&q=85'
     },
     {
-      angle_label: 'Góc nhìn rộng 178° tràn viền',
+      angle_label: 'Góc nhìn siêu rộng 178° không biến dạng màu sắc',
       image_url: 'https://images.unsplash.com/photo-1593642702821-c8da6771f0c6?w=1000&auto=format&fit=crop&q=85'
+    },
+    {
+      angle_label: 'Phụ kiện cáp kết nối bọc dù & Hộp xốp chống sốc',
+      image_url: 'https://images.unsplash.com/photo-1591799264318-7e6ef8ddb7ea?w=1000&auto=format&fit=crop&q=85'
     }
   ],
   keyboards: [
     {
-      angle_label: 'Cận cảnh Switch & Keycap PBT',
-      image_url: 'https://images.unsplash.com/photo-1618384887929-16ec33fab9ef?w=1000&auto=format&fit=crop&q=85'
-    },
-    {
-      angle_label: 'Hiệu ứng LED RGB bóng tối',
+      angle_label: 'Toàn cảnh layout phím cơ custom công thái học',
       image_url: 'https://images.unsplash.com/photo-1587829741301-dc798b83add3?w=1000&auto=format&fit=crop&q=85'
     },
     {
-      angle_label: 'Góc nghiêng công thái học',
+      angle_label: 'Cận cảnh cụm Switch cơ học Hot-swap tháo rời',
+      image_url: 'https://images.unsplash.com/photo-1618384887929-16ec33fab9ef?w=1000&auto=format&fit=crop&q=85'
+    },
+    {
+      angle_label: 'Màn hình OLED đa thông số & Núm xoay kim loại',
       image_url: 'https://images.unsplash.com/photo-1595225476474-87563907a212?w=1000&auto=format&fit=crop&q=85'
+    },
+    {
+      angle_label: 'Đèn LED RGB từng phím lung linh trong bóng tối',
+      image_url: 'https://images.unsplash.com/photo-1563770660941-20978e870e26?w=1000&auto=format&fit=crop&q=85'
+    },
+    {
+      angle_label: 'Mặt đáy đệm cao su giảm chấn, chân nâng góc nghiêng',
+      image_url: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=1000&auto=format&fit=crop&q=85'
+    },
+    {
+      angle_label: 'Dây cáp Type-C bện dù, Dụng cụ gắp switch & Nắp mica',
+      image_url: 'https://images.unsplash.com/photo-1591799264318-7e6ef8ddb7ea?w=1000&auto=format&fit=crop&q=85'
+    }
+  ],
+  motherboards: [
+    {
+      angle_label: 'Góc nhìn tổng thể bo mạch ATX cao cấp',
+      image_url: 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=1000&auto=format&fit=crop&q=85'
+    },
+    {
+      angle_label: 'Cụm tản nhiệt phase nguồn VRM hợp kim nhôm khối',
+      image_url: 'https://images.unsplash.com/photo-1563770660941-20978e870e26?w=1000&auto=format&fit=crop&q=85'
+    },
+    {
+      angle_label: 'Sơ đồ I/O mặt sau bọc sẵn & Anten Wi-Fi 7 thế hệ mới',
+      image_url: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=1000&auto=format&fit=crop&q=85'
+    },
+    {
+      angle_label: 'Khe PCIe 5.0 bọc thép SafeSlot & 5x Khay tản M.2 NVMe',
+      image_url: 'https://images.unsplash.com/photo-1587202372775-e229f172b9d7?w=1000&auto=format&fit=crop&q=85'
+    },
+    {
+      angle_label: 'Mặt lưng PCB sợi thủy tinh gia cường lực',
+      image_url: 'https://images.unsplash.com/photo-1591799264318-7e6ef8ddb7ea?w=1000&auto=format&fit=crop&q=85'
+    },
+    {
+      angle_label: 'Trọn bộ phụ kiện cáp SATA, card mở rộng & Hộp Box',
+      image_url: 'https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?w=1000&auto=format&fit=crop&q=85'
+    }
+  ],
+  cpus: [
+    {
+      angle_label: 'Vỏ hộp Box chính hãng nguyên seal tem phân phối',
+      image_url: 'https://images.unsplash.com/photo-1587202372775-e229f172b9d7?w=1000&auto=format&fit=crop&q=85'
+    },
+    {
+      angle_label: 'Mặt trước IHS mạ niken khắc laser sắc nét',
+      image_url: 'https://images.unsplash.com/photo-1591799264318-7e6ef8ddb7ea?w=1000&auto=format&fit=crop&q=85'
+    },
+    {
+      angle_label: 'Chân tiếp xúc Socket mạ vàng nano cao cấp',
+      image_url: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=1000&auto=format&fit=crop&q=85'
+    },
+    {
+      angle_label: 'Khay bảo vệ chống cong vênh & Giấy chứng nhận xuất xưởng',
+      image_url: 'https://images.unsplash.com/photo-1518770660439-4636190af475?w=1000&auto=format&fit=crop&q=85'
     }
   ],
   mice: [
     {
-      angle_label: 'Góc nghiêng công thái học',
+      angle_label: 'Góc nghiêng công thái học êm ái',
       image_url: 'https://images.unsplash.com/photo-1615663245857-ac93bb7c39e7?w=1000&auto=format&fit=crop&q=85'
     },
     {
-      angle_label: 'Mặt đáy cảm biến & Feet PTFE',
+      angle_label: 'Mặt đáy cảm biến quang học & Feet PTFE siêu trơn',
       image_url: 'https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?w=1000&auto=format&fit=crop&q=85'
     },
     {
-      angle_label: 'Trọn bộ phụ kiện & Cáp sạc',
+      angle_label: 'Trọn bộ phụ kiện cáp sạc bọc dù & Đầu thu không dây',
       image_url: 'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=1000&auto=format&fit=crop&q=85'
     }
   ],
   default: [
     {
-      angle_label: 'Góc nghiêng 45° chi tiết',
+      angle_label: 'Góc nghiêng 45° hoàn thiện cao cấp',
       image_url: 'https://images.unsplash.com/photo-1591799264318-7e6ef8ddb7ea?w=1000&auto=format&fit=crop&q=85'
     },
     {
-      angle_label: 'Mặt sau & Cổng giao tiếp',
+      angle_label: 'Mặt sau & Cổng giao tiếp tiêu chuẩn',
       image_url: 'https://images.unsplash.com/photo-1587202372775-e229f172b9d7?w=1000&auto=format&fit=crop&q=85'
     },
     {
-      angle_label: 'Đóng gói Fullbox phụ kiện',
+      angle_label: 'Đóng gói Fullbox phụ kiện chính hãng',
       image_url: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=1000&auto=format&fit=crop&q=85'
     }
   ]
@@ -122,6 +196,52 @@ const ProductGallery = ({ product, selectedVariant }) => {
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [lightboxScale, setLightboxScale] = useState(1);
   const thumbnailScrollRef = useRef(null);
+
+  // Phân loại: Nhận diện sản phẩm chuyên sâu/cao cấp cần nhiều thông tin trực quan (Nhồi 5-6 ảnh chi tiết)
+  // Các sản phẩm đơn giản giữ 2-3 ảnh cơ bản, không nhồi thừa
+  const isHighInfoProduct = useMemo(() => {
+    if (!product) return false;
+    const cat = (product.category_slug || '').toLowerCase();
+    const name = (product.name || '').toLowerCase();
+    const price = Number(product.base_price || product.price || 0);
+
+    // 1. Nhóm thiết bị phần cứng & gear phức tạp
+    const highInfoCategories = [
+      'laptop',
+      'laptops',
+      'gpu',
+      'gpus',
+      'vga',
+      'card-man-hinh',
+      'monitor',
+      'monitors',
+      'man-hinh',
+      'keyboard',
+      'keyboards',
+      'ban-phim',
+      'motherboard',
+      'motherboards',
+      'mainboard',
+      'bo-mach-chu'
+    ];
+
+    if (highInfoCategories.some((k) => cat.includes(k))) return true;
+
+    // 2. Sản phẩm cao cấp, Flagship hoặc có giá trị từ 15 triệu
+    if (price >= 15000000) return true;
+    if (
+      /zephyrus|strix|legion|nitro|oled|4090|4080|titanium|dark hero|formula|superlight|custom/i.test(
+        name
+      )
+    ) {
+      return true;
+    }
+
+    return false;
+  }, [product]);
+
+  // Số lượng ảnh mục tiêu: 6 ảnh cho sản phẩm cần nhiều info; 3 ảnh cho phụ kiện/sản phẩm thông thường
+  const targetMaxImages = isHighInfoProduct ? 6 : 3;
 
   // 1. Tự động gom góp toàn bộ ảnh từ DB (Thumbnail + product_images + variants + bổ sung góc chụp)
   const imagesToShow = useMemo(() => {
@@ -166,8 +286,8 @@ const ProductGallery = ({ product, selectedVariant }) => {
       }
     }
 
-    // D. Nếu tổng ảnh dưới 4: Tự động bổ sung các góc chụp thực tế theo danh mục
-    if (list.length < 4) {
+    // D. Bổ sung góc chụp giàu thông tin theo danh mục nếu số lượng chưa đạt mục tiêu (5-6 ảnh cho high-info)
+    if (list.length < targetMaxImages) {
       const catKey = product?.category_slug || 'default';
       const fallbacks =
         CATEGORY_ANGLE_FALLBACKS[catKey] ||
@@ -175,7 +295,7 @@ const ProductGallery = ({ product, selectedVariant }) => {
         CATEGORY_ANGLE_FALLBACKS.default;
 
       for (const fb of fallbacks) {
-        if (list.length >= 5) break;
+        if (list.length >= targetMaxImages) break;
         if (!seenUrls.has(fb.image_url)) {
           list.push({
             id: `fb-${list.length}`,
@@ -197,7 +317,7 @@ const ProductGallery = ({ product, selectedVariant }) => {
     }
 
     return list;
-  }, [product]);
+  }, [product, targetMaxImages]);
 
   // Reset về ảnh đầu khi đổi sản phẩm
   useEffect(() => {

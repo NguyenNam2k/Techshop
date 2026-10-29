@@ -930,25 +930,25 @@ export default function PCBuilderView() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
         {/* Header Hero Banner */}
-        <div className="p-6 md:p-8 rounded-3xl bg-gradient-to-r from-sky-600 via-blue-600 to-indigo-700 text-white shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-6 border border-sky-500/20">
+        <div className="p-6 md:p-8 rounded-3xl bg-gradient-to-r from-sky-600 via-blue-600 to-indigo-700 !text-white text-white shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-6 border border-sky-500/20">
           <div className="space-y-2">
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/15 text-white text-xs font-bold backdrop-blur-md border border-white/20">
-              <Wrench className="w-3.5 h-3.5 text-sky-300" />
-              <span>Công Cụ Xây Dựng Cấu Hình PC Chuyên Nghiệp</span>
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/15 !text-white text-xs font-bold backdrop-blur-md border border-white/20">
+              <Wrench className="w-3.5 h-3.5 text-sky-200" />
+              <span className="!text-white text-white">Công Cụ Xây Dựng Cấu Hình PC Chuyên Nghiệp</span>
             </div>
-            <h1 className="text-2xl md:text-3xl lg:text-4xl font-black">
+            <h1 className="text-2xl md:text-3xl lg:text-4xl font-black !text-white text-white drop-shadow-sm">
               Tự Build Cấu Hình Máy Tính Theo Nhu Cầu
             </h1>
-            <p className="text-xs sm:text-sm text-sky-100 max-w-xl font-medium">
+            <p className="text-xs sm:text-sm !text-sky-100 text-sky-100 max-w-xl font-medium">
               Chọn linh kiện chuẩn xác, tự động kiểm tra tương thích phần cứng, tối ưu chi phí và nhận combo quà tặng 1.500.000₫!
             </p>
           </div>
 
-          <div className="p-4 bg-slate-950/40 backdrop-blur-md rounded-2xl border border-white/20 text-right min-w-[220px]">
-            <span className="text-xs font-bold text-sky-200 block uppercase tracking-wider">
+          <div className="p-4 bg-blue-950/50 sm:bg-black/30 backdrop-blur-md rounded-2xl border border-white/25 text-right min-w-[220px]">
+            <span className="text-xs font-bold !text-sky-200 text-sky-200 block uppercase tracking-wider">
               Dự toán cấu hình:
             </span>
-            <span className="text-2xl md:text-3xl font-black font-mono text-white">
+            <span className="text-2xl md:text-3xl font-black font-mono !text-white text-white drop-shadow-sm">
               {formatVND(totalPrice)}
             </span>
           </div>

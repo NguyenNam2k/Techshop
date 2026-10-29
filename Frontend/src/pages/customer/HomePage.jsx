@@ -992,20 +992,20 @@ export default function HomePage() {
               onClick={() => {
                 navigate('/catalog?category=keyboards');
               }}
-              className="relative overflow-hidden rounded-2xl p-4 bg-gradient-to-br from-red-600 via-rose-600 to-orange-500 text-white shadow-md hover:shadow-xl hover:shadow-rose-600/25 transition-all duration-300 group flex flex-col justify-between min-h-[120px] active:scale-[0.99] border border-rose-400/30 hover:border-rose-400/60 glow-card-rose hover:-translate-y-1.5 cursor-pointer btn-shimmer"
+              className="relative overflow-hidden rounded-2xl p-4 bg-gradient-to-br from-red-600 via-rose-600 to-orange-500 !text-white text-white shadow-md hover:shadow-xl hover:shadow-rose-600/25 transition-all duration-300 group flex flex-col justify-between min-h-[120px] active:scale-[0.99] border border-rose-400/30 hover:border-rose-400/60 glow-card-rose hover:-translate-y-1.5 cursor-pointer btn-shimmer"
             >
               <div className="relative z-10 space-y-1">
-                <h4 className="font-extrabold text-sm sm:text-base leading-tight tracking-tight text-white drop-shadow-sm">
+                <h4 className="font-extrabold text-sm sm:text-base leading-tight tracking-tight !text-white text-white drop-shadow-sm">
                   Gear Esports Chính Hãng
                 </h4>
-                <p className="text-[11px] text-rose-100 font-medium leading-relaxed">
+                <p className="text-[11px] !text-rose-100 text-rose-100 font-medium leading-relaxed">
                   Chuột, phím, tai nghe giá tốt tuần này
                 </p>
               </div>
 
-              <div className="relative z-10 pt-2 flex items-center gap-1.5 text-xs font-bold text-white group-hover:translate-x-1 transition-transform">
-                <span>Xem ngay</span>
-                <ArrowRight className="w-3.5 h-3.5" />
+              <div className="relative z-10 pt-2 flex items-center gap-1.5 text-xs font-bold !text-white text-white group-hover:translate-x-1 transition-transform">
+                <span className="!text-white text-white">Xem ngay</span>
+                <ArrowRight className="w-3.5 h-3.5 text-white" />
               </div>
 
               {/* Watermark Icon */}
@@ -1415,26 +1415,26 @@ export default function HomePage() {
       {/* ========================================================================= */}
       {/* 9. BANNER CALL TO ACTION: XÂY DỰNG CẤU HÌNH PC CHUYÊN NGHIỆP               */}
       {/* ========================================================================= */}
-      <section className="p-8 rounded-3xl bg-gradient-to-r from-sky-600 via-blue-600 to-indigo-700 text-white shadow-xl flex flex-col md:flex-row items-center justify-between gap-6 border border-sky-500/20">
+      <section className="p-8 rounded-3xl bg-gradient-to-r from-sky-600 via-blue-600 to-indigo-700 !text-white text-white shadow-xl flex flex-col md:flex-row items-center justify-between gap-6 border border-sky-500/20">
         <div className="space-y-2 text-center md:text-left">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/15 text-white text-xs font-bold backdrop-blur-md border border-white/20">
-            <Wrench className="w-3.5 h-3.5 text-sky-300" />
-            <span>Công Cụ Tương Thích 100%</span>
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/15 !text-white text-xs font-bold backdrop-blur-md border border-white/20">
+            <Wrench className="w-3.5 h-3.5 text-sky-200" />
+            <span className="!text-white text-white">Công Cụ Tương Thích 100%</span>
           </div>
-          <h2 className="text-2xl sm:text-3xl font-black">
+          <h2 className="text-2xl sm:text-3xl font-black !text-white text-white drop-shadow-sm">
             Tự Tay Xây Dựng Cấu Hình PC Trong Mơ
           </h2>
-          <p className="text-xs sm:text-sm text-sky-100 max-w-xl font-medium">
+          <p className="text-xs sm:text-sm !text-sky-100 text-sky-100 max-w-xl font-medium">
             Tự do chọn linh kiện, tự động kiểm tra tương thích phần cứng qua Socket, dự toán chi phí chính xác và nhận quà tặng gaming trị giá 1.500.000₫!
           </p>
         </div>
 
         <Link
           to="/build-pc"
-          className="px-6 py-3.5 rounded-2xl bg-white hover:bg-sky-50 text-sky-900 font-black text-xs uppercase tracking-wider shadow-2xl transition active:scale-95 shrink-0 flex items-center gap-2"
+          className="px-6 py-3.5 rounded-2xl bg-white hover:bg-sky-50 !text-sky-900 text-sky-900 font-black text-xs uppercase tracking-wider shadow-2xl transition active:scale-95 shrink-0 flex items-center gap-2 group/btn"
         >
-          <Wrench className="w-4 h-4 text-sky-600" />
-          <span>Bắt Đầu Xây Dựng PC →</span>
+          <Wrench className="w-4 h-4 text-sky-600 group-hover/btn:rotate-45 transition-transform" />
+          <span className="!text-sky-900 text-sky-900">Bắt Đầu Xây Dựng PC →</span>
         </Link>
       </section>
     </div>

@@ -1,4 +1,4 @@
-const pool = require('../config/database');
+const pool = require('../../config/db');
 
 const ORDER_CODE_REGEX = /ORD[\s-]*(\d{13})[\s-]*(\d{4})/i;
 

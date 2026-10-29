@@ -14,8 +14,8 @@ class StaffRepository extends BaseRepository {
 
   static async findByAccount(account) {
     const [rows] = await pool.query(
-      'SELECT id, username, staff_code, email, password_hash, full_name as name, status FROM staffs WHERE username = ? OR staff_code = ?',
-      [account, account]
+      'SELECT id, username, staff_code, email, password_hash, full_name as name, status FROM staffs WHERE username = ? OR staff_code = ? OR email = ?',
+      [account, account, account]
     );
     return rows[0] || null;
   }

@@ -1,4 +1,4 @@
-const cartService = require('../services/cart.service');
+const cartService = require('../../services/customer/cartService');
 
 function extractClientContext(req) {
   // customerId must come from trusted authentication middleware, never a client header/body.

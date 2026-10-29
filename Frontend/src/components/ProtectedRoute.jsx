@@ -49,6 +49,7 @@ function ProtectedRoute({ children, requiredRole, allowedRoles }) {
   }
 
   const userRole = (user.role || '').toLowerCase();
+  const isCustomerRole = !userRole || userRole === 'customer' || userRole.includes('vip') || userRole.includes('diamond');
 
   const getHomeForRole = (role) => {
     if (role === 'admin') return '/admin';
@@ -58,12 +59,15 @@ function ProtectedRoute({ children, requiredRole, allowedRoles }) {
 
   // Đã đăng nhập nhưng không đủ quyền → cách ly và chuyển về trang của chính vai trò đó
   if (requiredRole && userRole !== requiredRole.toLowerCase()) {
-    return <Navigate to={getHomeForRole(userRole)} replace />;
+    if (!(requiredRole.toLowerCase() === 'customer' && isCustomerRole)) {
+      return <Navigate to={getHomeForRole(userRole)} replace />;
+    }
   }
 
   if (allowedRoles && allowedRoles.length > 0) {
     const normalizedAllowed = allowedRoles.map((r) => r.toLowerCase());
-    if (!normalizedAllowed.includes(userRole)) {
+    const isCustomerAllowed = normalizedAllowed.includes('customer');
+    if (!normalizedAllowed.includes(userRole) && !(isCustomerAllowed && isCustomerRole)) {
       return <Navigate to={getHomeForRole(userRole)} replace />;
     }
   }

@@ -3,8 +3,8 @@ const db = require('../../config/db');
 const ManagerRepository = {
   findByAccount: async (account) => {
     const [rows] = await db.query(
-      'SELECT id, username, manager_code, email, password_hash, full_name as name, status FROM managers WHERE username = ? OR manager_code = ?',
-      [account, account]
+      'SELECT id, username, manager_code, email, password_hash, full_name as name, status FROM managers WHERE username = ? OR manager_code = ? OR email = ?',
+      [account, account, account]
     );
     return rows[0] || null;
   },

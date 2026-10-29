@@ -1,4 +1,4 @@
-const shippingService = require('../services/shipping.service');
+const shippingService = require('../../services/customer/shippingService');
 
 async function getQuote(req, res) {
   try {

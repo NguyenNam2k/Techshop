@@ -2,10 +2,10 @@
   "name": "techgear-backend",
   "version": "1.0.0",
   "description": "Backend for TechGear PC Hardware Store",
-  "main": "src/app.js",
+  "main": "server.js",
   "scripts": {
-    "dev": "node --watch src/app.js",
-    "start": "node src/app.js",
+    "dev": "node --watch server.js",
+    "start": "node server.js",
     "db:migrate:coupon-terms": "node scripts/migrate_coupon_terms.js"
   },
   "dependencies": {

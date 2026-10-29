@@ -1,7 +1,7 @@
-const pool = require('../config/database');
-const cartService = require('./cart.service');
-const couponService = require('./coupon.service');
-const shippingService = require('./shipping.service');
+const pool = require('../../config/db');
+const cartService = require('./cartService');
+const couponService = require('./couponService');
+const shippingService = require('./shippingService');
 
 const rawAccountNo = String(process.env.VIETQR_ACCOUNT_NO || '').trim();
 const rawAccountName = String(process.env.VIETQR_ACCOUNT_NAME || '').trim();
@@ -622,15 +622,11 @@ async function getAllOrders({ customerId, sessionToken, phone, limit = 50 } = {}
   if (customerId) {
     whereConditions.push('customer_id = ?');
     queryParams.push(Number(customerId));
-  } else if (sessionToken) {
-    const guestId = await cartService.findGuestIdBySession(pool, sessionToken);
-    if (guestId) {
-      whereConditions.push('guest_id = ?');
-      queryParams.push(guestId);
-    }
   } else if (phone) {
     whereConditions.push('recipient_phone = ?');
     queryParams.push(phone);
+  } else {
+    return [];
   }
 
   const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : '';

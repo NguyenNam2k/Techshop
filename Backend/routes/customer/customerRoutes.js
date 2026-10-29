@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const customerController = require('../controllers/customer.controller');
+const customerController = require('../../controllers/customer/customerController');
 
 router.get('/profile', customerController.getProfile);
 router.put('/profile', customerController.updateProfile);

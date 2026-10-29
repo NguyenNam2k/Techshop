@@ -14,11 +14,14 @@ export function AuthProvider({ children }) {
   // Restore session từ localStorage khi app khởi động
   useEffect(() => {
     try {
-      const savedUser  = localStorage.getItem(USER_KEY) || localStorage.getItem(LEGACY_USER_KEY);
-      const savedToken = localStorage.getItem(TOKEN_KEY);
-      if (savedUser) {
-        const parsed = JSON.parse(savedUser);
+      const rawUser = localStorage.getItem(USER_KEY) || localStorage.getItem(LEGACY_USER_KEY);
+      if (rawUser && rawUser !== 'undefined' && rawUser !== 'null') {
+        const parsed = JSON.parse(rawUser);
         if (parsed && typeof parsed === 'object') {
+          const roleLower = String(parsed.role || '').toLowerCase();
+          if (!roleLower || roleLower.includes('vip') || roleLower.includes('diamond')) {
+            parsed.role = 'customer';
+          }
           setUserState(parsed);
         }
       }
@@ -33,9 +36,14 @@ export function AuthProvider({ children }) {
   const login = (token, userData) => {
     if (token) localStorage.setItem(TOKEN_KEY, token);
     if (userData) {
-      localStorage.setItem(USER_KEY, JSON.stringify(userData));
-      localStorage.setItem(LEGACY_USER_KEY, JSON.stringify(userData));
-      setUserState(userData);
+      const normalizedUser = { ...userData };
+      const roleLower = String(normalizedUser.role || '').toLowerCase();
+      if (!roleLower || roleLower.includes('vip') || roleLower.includes('diamond')) {
+        normalizedUser.role = 'customer';
+      }
+      localStorage.setItem(USER_KEY, JSON.stringify(normalizedUser));
+      localStorage.setItem(LEGACY_USER_KEY, JSON.stringify(normalizedUser));
+      setUserState(normalizedUser);
     }
   };
 
@@ -47,15 +55,27 @@ export function AuthProvider({ children }) {
     setUserState(null);
   };
 
-  /** Cập nhật thông tin user (dùng trong Dashboard role-switcher) */
+  /** Cập nhật thông tin user */
   const setUser = (userData) => {
     if (!userData) {
       logout();
       return;
     }
-    localStorage.setItem(USER_KEY, JSON.stringify(userData));
-    localStorage.setItem(LEGACY_USER_KEY, JSON.stringify(userData));
-    setUserState(userData);
+    setUserState((prev) => {
+      const finalUser = typeof userData === 'function' ? userData(prev) : userData;
+      if (!finalUser) return null;
+      const r = String(finalUser.role || '').toLowerCase();
+      if (!r || r.includes('vip') || r.includes('diamond')) {
+        finalUser.role = 'customer';
+      }
+      try {
+        localStorage.setItem(USER_KEY, JSON.stringify(finalUser));
+        localStorage.setItem(LEGACY_USER_KEY, JSON.stringify(finalUser));
+      } catch {
+        // ignore
+      }
+      return finalUser;
+    });
   };
 
   return (

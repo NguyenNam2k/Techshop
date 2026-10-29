@@ -1,23 +1,7 @@
-const pool = require('../config/database');
+const bcrypt = require('bcryptjs');
+const pool = require('../../config/db');
 
-const DEFAULT_ADDRESSES = [
-  {
-    id: 'addr-1',
-    title: 'Nhà riêng',
-    recipientName: 'Đặng Minh Thuận',
-    phone: '0908 123 456',
-    address: 'Số 12, Ngõ 45 Cầu Giấy, Phường Quan Hoa, Quận Cầu Giấy, Hà Nội',
-    isDefault: true
-  },
-  {
-    id: 'addr-2',
-    title: 'Văn phòng',
-    recipientName: 'Đặng Minh Thuận',
-    phone: '0908 123 456',
-    address: 'Tầng 8, Tòa nhà FPT Cầu Giấy, Phố Duy Tân, Quận Cầu Giấy, Hà Nội',
-    isDefault: false
-  }
-];
+const DEFAULT_ADDRESSES = [];
 
 const DEFAULT_PAYMENT_METHODS = [
   {
@@ -149,12 +133,12 @@ function parseJsonField(val, fallback) {
 
 async function getProfile(req, res) {
   try {
-    const customerId = req.query.id || 1;
+    const customerId = req.query.id || (req.user && req.user.id) || 1;
     const [rows] = await pool.query(
-      `SELECT id, name, email, phone, address, avatar_url, birth_date,
+      `SELECT id, name, email, phone, address, avatar_url, birth_date, gender, bio,
               two_factor_enabled, notification_preferences, saved_addresses,
               saved_payment_methods, wishlist, pc_builds, points, saved_vouchers,
-              support_tickets, product_reviews,
+              google_id, password_hash,
               created_at, updated_at
        FROM customers WHERE id = ? LIMIT 1`,
       [customerId]
@@ -164,7 +148,11 @@ async function getProfile(req, res) {
     let totalSpent = 0;
     try {
       const [orderStats] = await pool.query(
-        'SELECT COUNT(*) as count, COALESCE(SUM(final_amount), 0) as total FROM orders WHERE customer_id = ? OR recipient_phone = ?',
+        `SELECT 
+           COUNT(id) as count,
+           COALESCE(SUM(CASE WHEN payment_status = 'paid' AND shipping_status IN ('delivered', 'completed') THEN final_amount ELSE 0 END), 0) as total
+         FROM orders 
+         WHERE customer_id = ? OR (recipient_phone = ? AND recipient_phone != '')`,
         [customerId, rows[0]?.phone || '']
       );
       if (orderStats.length > 0) {
@@ -179,19 +167,22 @@ async function getProfile(req, res) {
       return res.status(200).json({
         success: true,
         data: {
-          id: 1,
-          name: 'Đặng Minh Thuận',
-          email: 'thuan.dang@techshop.vn',
-          phone: '0908 123 456',
-          address: 'Số 12, Ngõ 45 Cầu Giấy, Hà Nội',
-          avatar_url: DEFAULT_AVATAR,
-          birth_date: '1998-05-15',
+          id: customerId,
+          name: '',
+          email: '',
+          phone: '',
+          address: '',
+          avatar_url: '',
+          birth_date: '',
           gender: 'male',
-          bio: 'Tech enthusiast & mechanical keyboard customizer.',
-          role: 'Thành viên VIP Diamond',
-          points: 2450,
-          totalSpent: 54140000,
-          orderCount: 18,
+          bio: '',
+          role: 'customer',
+          memberTier: 'Khách hàng thành viên',
+          points: 0,
+          totalSpent: 0,
+          orderCount: 0,
+          hasPassword: false,
+          isGoogleAccount: false,
           two_factor_enabled: false,
           notification_preferences: {
             orderUpdates: true,
@@ -199,10 +190,10 @@ async function getProfile(req, res) {
             warrantyAlerts: true,
             smsAlerts: false
           },
-          savedAddresses: DEFAULT_ADDRESSES,
-          savedPaymentMethods: DEFAULT_PAYMENT_METHODS,
-          wishlist: DEFAULT_WISHLIST,
-          pcBuilds: DEFAULT_PC_BUILDS,
+          savedAddresses: [],
+          savedPaymentMethods: [],
+          wishlist: [],
+          pcBuilds: [],
           savedVouchers: [],
           supportTickets: null,
           productReviews: null
@@ -211,13 +202,13 @@ async function getProfile(req, res) {
     }
 
     const customer = rows[0];
-    const savedAddresses = parseJsonField(customer.saved_addresses, DEFAULT_ADDRESSES);
-    const savedPaymentMethods = parseJsonField(customer.saved_payment_methods, DEFAULT_PAYMENT_METHODS);
-    const wishlist = parseJsonField(customer.wishlist, DEFAULT_WISHLIST);
-    const pcBuilds = parseJsonField(customer.pc_builds, DEFAULT_PC_BUILDS);
+    const savedAddresses = parseJsonField(customer.saved_addresses, []);
+    const savedPaymentMethods = parseJsonField(customer.saved_payment_methods, []);
+    const wishlist = parseJsonField(customer.wishlist, []);
+    const pcBuilds = parseJsonField(customer.pc_builds, []);
     const savedVouchers = parseJsonField(customer.saved_vouchers, []);
-    const supportTickets = parseJsonField(customer.support_tickets, null);
-    const productReviews = parseJsonField(customer.product_reviews, null);
+    const supportTickets = null;
+    const productReviews = null;
     const notifPrefs = parseJsonField(customer.notification_preferences, {
       orderUpdates: true,
       promotions: true,
@@ -225,28 +216,42 @@ async function getProfile(req, res) {
       smsAlerts: false
     });
 
-    const birthDateStr = customer.birth_date
-      ? (customer.birth_date instanceof Date
-          ? customer.birth_date.toISOString().slice(0, 10)
-          : String(customer.birth_date).slice(0, 10))
-      : '1998-05-15';
+    let birthDateStr = '';
+    if (customer.birth_date) {
+      birthDateStr = customer.birth_date instanceof Date
+        ? customer.birth_date.toISOString().slice(0, 10)
+        : String(customer.birth_date).slice(0, 10);
+    }
+
+    // Tính toán cấp bậc thành viên thực tế dựa trên số tiền tích lũy
+    let memberTier = 'Khách hàng thành viên';
+    if (totalSpent >= 50000000) {
+      memberTier = 'Thành viên VIP Diamond';
+    } else if (totalSpent >= 20000000) {
+      memberTier = 'Thành viên VIP Gold';
+    } else if (totalSpent >= 5000000) {
+      memberTier = 'Thành viên Bạc';
+    }
 
     return res.status(200).json({
       success: true,
       data: {
         id: customer.id,
-        name: customer.name || 'Đặng Minh Thuận',
-        email: customer.email || 'thuan.dang@techshop.vn',
-        phone: customer.phone || '0908 123 456',
-        address: customer.address || 'Số 12, Ngõ 45 Cầu Giấy, Hà Nội',
-        avatar_url: customer.avatar_url || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200&auto=format&fit=crop&q=80',
+        name: customer.name || '',
+        email: customer.email || '',
+        phone: customer.phone || '',
+        address: customer.address || '',
+        avatar_url: customer.avatar_url || '',
         birth_date: birthDateStr,
-        gender: 'male',
-        bio: 'Tech enthusiast & mechanical keyboard customizer.',
-        role: 'Thành viên VIP Diamond',
-        points: customer.points != null ? Number(customer.points) : 2450,
-        totalSpent: totalSpent > 0 ? totalSpent : 54140000,
-        orderCount: orderCount > 0 ? orderCount : 18,
+        gender: customer.gender || 'male',
+        bio: customer.bio || '',
+        role: 'customer',
+        memberTier,
+        points: customer.points != null ? Number(customer.points) : 0,
+        totalSpent,
+        orderCount,
+        hasPassword: Boolean(customer.password_hash && customer.password_hash.trim().length > 0),
+        isGoogleAccount: Boolean(customer.google_id),
         two_factor_enabled: Boolean(customer.two_factor_enabled),
         notification_preferences: notifPrefs,
         savedAddresses,
@@ -255,7 +260,8 @@ async function getProfile(req, res) {
         pcBuilds,
         savedVouchers,
         supportTickets,
-        productReviews
+        productReviews,
+        created_at: customer.created_at
       }
     });
   } catch (error) {
@@ -266,7 +272,7 @@ async function getProfile(req, res) {
 
 async function updateProfile(req, res) {
   try {
-    const customerId = req.body.id || req.query.id || 1;
+    const customerId = req.body.id || req.query.id || (req.user && req.user.id) || 1;
     const {
       name,
       email,
@@ -274,6 +280,8 @@ async function updateProfile(req, res) {
       address,
       birth_date,
       birthDate,
+      gender,
+      bio,
       avatar_url,
       avatarUrl,
       two_factor_enabled,
@@ -326,6 +334,8 @@ async function updateProfile(req, res) {
         phone = COALESCE(?, phone),
         address = COALESCE(?, address),
         birth_date = COALESCE(?, birth_date),
+        gender = COALESCE(?, gender),
+        bio = COALESCE(?, bio),
         avatar_url = COALESCE(?, avatar_url),
         two_factor_enabled = COALESCE(?, two_factor_enabled),
         notification_preferences = COALESCE(?, notification_preferences),
@@ -338,11 +348,13 @@ async function updateProfile(req, res) {
         updated_at = NOW()
        WHERE id = ?`,
       [
-        name,
-        email,
-        phone,
-        address,
+        name !== undefined ? name : null,
+        email !== undefined ? email : null,
+        phone !== undefined ? phone : null,
+        address !== undefined ? address : null,
         finalBirthDate,
+        gender !== undefined ? gender : null,
+        bio !== undefined ? bio : null,
         finalAvatarUrl,
         final2FA,
         finalNotifs,
@@ -368,8 +380,8 @@ async function updateProfile(req, res) {
 
 async function changePassword(req, res) {
   try {
-    const customerId = req.body.id || req.query.id || 1;
-    const { newPassword } = req.body;
+    const customerId = req.body.id || req.query.id || (req.user && req.user.id) || 1;
+    const { currentPassword, newPassword } = req.body;
 
     if (!newPassword || newPassword.length < 8) {
       return res.status(400).json({
@@ -378,38 +390,83 @@ async function changePassword(req, res) {
       });
     }
 
-    await pool.query(
-      'UPDATE customers SET password_changed_at = NOW() WHERE id = ?',
+    const [rows] = await pool.query(
+      'SELECT id, password_hash, google_id FROM customers WHERE id = ? LIMIT 1',
       [customerId]
+    );
+
+    if (!rows.length) {
+      return res.status(404).json({ success: false, message: 'Không tìm thấy tài khoản khách hàng.' });
+    }
+
+    const customer = rows[0];
+    const hasExistingPassword = Boolean(customer.password_hash && customer.password_hash.trim().length > 0);
+
+    if (hasExistingPassword) {
+      if (!currentPassword) {
+        return res.status(400).json({
+          success: false,
+          message: 'Vui lòng nhập mật khẩu hiện tại.'
+        });
+      }
+      const isMatch = await bcrypt.compare(currentPassword, customer.password_hash);
+      if (!isMatch) {
+        return res.status(400).json({
+          success: false,
+          message: 'Mật khẩu hiện tại không chính xác.'
+        });
+      }
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+    await pool.query(
+      'UPDATE customers SET password_hash = ?, password_changed_at = NOW(), updated_at = NOW() WHERE id = ?',
+      [hashedPassword, customerId]
     );
 
     return res.status(200).json({
       success: true,
-      message: 'Cập nhật mật khẩu thành công vào cơ sở dữ liệu!'
+      message: hasExistingPassword
+        ? 'Đổi mật khẩu thành công!'
+        : 'Thiết lập mật khẩu thành công! Giờ đây bạn có thể đăng nhập bằng cả Google và Email + Mật khẩu này.',
+      hasPassword: true
     });
   } catch (error) {
     console.error('Error changing customer password:', error);
-    return res.status(500).json({ success: false, message: 'Không thể đổi mật khẩu.' });
+    return res.status(500).json({ success: false, message: 'Không thể cập nhật mật khẩu.' });
   }
 }
 
 async function updateAddresses(req, res) {
   try {
-    const customerId = req.body.id || req.query.id || 1;
+    const customerId = req.body.id || req.query.id || (req.user && req.user.id) || 1;
     const { addresses } = req.body;
     if (!Array.isArray(addresses)) {
       return res.status(400).json({ success: false, message: 'Danh sách địa chỉ không hợp lệ.' });
     }
 
-    await pool.query(
-      'UPDATE customers SET saved_addresses = ?, updated_at = NOW() WHERE id = ?',
-      [JSON.stringify(addresses), customerId]
-    );
+    const defaultAddr = addresses.find((a) => a.isDefault) || addresses[0];
+    const defaultAddressStr = defaultAddr ? defaultAddr.address : null;
+
+    if (defaultAddressStr) {
+      await pool.query(
+        'UPDATE customers SET saved_addresses = ?, address = ?, updated_at = NOW() WHERE id = ?',
+        [JSON.stringify(addresses), defaultAddressStr, customerId]
+      );
+    } else {
+      await pool.query(
+        'UPDATE customers SET saved_addresses = ?, updated_at = NOW() WHERE id = ?',
+        [JSON.stringify(addresses), customerId]
+      );
+    }
 
     return res.status(200).json({
       success: true,
       message: 'Đã lưu sổ địa chỉ vào database!',
-      data: addresses
+      data: addresses,
+      defaultAddress: defaultAddressStr
     });
   } catch (error) {
     console.error('Error updating addresses in DB:', error);

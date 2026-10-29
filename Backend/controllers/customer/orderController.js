@@ -1,4 +1,4 @@
-const orderService = require('../services/order.service');
+const orderService = require('../../services/customer/orderService');
 
 async function createOrder(req, res) {
   try {

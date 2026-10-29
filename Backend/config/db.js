@@ -1,3 +1,3 @@
-const { pool, testConnection, initDatabaseSchema } = require('./database');
+const { pool } = require('./database');
 
 module.exports = pool;

@@ -27,11 +27,11 @@ function CatalogPage() {
   const currentSort = searchParams.get('sort') || 'newest';
   const currentSearch = searchParams.get('q') || searchParams.get('search') || '';
   const currentPage = parseInt(searchParams.get('page'), 10) || 1;
-  const currentLimit = parseInt(searchParams.get('limit'), 10) || 12;
+  const currentLimit = parseInt(searchParams.get('limit'), 10) || 8;
 
   // State
   const [products, setProducts] = useState([]);
-  const [pagination, setPagination] = useState({ page: 1, limit: 12, total: 0, totalPages: 1 });
+  const [pagination, setPagination] = useState({ page: 1, limit: 8, total: 0, totalPages: 1 });
   const [metadata, setMetadata] = useState({ categories: [], brands: [], priceRange: { min: 0, max: 100000000 } });
   const [loading, setLoading] = useState(true);
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
@@ -165,9 +165,8 @@ function CatalogPage() {
                 // Navigate cleanly
               }
             }}
-            className={`hover:text-blue-400 transition-colors shrink-0 ${
-              !currentCategory && !currentSearch ? 'text-white font-semibold' : ''
-            }`}
+            className={`hover:text-blue-400 transition-colors shrink-0 ${!currentCategory && !currentSearch ? 'text-white font-semibold' : ''
+              }`}
           >
             Sản phẩm & Linh kiện
           </Link>

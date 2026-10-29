@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
+require('dotenv').config({ path: path.join(__dirname, '../.env') });
 require('dotenv').config();
 
 // Khởi tạo Express app
@@ -41,6 +42,11 @@ const reportRoutes = require('./routes/manager/reportRoutes');
 const logRoutes = require('./routes/admin/logRoutes');
 const roleRoutes = require('./routes/admin/roleRoutes');
 const permissionRoutes = require('./routes/admin/permissionRoutes');
+const customerRoutes = require('./routes/customer/customerRoutes');
+const cartRoutes = require('./routes/customer/cartRoutes');
+const orderRoutes = require('./routes/customer/orderRoutes');
+const shippingRoutes = require('./routes/customer/shippingRoutes');
+const paymentRoutes = require('./routes/customer/paymentRoutes');
 const { testConnection } = require('./config/database');
 
 // 3. Phục vụ Manager App SPA nếu đã build dist (Duong's Manager Portal)
@@ -82,6 +88,11 @@ app.use('/api/reports', reportRoutes);
 app.use('/api/logs', logRoutes);
 app.use('/api/roles', roleRoutes);
 app.use('/api/permissions', permissionRoutes);
+app.use('/api/customer', customerRoutes);
+app.use('/api/cart', cartRoutes);
+app.use('/api/orders', orderRoutes);
+app.use('/api/shipping', shippingRoutes);
+app.use('/api/payments', paymentRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

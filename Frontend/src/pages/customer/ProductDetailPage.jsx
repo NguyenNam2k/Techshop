@@ -173,7 +173,7 @@ const ProductDetailPage = () => {
         </div>
       )}
 
-      {/* Breadcrumbs */}
+      {/* Breadcrumbs (Tự nhiên trên đầu trang, không chiếm diện tích khi cuộn) */}
       <div className="bg-slate-900/60 border-b border-slate-800 backdrop-blur-md">
         <div className="max-w-7xl mx-auto px-4 py-3">
           <nav className="flex items-center gap-2 text-xs text-slate-400 font-medium">
@@ -210,8 +210,8 @@ const ProductDetailPage = () => {
             />
           </div>
 
-          {/* Cột phải: Thông tin giá, Chọn biến thể, Nút mua (Sticky on desktop, right below gallery on mobile) */}
-          <div className="lg:col-span-5 space-y-6 lg:sticky lg:top-36">
+          {/* Cột phải: Thông tin giá, Chọn biến thể, Nút mua (Sticky dưới Header, dừng tự nhiên khi hết bảng thông số) */}
+          <div className="lg:col-span-5 space-y-6 lg:sticky lg:top-20">
             <div>
               <div className="flex items-center gap-2 text-xs font-mono text-slate-400 mb-1.5">
                 <span className="font-bold text-sky-400 uppercase tracking-wider bg-sky-500/10 px-2 py-0.5 rounded border border-sky-500/20">

@@ -60,6 +60,13 @@ async function initDatabaseSchema() {
       `);
     }
 
+    // 2c. Ensure sort_order exists in categories
+    try {
+      await connection.query("ALTER TABLE `categories` ADD COLUMN `sort_order` INT NOT NULL DEFAULT 0");
+    } catch (e) {
+      // Column already exists
+    }
+
     // 2b. Ensure username column exists in customers, managers, staffs
     for (const tbl of ['customers', 'managers', 'staffs']) {
       try {
@@ -231,7 +238,53 @@ async function initDatabaseSchema() {
       `);
     }
 
-    console.log('✅ Database schema verified (coupons, tasks, schedules, orders ready).');
+    // 10. Ensure reviews table exists
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS \`reviews\` (
+        \`id\` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        \`product_id\` INT UNSIGNED NOT NULL,
+        \`customer_id\` INT UNSIGNED NULL,
+        \`customer_name\` VARCHAR(100) NOT NULL DEFAULT 'Khách hàng TechShop',
+        \`rating\` TINYINT NOT NULL,
+        \`comment\` TEXT NULL,
+        \`is_verified_buyer\` TINYINT(1) DEFAULT 1,
+        \`likes\` INT DEFAULT 0,
+        \`status\` ENUM('approved', 'pending', 'hidden') DEFAULT 'approved',
+        \`created_at\` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        INDEX \`idx_reviews_product_id\` (\`product_id\`),
+        INDEX \`idx_reviews_status\` (\`status\`)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+    `);
+
+    const [reviewCount] = await connection.query("SELECT COUNT(*) as count FROM `reviews`");
+    if (reviewCount[0].count === 0) {
+      await connection.query(`
+        INSERT INTO \`reviews\` (\`product_id\`, \`customer_name\`, \`rating\`, \`comment\`, \`is_verified_buyer\`, \`likes\`, \`status\`)
+        VALUES
+          (1, 'Hoàng Nam', 5, 'Card siêu khủng, full load nhiệt độ chỉ tầm 65 độ C. Đóng gói cẩn thận, giao hỏa tốc 2h.', 1, 3, 'approved'),
+          (1, 'Đức Anh', 5, 'Card khá to và nặng, anh em nhớ sắm thêm giá đỡ VGA nhé. Hiệu năng đỉnh nóc kịch trần.', 1, 4, 'approved'),
+          (2, 'Minh Tuấn', 5, 'Cân tốt mọi game 4K Ray Tracing max setting. Bản White Edition lắp case trắng nhìn đẹp mê ly.', 1, 5, 'approved'),
+          (2, 'Văn Hưng', 5, 'Hàng chính hãng bảo hành 36 tháng ASUS, quạt chạy cực êm không hề có tiếng coil whine.', 1, 2, 'approved'),
+          (3, 'Quốc Bảo', 5, '3D V-Cache chơi game FPS mượt không đối thủ. Vừa render 4K vừa chơi game không bị drop frame.', 1, 3, 'approved'),
+          (3, 'Thanh Tùng', 5, 'Tiết kiệm điện hơn hẳn gen trước. Nhiệt độ mát mẻ khi đi cùng tản AIO 360.', 1, 2, 'approved'),
+          (4, 'Thành Long', 5, 'Mainboard flagship hoàn thiện cực kỳ tinh xảo. Bios ASUS trực quan, ép xung RAM DDR5 rất ổn định.', 1, 3, 'approved'),
+          (5, 'Duy Khánh', 5, 'Bản Formula White tuyệt đẹp, tản nhiệt VRM xịn có thể gắn custom water cooling.', 1, 1, 'approved'),
+          (6, 'Gia Huy', 5, 'LED RGB mịn đẹp xuất sắc qua iCUE. Bật XMP 6000MHz chạy cái ăn ngay không lỗi lầm.', 1, 4, 'approved'),
+          (7, 'Bảo Châu', 5, 'Kit RAM trắng tinh tế, tản nhiệt nhôm dày cộm cầm rất nặng tay.', 1, 2, 'approved'),
+          (8, 'Bảo Long', 5, 'Tốc độ đọc ghi 7450/6900 MB/s đo thực tế chuẩn đét. Có sẵn heatsink nên nhiệt độ chỉ 45-50 độ.', 1, 5, 'approved'),
+          (9, 'Hải Đăng', 5, 'Thiết kế cắm dây bên hông cực kỳ tiện cho việc đi dây nguồn. Quạt êm ru kể cả khi tải nặng.', 1, 3, 'approved'),
+          (10, 'Việt Hoàng', 5, 'Nguồn chuẩn ATX 3.0 tặng kèm dây 12VHPWR cho card 40 series, màu trắng tiệp màu case.', 1, 2, 'approved'),
+          (11, 'Ngọc Sơn', 5, 'Màn hình LCD 2.36 inch sắc nét, hiển thị nhiệt độ CPU/GPU rất tiện. Cụm bơm hoạt động rất êm.', 1, 4, 'approved'),
+          (12, 'Phương Nam', 5, 'Tản nhiệt tốt cho con i9 14900K, phần mềm CAM dễ điều khiển hình động GIF.', 1, 2, 'approved'),
+          (13, 'Anh Quân', 5, 'Vỏ case huyền thoại, dải led RGB viền rất sang. Mặt kính trong suốt show linh kiện cực đẹp.', 1, 6, 'approved'),
+          (14, 'Duy Khang', 5, 'Full nhôm CNC gõ đầm tay, gasket mount êm ái. Kết nối bluetooth 3 thiết bị chuyển đổi nhanh.', 1, 3, 'approved'),
+          (15, 'Trọng Nhân', 5, 'Chuột 60g nhẹ tênh, switch quang cơ gõ nảy và không lo double click. Pin trâu dùng cả tuần.', 1, 7, 'approved'),
+          (16, 'Phúc Thịnh', 5, 'Màn hình OLED 240Hz màu đen sâu thẳm, tần số quét mượt mà. Xem phim hay chơi game đều tuyệt đỉnh.', 1, 5, 'approved'),
+          (17, 'Quang Minh', 5, 'Màn OLED 240Hz đẹp mê hồn, RTX 4080 kéo game nặng vô tư. Máy mỏng nhẹ hoàn thiện nhôm CNC sang trọng.', 1, 8, 'approved');
+      `);
+    }
+
+    console.log('✅ Database schema verified (coupons, tasks, schedules, orders, reviews ready).');
   } catch (error) {
     console.warn('⚠️ Notice during initDatabaseSchema:', error.message);
   } finally {

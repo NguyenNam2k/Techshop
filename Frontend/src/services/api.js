@@ -95,12 +95,42 @@ export const api = {
     return res.data.data;
   },
 
-  async getSimilarProducts(productId, limit = 8) {
-    const res = await apiClient.get(
-      `/api/products/${encodeURIComponent(productId)}/similar?limit=${limit}`
-    );
+  async getSimilarProducts(productId, limit = 8, categoryId = null) {
+    let url = `/api/products/${encodeURIComponent(productId)}/similar?limit=${limit}`;
+    if (categoryId) {
+      url += `&category_id=${encodeURIComponent(categoryId)}`;
+    }
+    const res = await apiClient.get(url);
     if (!res.data?.success) {
       throw new Error(res.data?.message || 'Không thể tải sản phẩm tương tự');
+    }
+    return res.data.data;
+  },
+
+  async getProductReviews(productId, { rating, page = 1, limit = 10 } = {}) {
+    let url = `/api/products/${encodeURIComponent(productId)}/reviews?page=${page}&limit=${limit}`;
+    if (rating) {
+      url += `&rating=${rating}`;
+    }
+    const res = await apiClient.get(url);
+    if (!res.data?.success) {
+      throw new Error(res.data?.message || 'Không thể tải đánh giá sản phẩm');
+    }
+    return res.data.data;
+  },
+
+  async createProductReview(productId, reviewData) {
+    const res = await apiClient.post(`/api/products/${encodeURIComponent(productId)}/reviews`, reviewData);
+    if (!res.data?.success) {
+      throw new Error(res.data?.message || 'Không thể gửi đánh giá');
+    }
+    return res.data.data;
+  },
+
+  async likeProductReview(productId, reviewId) {
+    const res = await apiClient.post(`/api/products/${encodeURIComponent(productId)}/reviews/${reviewId}/like`);
+    if (!res.data?.success) {
+      throw new Error(res.data?.message || 'Không thể thích đánh giá');
     }
     return res.data.data;
   },

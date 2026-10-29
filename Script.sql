@@ -118,6 +118,7 @@ CREATE TABLE `categories` (
     `slug` VARCHAR(120) NOT NULL UNIQUE,
     `description` TEXT NULL,
     `icon_url` VARCHAR(255) NULL,
+    `sort_order` INT NOT NULL DEFAULT 0,
     `parent_id` INT UNSIGNED NULL DEFAULT NULL,
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -344,6 +345,22 @@ CREATE TABLE `coupons` (
     `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     INDEX `idx_coupon_code` (`code`),
     INDEX `idx_coupon_active` (`is_active`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE `reviews` (
+    `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    `product_id` INT UNSIGNED NOT NULL,
+    `customer_id` INT UNSIGNED NULL,
+    `customer_name` VARCHAR(100) NOT NULL DEFAULT 'Khách hàng TechShop',
+    `rating` TINYINT NOT NULL,
+    `comment` TEXT NULL,
+    `is_verified_buyer` TINYINT(1) DEFAULT 1,
+    `likes` INT DEFAULT 0,
+    `status` ENUM('approved', 'pending', 'hidden') DEFAULT 'approved',
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT `fk_reviews_product` FOREIGN KEY (`product_id`) REFERENCES `products` (`id`) ON DELETE CASCADE,
+    INDEX `idx_reviews_product_id` (`product_id`),
+    INDEX `idx_reviews_status` (`status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE `staff_tasks` (

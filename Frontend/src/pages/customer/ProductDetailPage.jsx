@@ -14,6 +14,7 @@ import VariantSelector from '../../components/pdp/VariantSelector';
 import AddToCartSection from '../../components/pdp/AddToCartSection';
 import ProductSpecsTable from '../../components/pdp/ProductSpecsTable';
 import SimilarProductsSlider from '../../components/pdp/SimilarProductsSlider';
+import ProductReviews from '../../components/pdp/ProductReviews';
 import { useCart } from '../../context/CartContext';
 import { useAuth } from '../../context/AuthContext';
 import AuthRequiredModal from '../../components/common/AuthRequiredModal';
@@ -225,11 +226,21 @@ const ProductDetailPage = () => {
               </h1>
 
               <div className="flex items-center gap-3 mt-3 flex-wrap">
-                <div className="flex items-center gap-1.5 text-xs">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const el = document.getElementById('product-reviews');
+                    if (el) el.scrollIntoView({ behavior: 'smooth' });
+                  }}
+                  className="flex items-center gap-1.5 text-xs hover:opacity-85 transition cursor-pointer"
+                  title="Cuộn tới phần đánh giá khách hàng"
+                >
                   <Star className="w-4 h-4 fill-amber-400 text-amber-500" />
-                  <span className="font-extrabold text-slate-100">4.9</span>
-                  <span className="text-slate-400 text-xs">(128 Đánh giá)</span>
-                </div>
+                  <span className="font-extrabold text-slate-100">5.0</span>
+                  <span className="text-slate-400 text-xs hover:text-sky-400 transition underline underline-offset-2">
+                    (Đánh giá &amp; nhận xét)
+                  </span>
+                </button>
                 <span className="text-slate-700">|</span>
                 {selectedVariant && Number(selectedVariant.stock) > 0 ? (
                   <span className="text-xs text-emerald-400 font-bold flex items-center gap-1 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-md">
@@ -328,12 +339,20 @@ const ProductDetailPage = () => {
 
           {/* Thông số kỹ thuật (Dưới ảnh trên desktop, dưới nút mua trên mobile) */}
           <div className="lg:col-span-7 space-y-8">
-            <ProductSpecsTable specifications={product.specifications} />
+            <ProductSpecsTable specifications={product.specifications} product={product} />
           </div>
         </div>
 
+        {/* Đánh giá & nhận xét từ khách hàng */}
+        <ProductReviews productId={product.id} productName={product.name} />
+
         {/* Sản phẩm cùng danh mục */}
-        <SimilarProductsSlider id={product.id} currentProductId={product.id} />
+        <SimilarProductsSlider
+          id={product.id}
+          currentProductId={product.id}
+          categoryId={product.category_id}
+          brand={product.brand}
+        />
       </div>
 
       {/* Modal yêu cầu đăng nhập khi khách bấm mua hàng */}

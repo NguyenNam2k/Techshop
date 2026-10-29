@@ -35,6 +35,7 @@ import {
 } from 'lucide-react';
 import { api } from '../../services/api';
 import { useCart } from '../../context/CartContext';
+import BrandLogosSection from '../../components/home/BrandLogosSection';
 
 const formatVND = (n) =>
   new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(n || 0);
@@ -1407,38 +1408,9 @@ export default function HomePage() {
       </section>
 
       {/* ========================================================================= */}
-      {/* 8. HỆ SINH THÁI THƯƠNG HIỆU ĐỐI TÁC CHÍNH HÃNG                            */}
+      {/* 8. HỆ SINH THÁI THƯƠNG HIỆU ĐỐI TÁC CHÍNH HÃNG (SVG VECTOR LOGOS)           */}
       {/* ========================================================================= */}
-      <section className="p-6 rounded-3xl bg-slate-900 border border-slate-800 shadow-sm space-y-5">
-        <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-          <div className="flex items-center gap-2">
-            <Sparkles className="w-5 h-5 text-amber-400" />
-            <h3 className="text-base font-extrabold uppercase tracking-wider text-slate-100">
-              Hệ Sinh Thái Thương Hiệu Hàng Đầu
-            </h3>
-          </div>
-          <span className="text-xs text-slate-400 font-medium hidden sm:inline">
-            100% Phân phối ủy quyền chính hãng tại Việt Nam
-          </span>
-        </div>
-
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
-          {FEATURED_BRANDS.map((brand, idx) => (
-            <div
-              key={idx}
-              onClick={() => {
-                navigate(`/catalog?brands=${encodeURIComponent(brand.tag)}`);
-              }}
-              className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 hover:border-sky-500/60 hover:bg-slate-900/60 transition cursor-pointer text-center group"
-            >
-              <h4 className="font-extrabold text-sm text-slate-200 group-hover:text-sky-400 transition">
-                {brand.name}
-              </h4>
-              <p className="text-[11px] text-slate-500 mt-0.5 truncate">{brand.desc}</p>
-            </div>
-          ))}
-        </div>
-      </section>
+      <BrandLogosSection />
 
       {/* ========================================================================= */}
       {/* 9. BANNER CALL TO ACTION: XÂY DỰNG CẤU HÌNH PC CHUYÊN NGHIỆP               */}

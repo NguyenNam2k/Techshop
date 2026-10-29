@@ -683,21 +683,30 @@ class ProductService {
    */
   static async getSimilarProducts(productId, categoryId = null, limit = 4) {
     try {
-      let targetCategoryId = categoryId;
+      const safeLimit = Math.max(1, Math.min(20, parseInt(limit, 10) || 4));
+      const isNumeric = /^\d+$/.test(String(productId).trim());
+      let currentId = isNumeric ? parseInt(productId, 10) : null;
+      let targetCategoryId = categoryId ? parseInt(categoryId, 10) : null;
 
-      if (!targetCategoryId) {
-        const [prod] = await pool.query('SELECT category_id FROM products WHERE id = ?', [productId]);
+      if (!currentId || !targetCategoryId) {
+        const [prod] = await pool.query(
+          `SELECT id, category_id FROM products WHERE ${isNumeric ? 'id = ?' : 'slug = ? OR id = ?'} LIMIT 1`,
+          isNumeric ? [currentId] : [productId, productId]
+        );
         if (prod.length > 0) {
-          targetCategoryId = prod[0].category_id;
+          currentId = prod[0].id;
+          if (!targetCategoryId) {
+            targetCategoryId = prod[0].category_id;
+          }
         }
       }
 
       let similar = [];
 
-      if (targetCategoryId) {
+      if (targetCategoryId && currentId) {
         const query = `
           SELECT p.id, p.name, p.slug, p.brand, p.model_code, p.base_price, p.thumbnail_url,
-                 c.name AS category_name,
+                 COALESCE(MAX(c.name), 'Linh kiện') AS category_name,
                  COALESCE(MIN(pv.price), p.base_price) AS min_price,
                  COALESCE(SUM(pv.stock), 0) AS total_stock
           FROM products p
@@ -708,7 +717,7 @@ class ProductService {
           ORDER BY p.id DESC
           LIMIT ?
         `;
-        const [rows] = await pool.query(query, [targetCategoryId, productId, limit]);
+        const [rows] = await pool.query(query, [targetCategoryId, currentId, safeLimit]);
         similar = rows.map(r => ({
           id: r.id,
           name: r.name,
@@ -724,29 +733,30 @@ class ProductService {
         }));
       }
 
-      if (similar.length >= limit) {
+      if (similar.length >= safeLimit) {
         return similar;
       }
 
-      const needed = limit - similar.length;
-      const existingIds = [productId, ...similar.map(s => s.id)];
-      const placeholders = existingIds.map(() => '?').join(',');
+      const needed = safeLimit - similar.length;
+      const existingIds = currentId ? [currentId, ...similar.map(s => s.id)] : [...similar.map(s => s.id)];
+      const placeholders = existingIds.length > 0 ? existingIds.map(() => '?').join(',') : '0';
 
-      const randomQuery = `
+      const fallbackQuery = `
         SELECT p.id, p.name, p.slug, p.brand, p.model_code, p.base_price, p.thumbnail_url,
-               c.name AS category_name,
+               COALESCE(MAX(c.name), 'Linh kiện') AS category_name,
                COALESCE(MIN(pv.price), p.base_price) AS min_price,
                COALESCE(SUM(pv.stock), 0) AS total_stock
         FROM products p
         LEFT JOIN categories c ON p.category_id = c.id
         LEFT JOIN product_variants pv ON pv.product_id = p.id
-        WHERE p.id NOT IN (${placeholders}) AND p.status != 'archived'
+        ${existingIds.length > 0 ? `WHERE p.id NOT IN (${placeholders}) AND p.status != 'archived'` : `WHERE p.status != 'archived'`}
         GROUP BY p.id
-        ORDER BY RAND()
+        ORDER BY p.id DESC
         LIMIT ?
       `;
-      const [randomRows] = await pool.query(randomQuery, [...existingIds, needed]);
-      const randomProducts = randomRows.map(r => ({
+      const params = existingIds.length > 0 ? [...existingIds, needed] : [needed];
+      const [fallbackRows] = await pool.query(fallbackQuery, params);
+      const fallbackProducts = fallbackRows.map(r => ({
         id: r.id,
         name: r.name,
         slug: r.slug,
@@ -760,10 +770,10 @@ class ProductService {
         match_type: 'suggested'
       }));
 
-      return [...similar, ...randomProducts];
+      return [...similar, ...fallbackProducts];
     } catch (err) {
       console.error('Error in getSimilarProducts:', err);
-      throw err;
+      return [];
     }
   }
 

@@ -930,7 +930,7 @@ export default function PCBuilderView() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
         {/* Header Hero Banner */}
-        <div className="p-6 md:p-8 rounded-3xl bg-gradient-to-r from-sky-600 via-blue-600 to-indigo-700 !text-white text-white shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-6 border border-sky-500/20">
+        <div className="dark-locked p-6 md:p-8 rounded-3xl bg-gradient-to-r from-sky-600 via-blue-600 to-indigo-700 text-white shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-6 border border-sky-400/30">
           <div className="space-y-2">
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/15 !text-white text-xs font-bold backdrop-blur-md border border-white/20">
               <Wrench className="w-3.5 h-3.5 text-sky-200" />
@@ -944,7 +944,7 @@ export default function PCBuilderView() {
             </p>
           </div>
 
-          <div className="p-4 bg-blue-950/50 sm:bg-black/30 backdrop-blur-md rounded-2xl border border-white/25 text-right min-w-[220px]">
+          <div className="p-4 bg-slate-900/80 sm:bg-black/40 backdrop-blur-md rounded-2xl border border-white/25 text-right min-w-[220px] shadow-lg">
             <span className="text-xs font-bold !text-sky-200 text-sky-200 block uppercase tracking-wider">
               Dự toán cấu hình:
             </span>

@@ -1415,26 +1415,26 @@ export default function HomePage() {
       {/* ========================================================================= */}
       {/* 9. BANNER CALL TO ACTION: XÂY DỰNG CẤU HÌNH PC CHUYÊN NGHIỆP               */}
       {/* ========================================================================= */}
-      <section className="p-8 rounded-3xl bg-gradient-to-r from-sky-600 via-blue-600 to-indigo-700 !text-white text-white shadow-xl flex flex-col md:flex-row items-center justify-between gap-6 border border-sky-500/20">
+      <section className="dark-locked p-8 rounded-3xl bg-gradient-to-r from-sky-600 via-blue-600 to-indigo-700 text-white shadow-xl flex flex-col md:flex-row items-center justify-between gap-6 border border-sky-400/30">
         <div className="space-y-2 text-center md:text-left">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/15 !text-white text-xs font-bold backdrop-blur-md border border-white/20">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/20 text-white text-xs font-bold backdrop-blur-md border border-white/25">
             <Wrench className="w-3.5 h-3.5 text-sky-200" />
-            <span className="!text-white text-white">Công Cụ Tương Thích 100%</span>
+            <span className="text-white font-bold">Công Cụ Tương Thích 100%</span>
           </div>
-          <h2 className="text-2xl sm:text-3xl font-black !text-white text-white drop-shadow-sm">
+          <h2 className="text-2xl sm:text-3xl font-black text-white drop-shadow-sm">
             Tự Tay Xây Dựng Cấu Hình PC Trong Mơ
           </h2>
-          <p className="text-xs sm:text-sm !text-sky-100 text-sky-100 max-w-xl font-medium">
+          <p className="text-xs sm:text-sm text-sky-100 max-w-xl font-medium leading-relaxed">
             Tự do chọn linh kiện, tự động kiểm tra tương thích phần cứng qua Socket, dự toán chi phí chính xác và nhận quà tặng gaming trị giá 1.500.000₫!
           </p>
         </div>
 
         <Link
           to="/build-pc"
-          className="px-6 py-3.5 rounded-2xl bg-white hover:bg-sky-50 !text-sky-900 text-sky-900 font-black text-xs uppercase tracking-wider shadow-2xl transition active:scale-95 shrink-0 flex items-center gap-2 group/btn"
+          className="px-6 py-3.5 rounded-2xl bg-white hover:bg-sky-50 text-sky-950 font-black text-xs uppercase tracking-wider shadow-2xl transition active:scale-95 shrink-0 flex items-center gap-2 group/btn"
         >
           <Wrench className="w-4 h-4 text-sky-600 group-hover/btn:rotate-45 transition-transform" />
-          <span className="!text-sky-900 text-sky-900">Bắt Đầu Xây Dựng PC →</span>
+          <span className="text-sky-950 font-extrabold">Bắt Đầu Xây Dựng PC →</span>
         </Link>
       </section>
     </div>

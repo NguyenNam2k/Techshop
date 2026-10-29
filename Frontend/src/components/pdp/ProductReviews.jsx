@@ -197,7 +197,7 @@ const ProductReviews = ({ productId, productName = 'sản phẩm' }) => {
           className="p-6 rounded-3xl bg-slate-900 border border-sky-500/30 shadow-xl space-y-5 animate-in fade-in slide-in-from-top-4 duration-300"
         >
           <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-            <h3 className="text-sm font-bold text-white flex items-center gap-2">
+            <h3 className="text-sm font-bold text-slate-100 flex items-center gap-2">
               <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
               Gửi Đánh Giá Trải Nghiệm Của Bạn
             </h3>
@@ -252,7 +252,7 @@ const ProductReviews = ({ productId, productName = 'sản phẩm' }) => {
                 value={customerName}
                 onChange={(e) => setCustomerName(e.target.value)}
                 placeholder="Ví dụ: Nguyễn Văn A"
-                className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-sky-500"
+                className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-sky-500"
               />
             </div>
           )}
@@ -267,7 +267,7 @@ const ProductReviews = ({ productId, productName = 'sản phẩm' }) => {
               value={comment}
               onChange={(e) => setComment(e.target.value)}
               placeholder="Chia sẻ về độ hoàn thiện, hiệu năng chơi game / làm việc, nhiệt độ, đóng gói và dịch vụ bảo hành..."
-              className="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-sky-500 resize-none leading-relaxed"
+              className="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-sky-500 resize-none leading-relaxed"
             />
             <div className="flex justify-between text-[11px] text-slate-500">
               <span>Tối thiểu 5 ký tự</span>
@@ -362,7 +362,7 @@ const ProductReviews = ({ productId, productName = 'sản phẩm' }) => {
           className={`px-3 py-1.5 rounded-xl font-bold transition cursor-pointer border ${
             selectedRatingFilter === null
               ? 'bg-sky-500/20 text-sky-400 border-sky-500/40'
-              : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-white'
+              : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-slate-100'
           }`}
         >
           Tất cả ({totalReviews})
@@ -379,7 +379,7 @@ const ProductReviews = ({ productId, productName = 'sản phẩm' }) => {
               className={`px-3 py-1.5 rounded-xl font-bold transition cursor-pointer border flex items-center gap-1 ${
                 selectedRatingFilter === star
                   ? 'bg-amber-500/20 text-amber-400 border-amber-500/40'
-                  : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-white'
+                  : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-slate-100'
               }`}
             >
               <span>{star}</span>

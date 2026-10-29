@@ -113,6 +113,34 @@ html[data-theme="light"] .dark-locked {
   --indigo-400: 129 140 248;
 }
 
+/* Các thành phần được gắn class dark-locked luôn giữ màu chữ sáng và tương phản cao */
+html[data-theme="light"] .dark-locked h1,
+html[data-theme="light"] .dark-locked h2,
+html[data-theme="light"] .dark-locked h3 {
+  color: #ffffff !important;
+}
+html[data-theme="light"] .dark-locked .text-white {
+  color: #ffffff !important;
+}
+html[data-theme="light"] .dark-locked .text-sky-100 {
+  color: #e0f2fe !important;
+}
+html[data-theme="light"] .dark-locked .text-sky-200 {
+  color: #bae6fd !important;
+}
+html[data-theme="light"] .dark-locked .text-slate-100 {
+  color: #f1f5f9 !important;
+}
+html[data-theme="light"] .dark-locked .text-slate-200 {
+  color: #e2e8f0 !important;
+}
+html[data-theme="light"] .dark-locked .text-slate-300 {
+  color: #cbd5e1 !important;
+}
+html[data-theme="light"] .dark-locked .text-slate-400 {
+  color: #94a3b8 !important;
+}
+
 @layer base {
   html {
     scroll-behavior: smooth;

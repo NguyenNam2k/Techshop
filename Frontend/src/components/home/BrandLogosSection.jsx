@@ -23,7 +23,7 @@ const BRAND_SVG_LOGOS = {
         fontWeight="900"
         fontSize="16"
         letterSpacing="2"
-        className="fill-slate-900 dark:fill-white group-hover:fill-red-600 dark:group-hover:fill-red-500 transition-colors"
+        className="fill-[#0f172a] dark:fill-white group-hover:fill-red-500 transition-colors"
       >
         ROG
       </text>
@@ -39,7 +39,7 @@ const BRAND_SVG_LOGOS = {
         fontWeight="800"
         fontSize="21"
         letterSpacing="-1"
-        className="fill-sky-600 dark:fill-sky-400 group-hover:fill-sky-700 dark:group-hover:fill-sky-300 transition-colors"
+        className="fill-sky-600 dark:fill-sky-400 group-hover:fill-sky-500 transition-colors"
       >
         intel.
       </text>
@@ -65,35 +65,35 @@ const BRAND_SVG_LOGOS = {
         fontWeight="900"
         fontSize="20"
         letterSpacing="1"
-        className="fill-slate-900 dark:fill-white group-hover:fill-emerald-600 dark:group-hover:fill-emerald-400 transition-colors"
+        className="fill-[#0f172a] dark:fill-white group-hover:fill-emerald-500 transition-colors"
       >
         AMD
       </text>
     </svg>
   ),
   corsair: (
-    <svg viewBox="0 0 110 40" className="w-auto h-7 max-w-[110px] mx-auto">
+    <svg viewBox="0 0 120 40" className="w-auto h-7 max-w-[120px] mx-auto">
       {/* Corsair 3 billowing sails */}
       <path
-        d="M12 27 C15 22, 19 16, 22 10 C21 16, 20 23, 19 28 Z"
+        d="M10 27 C13 22, 17 16, 20 10 C19 16, 18 23, 17 28 Z"
         className="fill-amber-500 dark:fill-yellow-400"
       />
       <path
-        d="M20 28 C24 20, 29 13, 33 7 C31 15, 29 23, 27 28 Z"
+        d="M18 28 C22 20, 27 13, 31 7 C29 15, 27 23, 25 28 Z"
         className="fill-amber-500 dark:fill-yellow-400"
       />
       <path
-        d="M28 28 C31 22, 35 16, 38 12 C36 18, 34 24, 33 28 Z"
+        d="M26 28 C29 22, 33 16, 36 12 C34 18, 32 24, 31 28 Z"
         className="fill-amber-500 dark:fill-yellow-400"
       />
       <text
-        x="42"
+        x="38"
         y="24"
         fontFamily="sans-serif"
         fontWeight="800"
         fontSize="13"
-        letterSpacing="1.5"
-        className="fill-slate-900 dark:fill-white group-hover:fill-amber-600 dark:group-hover:fill-yellow-400 transition-colors"
+        letterSpacing="1"
+        className="fill-[#0f172a] dark:fill-white group-hover:fill-amber-500 transition-colors"
       >
         CORSAIR
       </text>
@@ -111,7 +111,7 @@ const BRAND_SVG_LOGOS = {
         fontSize="22"
         fontStyle="italic"
         letterSpacing="2"
-        className="fill-red-600 dark:fill-red-500 group-hover:fill-red-700 dark:group-hover:fill-red-400 transition-colors"
+        className="fill-red-600 dark:fill-red-500 group-hover:fill-red-500 transition-colors"
       >
         msi
       </text>
@@ -122,7 +122,7 @@ const BRAND_SVG_LOGOS = {
       {/* AORUS Falcon wing */}
       <path
         d="M14 26 L18 10 L28 14 L24 22 L20 20 L20 26 Z"
-        fill="#EA580C"
+        fill="#FF6600"
       />
       <text
         x="32"
@@ -131,7 +131,7 @@ const BRAND_SVG_LOGOS = {
         fontWeight="900"
         fontSize="13"
         letterSpacing="1.5"
-        className="fill-slate-900 dark:fill-white group-hover:fill-orange-600 dark:group-hover:fill-orange-400 transition-colors"
+        className="fill-[#0f172a] dark:fill-white group-hover:fill-orange-500 transition-colors"
       >
         AORUS
       </text>
@@ -151,7 +151,7 @@ const BRAND_SVG_LOGOS = {
         fontWeight="800"
         fontSize="12.5"
         letterSpacing="1"
-        className="fill-slate-900 dark:fill-white group-hover:fill-rose-600 dark:group-hover:fill-rose-400 transition-colors"
+        className="fill-[#0f172a] dark:fill-white group-hover:fill-rose-500 transition-colors"
       >
         Kingston
       </text>
@@ -159,24 +159,25 @@ const BRAND_SVG_LOGOS = {
   ),
   samsung: (
     <svg viewBox="0 0 110 40" className="w-auto h-7 max-w-[110px] mx-auto">
-      {/* Official Samsung royal blue oval badge */}
+      {/* Samsung tilted ellipse badge */}
       <ellipse
         cx="55"
         cy="20"
         rx="48"
         ry="13"
         transform="rotate(-5 55 20)"
-        fill="#034EA2"
+        className="fill-blue-500/10 stroke-blue-600 dark:fill-blue-600/20 dark:stroke-blue-400 group-hover:fill-blue-600/25 transition-colors"
+        strokeWidth="1.5"
       />
       <text
         x="55"
-        y="24.5"
+        y="25"
         textAnchor="middle"
         fontFamily="sans-serif"
         fontWeight="900"
-        fontSize="12"
+        fontSize="13"
         letterSpacing="1.5"
-        fill="#FFFFFF"
+        className="fill-blue-700 dark:fill-white group-hover:fill-blue-600 transition-colors font-black"
       >
         SAMSUNG
       </text>
@@ -192,7 +193,7 @@ const BRAND_SVG_LOGOS = {
         fontWeight="900"
         fontSize="21"
         letterSpacing="3"
-        className="fill-purple-600 dark:fill-purple-400 group-hover:fill-purple-700 dark:group-hover:fill-purple-300 transition-colors"
+        className="fill-purple-600 dark:fill-purple-400 group-hover:fill-purple-500 transition-colors"
       >
         NZXT.
       </text>
@@ -204,7 +205,7 @@ const BRAND_SVG_LOGOS = {
       <path
         d="M20 12 A10 10 0 1 0 26 25 L26 20 L18 20"
         fill="none"
-        stroke="#00A8E8"
+        stroke="#00B8FC"
         strokeWidth="3"
         strokeLinecap="round"
       />
@@ -214,7 +215,7 @@ const BRAND_SVG_LOGOS = {
         fontFamily="sans-serif"
         fontWeight="900"
         fontSize="17"
-        className="fill-slate-900 dark:fill-white group-hover:fill-sky-600 dark:group-hover:fill-sky-400 transition-colors"
+        className="fill-[#0f172a] dark:fill-white group-hover:fill-sky-500 transition-colors"
       >
         logi
       </text>
@@ -223,7 +224,7 @@ const BRAND_SVG_LOGOS = {
   razer: (
     <svg viewBox="0 0 100 40" className="w-auto h-7 max-w-[95px] mx-auto">
       {/* Razer triple-snake icon */}
-      <circle cx="20" cy="20" r="8" fill="none" stroke="#16A34A" strokeWidth="2.5" strokeDasharray="3 3" />
+      <circle cx="20" cy="20" r="8" fill="none" stroke="#22C55E" strokeWidth="2" strokeDasharray="3 3" />
       <text
         x="36"
         y="25"
@@ -231,7 +232,7 @@ const BRAND_SVG_LOGOS = {
         fontWeight="900"
         fontSize="14"
         letterSpacing="3"
-        className="fill-emerald-600 dark:fill-emerald-400 group-hover:fill-emerald-700 dark:group-hover:fill-emerald-300 transition-colors"
+        className="fill-emerald-600 dark:fill-emerald-400 group-hover:fill-emerald-500 transition-colors"
       >
         RAZER
       </text>
@@ -240,8 +241,8 @@ const BRAND_SVG_LOGOS = {
   keychron: (
     <svg viewBox="0 0 110 40" className="w-auto h-7 max-w-[110px] mx-auto">
       {/* Keychron mechanical switch badge */}
-      <rect x="12" y="12" width="16" height="16" rx="4" fill="none" className="stroke-sky-600 dark:stroke-sky-400" strokeWidth="2" />
-      <circle cx="20" cy="20" r="3" className="fill-sky-600 dark:fill-sky-400" />
+      <rect x="12" y="12" width="16" height="16" rx="4" fill="none" stroke="#0284c7" className="dark:stroke-sky-400" strokeWidth="2" />
+      <circle cx="20" cy="20" r="3" fill="#0284c7" className="dark:fill-sky-400" />
       <text
         x="36"
         y="24"
@@ -249,7 +250,7 @@ const BRAND_SVG_LOGOS = {
         fontWeight="800"
         fontSize="12.5"
         letterSpacing="1"
-        className="fill-slate-900 dark:fill-white group-hover:fill-cyan-600 dark:group-hover:fill-cyan-400 transition-colors"
+        className="fill-[#0f172a] dark:fill-white group-hover:fill-sky-500 transition-colors"
       >
         Keychron
       </text>
@@ -276,16 +277,16 @@ const BrandLogosSection = () => {
   const navigate = useNavigate();
 
   return (
-    <section className="p-6 md:p-7 rounded-3xl bg-slate-100/90 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm space-y-6 transition-colors duration-200">
+    <section className="p-6 md:p-7 rounded-3xl bg-slate-900 border border-slate-800 shadow-sm space-y-6 transition-colors duration-200">
       {/* Header */}
-      <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
+      <div className="flex items-center justify-between pb-3 border-b border-slate-800">
         <div className="flex items-center gap-2.5">
           <Sparkles className="w-5 h-5 text-amber-500 dark:text-amber-400" />
-          <h3 className="text-base font-extrabold uppercase tracking-wider text-slate-900 dark:text-slate-100">
+          <h3 className="text-base font-extrabold uppercase tracking-wider text-slate-100">
             Hệ Sinh Thái Thương Hiệu Hàng Đầu
           </h3>
         </div>
-        <span className="text-xs text-slate-500 dark:text-slate-400 font-medium hidden sm:inline">
+        <span className="text-xs text-slate-400 font-medium hidden sm:inline">
           100% Phân phối ủy quyền chính hãng tại Việt Nam
         </span>
       </div>
@@ -298,7 +299,7 @@ const BrandLogosSection = () => {
             onClick={() => {
               navigate(`/catalog?brands=${encodeURIComponent(brand.tag)}`);
             }}
-            className={`p-4 rounded-2xl bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800/90 ${brand.color} hover:bg-slate-50/90 dark:hover:bg-slate-900 transition-all duration-300 cursor-pointer text-center group flex flex-col justify-between items-center shadow-xs hover:shadow-xl hover:-translate-y-1`}
+            className={`p-4 rounded-2xl bg-slate-950 border border-slate-800/90 ${brand.color} hover:bg-slate-900 transition-all duration-300 cursor-pointer text-center group flex flex-col justify-between items-center shadow-xs hover:shadow-xl hover:-translate-y-1`}
           >
             {/* Logo SVG Vector */}
             <div className="h-10 flex items-center justify-center w-full transition-transform duration-300 group-hover:scale-110">
@@ -306,11 +307,11 @@ const BrandLogosSection = () => {
             </div>
 
             {/* Thông tin & Subtext */}
-            <div className="mt-3 w-full border-t border-slate-100 dark:border-slate-800/70 pt-2.5">
-              <h4 className="font-bold text-xs text-slate-800 dark:text-slate-200 group-hover:text-sky-600 dark:group-hover:text-sky-400 transition-colors truncate">
+            <div className="mt-3 w-full border-t border-slate-800/70 pt-2">
+              <h4 className="font-bold text-xs text-slate-100 group-hover:text-sky-500 transition-colors truncate">
                 {brand.name}
               </h4>
-              <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5 truncate group-hover:text-slate-700 dark:group-hover:text-slate-300 transition-colors">
+              <p className="text-[10px] text-slate-400 mt-0.5 truncate group-hover:text-slate-300 transition-colors">
                 {brand.desc}
               </p>
             </div>

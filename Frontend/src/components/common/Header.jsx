@@ -157,7 +157,7 @@ export default function Header() {
   const isLoggedOut = !user;
 
   return (
-    <header className="sticky top-0 z-30 w-full bg-slate-900/95 backdrop-blur-md border-b border-slate-800 shadow-md transition-colors duration-200">
+    <header className="sticky top-0 z-50 w-full bg-slate-900/95 backdrop-blur-md border-b border-slate-800 shadow-md transition-colors duration-200">
       {/* Top Banner */}
       <div className="bg-gradient-to-r from-blue-700 via-indigo-600 to-purple-700 text-white text-[10px] sm:text-xs py-1.5 px-3 text-center font-medium truncate">
         ⚡ Siêu sale phụ kiện công nghệ - Giảm tới 30% cho khách hàng mới | Giao hỏa tốc 2H

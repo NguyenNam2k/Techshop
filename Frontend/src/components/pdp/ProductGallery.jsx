@@ -65,7 +65,7 @@ const ProductGallery = ({ product, selectedVariant }) => {
         </div>
 
         {/* Chỉ số ảnh */}
-        <div className="absolute top-3 right-3 z-20 flex items-center gap-1.5 bg-slate-900/80 backdrop-blur-md border border-slate-700 px-2.5 py-1 rounded-full text-xs font-mono text-slate-200 shadow-sm pointer-events-none">
+        <div className="absolute top-3 right-3 z-10 flex items-center gap-1.5 bg-slate-900/80 backdrop-blur-md border border-slate-700 px-2.5 py-1 rounded-full text-xs font-mono text-slate-200 shadow-sm pointer-events-none">
           <span>
             {mainImageIndex + 1} / {imagesToShow.length}
           </span>
@@ -78,7 +78,7 @@ const ProductGallery = ({ product, selectedVariant }) => {
               type="button"
               onClick={handlePrev}
               aria-label="Ảnh trước"
-              className="absolute left-3 top-1/2 -translate-y-1/2 z-40 p-2.5 rounded-full bg-slate-800/90 text-slate-300 hover:text-white hover:bg-slate-700 border border-slate-700 shadow-md transition-all duration-200 opacity-0 group-hover:opacity-100 hover:scale-110 active:scale-95 cursor-pointer"
+              className="absolute left-3 top-1/2 -translate-y-1/2 z-10 p-2.5 rounded-full bg-slate-800/90 text-slate-300 hover:text-white hover:bg-slate-700 border border-slate-700 shadow-md transition-all duration-200 opacity-0 group-hover:opacity-100 hover:scale-110 active:scale-95 cursor-pointer"
             >
               <ChevronLeft className="w-5 h-5" />
             </button>
@@ -86,7 +86,7 @@ const ProductGallery = ({ product, selectedVariant }) => {
               type="button"
               onClick={handleNext}
               aria-label="Ảnh kế tiếp"
-              className="absolute right-3 top-1/2 -translate-y-1/2 z-40 p-2.5 rounded-full bg-slate-800/90 text-slate-300 hover:text-white hover:bg-slate-700 border border-slate-700 shadow-md transition-all duration-200 opacity-0 group-hover:opacity-100 hover:scale-110 active:scale-95 cursor-pointer"
+              className="absolute right-3 top-1/2 -translate-y-1/2 z-10 p-2.5 rounded-full bg-slate-800/90 text-slate-300 hover:text-white hover:bg-slate-700 border border-slate-700 shadow-md transition-all duration-200 opacity-0 group-hover:opacity-100 hover:scale-110 active:scale-95 cursor-pointer"
             >
               <ChevronRight className="w-5 h-5" />
             </button>
@@ -95,7 +95,7 @@ const ProductGallery = ({ product, selectedVariant }) => {
 
         {/* Dấu chấm chỉ báo trang ảnh */}
         {imagesToShow.length > 1 && (
-          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-40 flex items-center gap-1.5 bg-slate-800/80 backdrop-blur-md px-3 py-1.5 rounded-full border border-slate-700 shadow-sm">
+          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-10 flex items-center gap-1.5 bg-slate-800/80 backdrop-blur-md px-3 py-1.5 rounded-full border border-slate-700 shadow-sm">
             {imagesToShow.map((_, idx) => (
               <button
                 key={idx}

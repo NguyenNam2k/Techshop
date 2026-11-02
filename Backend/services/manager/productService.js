@@ -708,10 +708,18 @@ class ProductService {
           SELECT p.id, p.name, p.slug, p.brand, p.model_code, p.base_price, p.thumbnail_url,
                  COALESCE(MAX(c.name), 'Linh kiện') AS category_name,
                  COALESCE(MIN(pv.price), p.base_price) AS min_price,
-                 COALESCE(SUM(pv.stock), 0) AS total_stock
+                 COALESCE(SUM(pv.stock), 0) AS total_stock,
+                 COALESCE(MAX(review_stats.average_rating), 5.0) AS average_rating,
+                 COALESCE(MAX(review_stats.total_reviews), 0) AS total_reviews
           FROM products p
           LEFT JOIN categories c ON p.category_id = c.id
           LEFT JOIN product_variants pv ON pv.product_id = p.id
+          LEFT JOIN (
+            SELECT product_id, AVG(rating) AS average_rating, COUNT(*) AS total_reviews
+            FROM reviews
+            WHERE status = 'approved'
+            GROUP BY product_id
+          ) review_stats ON review_stats.product_id = p.id
           WHERE p.category_id = ? AND p.id != ? AND p.status != 'archived'
           GROUP BY p.id
           ORDER BY p.id DESC
@@ -727,6 +735,8 @@ class ProductService {
           base_price: parseFloat(r.base_price),
           min_price: parseFloat(r.min_price),
           thumbnail_url: r.thumbnail_url,
+          average_rating: Number(Number(r.average_rating).toFixed(1)),
+          total_reviews: Number(r.total_reviews) || 0,
           category_name: r.category_name,
           in_stock: Number(r.total_stock) > 0,
           match_type: 'same_category'
@@ -745,10 +755,18 @@ class ProductService {
         SELECT p.id, p.name, p.slug, p.brand, p.model_code, p.base_price, p.thumbnail_url,
                COALESCE(MAX(c.name), 'Linh kiện') AS category_name,
                COALESCE(MIN(pv.price), p.base_price) AS min_price,
-               COALESCE(SUM(pv.stock), 0) AS total_stock
+               COALESCE(SUM(pv.stock), 0) AS total_stock,
+               COALESCE(MAX(review_stats.average_rating), 5.0) AS average_rating,
+               COALESCE(MAX(review_stats.total_reviews), 0) AS total_reviews
         FROM products p
         LEFT JOIN categories c ON p.category_id = c.id
         LEFT JOIN product_variants pv ON pv.product_id = p.id
+        LEFT JOIN (
+          SELECT product_id, AVG(rating) AS average_rating, COUNT(*) AS total_reviews
+          FROM reviews
+          WHERE status = 'approved'
+          GROUP BY product_id
+        ) review_stats ON review_stats.product_id = p.id
         ${existingIds.length > 0 ? `WHERE p.id NOT IN (${placeholders}) AND p.status != 'archived'` : `WHERE p.status != 'archived'`}
         GROUP BY p.id
         ORDER BY p.id DESC
@@ -765,6 +783,8 @@ class ProductService {
         base_price: parseFloat(r.base_price),
         min_price: parseFloat(r.min_price),
         thumbnail_url: r.thumbnail_url,
+        average_rating: Number(Number(r.average_rating).toFixed(1)),
+        total_reviews: Number(r.total_reviews) || 0,
         category_name: r.category_name,
         in_stock: Number(r.total_stock) > 0,
         match_type: 'suggested'

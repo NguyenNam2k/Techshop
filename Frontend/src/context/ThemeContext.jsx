@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { flushSync } from 'react-dom';
 
 const ThemeContext = createContext();
 
@@ -31,7 +32,21 @@ export function ThemeProvider({ children }) {
   }, [theme]);
 
   const toggleTheme = () => {
-    setTheme((prev) => (prev === 'light' ? 'dark' : 'light'));
+    const updateTheme = () => {
+      flushSync(() => {
+        setTheme((prev) => (prev === 'light' ? 'dark' : 'light'));
+      });
+    };
+
+    if (
+      typeof document.startViewTransition === 'function' &&
+      !window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    ) {
+      document.startViewTransition(updateTheme);
+      return;
+    }
+
+    updateTheme();
   };
 
   return (

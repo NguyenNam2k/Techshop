@@ -1,6 +1,6 @@
 -- ============================================================
 -- TechShop Admin RBAC (Role-Based Access Control)
--- Bổ sung bảng: roles, permissions, role_permissions
+-- Bổ sung bảng: roles, permissions, role_permissions & Reviews
 -- ============================================================
 
 USE `techshop_db`;
@@ -72,17 +72,25 @@ INSERT INTO `permissions` (`permission_name`, `description`, `module`) VALUES
 ('users.update', 'Cập nhật thông tin người dùng', 'users'),
 ('users.delete', 'Xóa người dùng', 'users'),
 ('users.toggle_status', 'Kích hoạt / Vô hiệu hóa tài khoản', 'users'),
+
 -- Module: roles
 ('roles.view', 'Xem danh sách vai trò', 'roles'),
 ('roles.create', 'Tạo vai trò mới', 'roles'),
 ('roles.update', 'Cập nhật vai trò', 'roles'),
 ('roles.delete', 'Xóa vai trò', 'roles'),
+
 -- Module: permissions
 ('permissions.view', 'Xem danh sách quyền hạn', 'permissions'),
 ('permissions.create', 'Tạo quyền mới', 'permissions'),
 ('permissions.update', 'Cập nhật quyền', 'permissions'),
 ('permissions.delete', 'Xóa quyền', 'permissions'),
-('permissions.assign', 'Gán quyền cho vai trò', 'permissions');
+('permissions.assign', 'Gán quyền cho vai trò', 'permissions'),
+
+-- Module: reviews
+('reviews.view', 'Xem danh sách và chi tiết đánh giá sản phẩm', 'reviews'),
+('reviews.moderate', 'Kiểm duyệt, ẩn hoặc phê duyệt đánh giá của khách hàng', 'reviews'),
+('reviews.reply', 'Phản hồi đánh giá của khách hàng với tư cách cửa hàng', 'reviews'),
+('reviews.delete', 'Xóa đánh giá vi phạm tiêu chuẩn cộng đồng', 'reviews');
 
 -- 4C. Gán quyền cho vai trò super_admin (toàn quyền)
 INSERT INTO `role_permissions` (`role_id`, `permission_id`)
@@ -90,16 +98,30 @@ SELECT r.id, p.id
 FROM `roles` r, `permissions` p
 WHERE r.role_name = 'super_admin';
 
--- 4D. Gán quyền cho vai trò system_admin (quyền xem + quản lý user)
+-- 4D. Gán quyền cho vai trò system_admin (quyền xem + quản lý user & review)
 INSERT INTO `role_permissions` (`role_id`, `permission_id`)
 SELECT r.id, p.id
 FROM `roles` r, `permissions` p
 WHERE r.role_name = 'system_admin'
-  AND p.permission_name IN ('users.view', 'users.create', 'users.update', 'users.toggle_status', 'roles.view', 'permissions.view');
+  AND p.permission_name IN (
+    'users.view', 'users.create', 'users.update', 'users.toggle_status',
+    'roles.view', 'permissions.view', 'reviews.view', 'reviews.moderate'
+  );
 
 -- 4E. Gán quyền cho vai trò manager
 INSERT INTO `role_permissions` (`role_id`, `permission_id`)
 SELECT r.id, p.id
 FROM `roles` r, `permissions` p
 WHERE r.role_name = 'manager'
-  AND p.permission_name IN ('users.view');
+  AND p.permission_name IN (
+    'users.view', 'reviews.view', 'reviews.moderate', 'reviews.reply', 'reviews.delete'
+  );
+
+-- 4F. Gán quyền cho vai trò staff
+INSERT INTO `role_permissions` (`role_id`, `permission_id`)
+SELECT r.id, p.id
+FROM `roles` r, `permissions` p
+WHERE r.role_name = 'staff'
+  AND p.permission_name IN (
+    'reviews.view', 'reviews.reply'
+  );

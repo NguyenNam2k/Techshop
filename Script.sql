@@ -1,14 +1,29 @@
+-- ==============================================================================
+-- TECHSHOP DATABASE INITIALIZATION SCRIPT (techshop_db)
+-- Hệ quản trị CSDL: MySQL 8.0+ / TiDB (InnoDB Engine, utf8mb4_unicode_ci)
+-- Tính năng: Thương mại điện tử, Biến thể linh kiện, AI Embeddings, Đơn hàng & VietQR,
+--           Phân quyền RBAC, và Hệ thống Đánh giá sản phẩm (Product Reviews)
+-- ==============================================================================
+
+SET NAMES utf8mb4;
+SET CHARACTER SET utf8mb4;
+SET FOREIGN_KEY_CHECKS = 0;
+
 CREATE DATABASE IF NOT EXISTS `techshop_db` 
 CHARACTER SET utf8mb4 
 COLLATE utf8mb4_unicode_ci;
 
 USE `techshop_db`;
 
+-- ==============================================================================
+-- DỌN DẸP BẢNG CŨ (DROP TABLES IN SAFE REVERSE ORDER)
+-- ==============================================================================
 DROP TABLE IF EXISTS `staff_schedules`;
 DROP TABLE IF EXISTS `staff_tasks`;
 DROP TABLE IF EXISTS `role_permissions`;
 DROP TABLE IF EXISTS `permissions`;
 DROP TABLE IF EXISTS `roles`;
+DROP TABLE IF EXISTS `reviews`;
 DROP TABLE IF EXISTS `coupons`;
 DROP TABLE IF EXISTS `audit_logs`;
 DROP TABLE IF EXISTS `inventory_logs`;
@@ -27,6 +42,9 @@ DROP TABLE IF EXISTS `admins`;
 DROP TABLE IF EXISTS `customers`;
 DROP TABLE IF EXISTS `guests`;
 
+-- ==============================================================================
+-- 1. BẢNG GUESTS (Khách vãng lai chưa đăng nhập)
+-- ==============================================================================
 CREATE TABLE `guests` (
     `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     `session_token` VARCHAR(100) NOT NULL UNIQUE,
@@ -37,6 +55,9 @@ CREATE TABLE `guests` (
     INDEX `idx_guests_session` (`session_token`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- ==============================================================================
+-- 2. BẢNG CUSTOMERS (Khách hàng thành viên)
+-- ==============================================================================
 CREATE TABLE `customers` (
     `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     `name` VARCHAR(100) NOT NULL,
@@ -54,6 +75,9 @@ CREATE TABLE `customers` (
     INDEX `idx_customers_google_id` (`google_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- ==============================================================================
+-- 3. BẢNG ADMINS (Quản trị viên hệ thống)
+-- ==============================================================================
 CREATE TABLE `admins` (
     `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     `username` VARCHAR(50) NOT NULL UNIQUE,
@@ -70,6 +94,9 @@ CREATE TABLE `admins` (
     INDEX `idx_admins_email` (`email`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- ==============================================================================
+-- 4. BẢNG MANAGERS (Quản lý chi nhánh / Cửa hàng)
+-- ==============================================================================
 CREATE TABLE `managers` (
     `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     `username` VARCHAR(50) NULL UNIQUE,
@@ -90,6 +117,9 @@ CREATE TABLE `managers` (
     INDEX `idx_managers_email` (`email`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- ==============================================================================
+-- 5. BẢNG STAFFS (Nhân viên vận hành, kho, bán hàng)
+-- ==============================================================================
 CREATE TABLE `staffs` (
     `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     `username` VARCHAR(50) NULL UNIQUE,
@@ -112,6 +142,9 @@ CREATE TABLE `staffs` (
     INDEX `idx_staffs_email` (`email`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- ==============================================================================
+-- 6. BẢNG CATEGORIES (Danh mục linh kiện / thiết bị)
+-- ==============================================================================
 CREATE TABLE `categories` (
     `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     `name` VARCHAR(100) NOT NULL,
@@ -127,6 +160,9 @@ CREATE TABLE `categories` (
         ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- ==============================================================================
+-- 7. BẢNG PRODUCTS (Sản phẩm phần cứng & Gear)
+-- ==============================================================================
 CREATE TABLE `products` (
     `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     `category_id` INT UNSIGNED NOT NULL,
@@ -152,6 +188,9 @@ CREATE TABLE `products` (
     INDEX `idx_products_status` (`status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- ==============================================================================
+-- 8. BẢNG PRODUCT_VARIANTS (Biến thể SKU: phiên bản, màu sắc, tồn kho)
+-- ==============================================================================
 CREATE TABLE `product_variants` (
     `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     `product_id` INT UNSIGNED NOT NULL,
@@ -172,6 +211,9 @@ CREATE TABLE `product_variants` (
     INDEX `idx_variants_stock` (`stock`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- ==============================================================================
+-- 9. BẢNG PRODUCT_SPECIFICATIONS (Thông số kỹ thuật chi tiết theo nhóm)
+-- ==============================================================================
 CREATE TABLE `product_specifications` (
     `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     `product_id` INT UNSIGNED NOT NULL,
@@ -187,6 +229,9 @@ CREATE TABLE `product_specifications` (
     INDEX `idx_specs_group` (`spec_group`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- ==============================================================================
+-- 10. BẢNG PRODUCT_IMAGES (Thư viện hình ảnh gallery sản phẩm)
+-- ==============================================================================
 CREATE TABLE `product_images` (
     `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     `product_id` INT UNSIGNED NOT NULL,
@@ -205,6 +250,9 @@ CREATE TABLE `product_images` (
         ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- ==============================================================================
+-- 11. BẢNG PRODUCT_EMBEDDINGS (Vector nhúng AI cho Visual & Semantic Search)
+-- ==============================================================================
 CREATE TABLE `product_embeddings` (
     `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     `product_id` INT UNSIGNED NOT NULL,
@@ -223,6 +271,9 @@ CREATE TABLE `product_embeddings` (
     INDEX `idx_embeddings_type` (`embedding_type`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- ==============================================================================
+-- 12. BẢNG CART_ITEMS (Giỏ hàng hỗ trợ cả Customer lẫn Khách vãng lai)
+-- ==============================================================================
 CREATE TABLE `cart_items` (
     `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     `customer_id` INT UNSIGNED NULL DEFAULT NULL,
@@ -242,6 +293,9 @@ CREATE TABLE `cart_items` (
         ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- ==============================================================================
+-- 13. BẢNG ORDERS (Đơn đặt hàng & thông tin thanh toán VietQR / COD)
+-- ==============================================================================
 CREATE TABLE `orders` (
     `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     `order_code` VARCHAR(50) NOT NULL UNIQUE,
@@ -271,6 +325,9 @@ CREATE TABLE `orders` (
     INDEX `idx_orders_created_at` (`created_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- ==============================================================================
+-- 14. BẢNG ORDER_ITEMS (Chi tiết từng sản phẩm trong đơn đặt hàng)
+-- ==============================================================================
 CREATE TABLE `order_items` (
     `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     `order_id` INT UNSIGNED NOT NULL,
@@ -290,6 +347,9 @@ CREATE TABLE `order_items` (
         ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- ==============================================================================
+-- 15. BẢNG INVENTORY_LOGS (Nhật ký xuất nhập và biến động tồn kho linh kiện)
+-- ==============================================================================
 CREATE TABLE `inventory_logs` (
     `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     `variant_id` INT UNSIGNED NOT NULL,
@@ -315,6 +375,9 @@ CREATE TABLE `inventory_logs` (
         ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- ==============================================================================
+-- 16. BẢNG AUDIT_LOGS (Nhật ký kiểm toán thay đổi dữ liệu hệ thống)
+-- ==============================================================================
 CREATE TABLE `audit_logs` (
     `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     `entity_type` VARCHAR(50) NOT NULL,
@@ -328,6 +391,9 @@ CREATE TABLE `audit_logs` (
     INDEX `idx_audit_action` (`action`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- ==============================================================================
+-- 17. BẢNG COUPONS (Mã giảm giá & chương trình khuyến mãi)
+-- ==============================================================================
 CREATE TABLE `coupons` (
     `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     `code` VARCHAR(50) NOT NULL UNIQUE,
@@ -347,22 +413,37 @@ CREATE TABLE `coupons` (
     INDEX `idx_coupon_active` (`is_active`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- ==============================================================================
+-- 18. BẢNG REVIEWS (Đánh giá, xếp hạng sao & nhận xét sản phẩm)
+-- ==============================================================================
 CREATE TABLE `reviews` (
     `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     `product_id` INT UNSIGNED NOT NULL,
-    `customer_id` INT UNSIGNED NULL,
+    `customer_id` INT UNSIGNED NULL DEFAULT NULL,
     `customer_name` VARCHAR(100) NOT NULL DEFAULT 'Khách hàng TechShop',
-    `rating` TINYINT NOT NULL,
+    `rating` TINYINT UNSIGNED NOT NULL,
     `comment` TEXT NULL,
-    `is_verified_buyer` TINYINT(1) DEFAULT 1,
-    `likes` INT DEFAULT 0,
-    `status` ENUM('approved', 'pending', 'hidden') DEFAULT 'approved',
+    `is_verified_buyer` TINYINT(1) NOT NULL DEFAULT 1,
+    `likes` INT UNSIGNED NOT NULL DEFAULT 0,
+    `status` ENUM('approved', 'pending', 'hidden') NOT NULL DEFAULT 'approved',
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT `fk_reviews_product` FOREIGN KEY (`product_id`) REFERENCES `products` (`id`) ON DELETE CASCADE,
+    `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT `fk_reviews_product` 
+        FOREIGN KEY (`product_id`) REFERENCES `products` (`id`) 
+        ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT `fk_reviews_customer` 
+        FOREIGN KEY (`customer_id`) REFERENCES `customers` (`id`) 
+        ON DELETE SET NULL ON UPDATE CASCADE,
     INDEX `idx_reviews_product_id` (`product_id`),
-    INDEX `idx_reviews_status` (`status`)
+    INDEX `idx_reviews_customer_id` (`customer_id`),
+    INDEX `idx_reviews_rating` (`rating`),
+    INDEX `idx_reviews_status` (`status`),
+    INDEX `idx_reviews_created_at` (`created_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- ==============================================================================
+-- 19. BẢNG STAFF_TASKS (Phân công nhiệm vụ nội bộ cho nhân viên)
+-- ==============================================================================
 CREATE TABLE `staff_tasks` (
     `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     `staff_id` INT UNSIGNED NOT NULL,
@@ -384,6 +465,9 @@ CREATE TABLE `staff_tasks` (
     INDEX `idx_task_status` (`status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- ==============================================================================
+-- 20. BẢNG STAFF_SCHEDULES (Lịch làm việc ca trực của nhân sự)
+-- ==============================================================================
 CREATE TABLE `staff_schedules` (
     `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     `staff_id` INT UNSIGNED NOT NULL,
@@ -398,15 +482,9 @@ CREATE TABLE `staff_schedules` (
     INDEX `idx_schedule_staff` (`staff_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-
-
--- ============================================================
--- TechShop Admin RBAC (Role-Based Access Control)
--- ============================================================
-
--- ============================================================
--- 20. Bảng ROLES (Vai trò)
--- ============================================================
+-- ==============================================================================
+-- 21. BẢNG ROLES (Vai trò phân quyền RBAC)
+-- ==============================================================================
 CREATE TABLE `roles` (
     `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     `role_name` VARCHAR(50) NOT NULL UNIQUE,
@@ -417,9 +495,9 @@ CREATE TABLE `roles` (
     INDEX `idx_roles_name` (`role_name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- ============================================================
--- 21. Bảng PERMISSIONS (Quyền hạn)
--- ============================================================
+-- ==============================================================================
+-- 22. BẢNG PERMISSIONS (Danh mục quyền hạn chi tiết theo module)
+-- ==============================================================================
 CREATE TABLE `permissions` (
     `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     `permission_name` VARCHAR(100) NOT NULL UNIQUE,
@@ -431,9 +509,9 @@ CREATE TABLE `permissions` (
     INDEX `idx_permissions_module` (`module`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- ============================================================
--- 22. Bảng ROLE_PERMISSIONS (Liên kết Vai trò - Quyền hạn)
--- ============================================================
+-- ==============================================================================
+-- 23. BẢNG ROLE_PERMISSIONS (Bảng liên kết Nhiều-Nhiều giữa Vai trò & Quyền hạn)
+-- ==============================================================================
 CREATE TABLE `role_permissions` (
     `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     `role_id` INT UNSIGNED NOT NULL,
@@ -446,54 +524,83 @@ CREATE TABLE `role_permissions` (
     UNIQUE KEY `uk_role_permission` (`role_id`, `permission_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- ============================================================
--- 23. DỮ LIỆU MẪU RBAC (SEED)
--- ============================================================
+-- ==============================================================================
+-- DỮ LIỆU MẪU MẶC ĐỊNH CHO HỆ THỐNG RBAC & ĐIỀU HÀNH
+-- ==============================================================================
 
--- 23A. Vai trò mặc định
+-- 1. Vai trò mặc định trong hệ thống
 INSERT INTO `roles` (`role_name`, `description`) VALUES
-('super_admin', 'Quản trị viên cao nhất, toàn quyền hệ thống'),
-('system_admin', 'Quản trị viên hệ thống'),
-('manager', 'Quản lý chi nhánh / bộ phận'),
-('staff', 'Nhân viên vận hành'),
-('customer', 'Khách hàng');
+('super_admin', 'Quản trị viên cao nhất, toàn quyền cấu hình và điều hành hệ thống'),
+('system_admin', 'Quản trị viên kỹ thuật hệ thống và quản trị tài khoản'),
+('manager', 'Quản lý cửa hàng, chi nhánh, kho và kiểm duyệt đánh giá'),
+('staff', 'Nhân viên bán hàng, đóng gói và chăm sóc khách hàng'),
+('customer', 'Khách hàng thành viên mua sắm');
 
--- 23B. Quyền hạn mặc định
+-- 2. Quyền hạn mặc định (Permissions theo từng module chức năng)
 INSERT INTO `permissions` (`permission_name`, `description`, `module`) VALUES
--- Module: users
-('users.view', 'Xem danh sách người dùng', 'users'),
-('users.create', 'Tạo người dùng mới', 'users'),
-('users.update', 'Cập nhật thông tin người dùng', 'users'),
-('users.delete', 'Xóa người dùng', 'users'),
-('users.toggle_status', 'Kích hoạt / Vô hiệu hóa tài khoản', 'users'),
--- Module: roles
-('roles.view', 'Xem danh sách vai trò', 'roles'),
-('roles.create', 'Tạo vai trò mới', 'roles'),
-('roles.update', 'Cập nhật vai trò', 'roles'),
-('roles.delete', 'Xóa vai trò', 'roles'),
--- Module: permissions
-('permissions.view', 'Xem danh sách quyền hạn', 'permissions'),
-('permissions.create', 'Tạo quyền mới', 'permissions'),
-('permissions.update', 'Cập nhật quyền', 'permissions'),
-('permissions.delete', 'Xóa quyền', 'permissions'),
-('permissions.assign', 'Gán quyền cho vai trò', 'permissions');
+-- Module: users (Quản lý người dùng)
+('users.view', 'Xem danh sách và hồ sơ người dùng', 'users'),
+('users.create', 'Tạo tài khoản người dùng / nhân sự mới', 'users'),
+('users.update', 'Cập nhật thông tin và mật khẩu người dùng', 'users'),
+('users.delete', 'Xóa tài khoản người dùng', 'users'),
+('users.toggle_status', 'Khóa hoặc mở khóa trạng thái tài khoản', 'users'),
 
--- 23C. Gán quyền cho vai trò super_admin (toàn quyền)
+-- Module: roles (Quản lý vai trò)
+('roles.view', 'Xem danh mục các vai trò', 'roles'),
+('roles.create', 'Tạo vai trò phân quyền mới', 'roles'),
+('roles.update', 'Cập nhật thông tin vai trò', 'roles'),
+('roles.delete', 'Xóa vai trò phân quyền', 'roles'),
+
+-- Module: permissions (Quản lý quyền hạn)
+('permissions.view', 'Xem danh mục các quyền hạn', 'permissions'),
+('permissions.create', 'Khai báo quyền hạn mới', 'permissions'),
+('permissions.update', 'Cập nhật quyền hạn', 'permissions'),
+('permissions.delete', 'Xóa quyền hạn', 'permissions'),
+('permissions.assign', 'Gán hoặc thu hồi quyền hạn cho vai trò', 'permissions'),
+
+-- Module: reviews (Quản lý đánh giá sản phẩm)
+('reviews.view', 'Xem danh sách và chi tiết đánh giá sản phẩm', 'reviews'),
+('reviews.moderate', 'Kiểm duyệt, ẩn hoặc phê duyệt đánh giá của khách hàng', 'reviews'),
+('reviews.reply', 'Phản hồi đánh giá của khách hàng với tư cách cửa hàng', 'reviews'),
+('reviews.delete', 'Xóa đánh giá vi phạm tiêu chuẩn cộng đồng', 'reviews');
+
+-- 3. Gán quyền cho vai trò Super Admin (Toàn bộ quyền hạn)
 INSERT INTO `role_permissions` (`role_id`, `permission_id`)
 SELECT r.id, p.id
 FROM `roles` r, `permissions` p
 WHERE r.role_name = 'super_admin';
 
--- 23D. Gán quyền cho vai trò system_admin (quyền xem + quản lý user)
+-- 4. Gán quyền cho System Admin (Quản lý người dùng, vai trò & phân quyền)
 INSERT INTO `role_permissions` (`role_id`, `permission_id`)
 SELECT r.id, p.id
 FROM `roles` r, `permissions` p
 WHERE r.role_name = 'system_admin'
-  AND p.permission_name IN ('users.view', 'users.create', 'users.update', 'users.toggle_status', 'roles.view', 'permissions.view');
+  AND p.permission_name IN (
+    'users.view', 'users.create', 'users.update', 'users.toggle_status',
+    'roles.view', 'permissions.view', 'reviews.view', 'reviews.moderate'
+  );
 
--- 23E. Gán quyền cho vai trò manager
+-- 5. Gán quyền cho Manager (Xem user và toàn quyền kiểm duyệt đánh giá sản phẩm)
 INSERT INTO `role_permissions` (`role_id`, `permission_id`)
 SELECT r.id, p.id
 FROM `roles` r, `permissions` p
 WHERE r.role_name = 'manager'
-  AND p.permission_name IN ('users.view');
+  AND p.permission_name IN (
+    'users.view', 'reviews.view', 'reviews.moderate', 'reviews.reply', 'reviews.delete'
+  );
+
+-- 6. Gán quyền cho Staff (Xem và phản hồi đánh giá)
+INSERT INTO `role_permissions` (`role_id`, `permission_id`)
+SELECT r.id, p.id
+FROM `roles` r, `permissions` p
+WHERE r.role_name = 'staff'
+  AND p.permission_name IN (
+    'reviews.view', 'reviews.reply'
+  );
+
+SET FOREIGN_KEY_CHECKS = 1;
+
+-- ==============================================================================
+-- HOÀN TẤT KHỞI TẠO CẤU TRÚC DATABASE TECHSHOP_DB (23 BẢNG + RBAC SEED)
+-- Để nạp dữ liệu danh mục & reviews đầy đủ, chạy: seed_full_catalog.sql
+-- ==============================================================================

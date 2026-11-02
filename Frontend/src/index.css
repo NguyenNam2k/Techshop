@@ -154,6 +154,14 @@ html[data-theme="light"] .dark-locked .text-slate-400 {
     @apply transition-colors duration-200;
   }
 
+  @media (prefers-reduced-motion: no-preference) {
+    ::view-transition-old(root),
+    ::view-transition-new(root) {
+      animation-duration: 180ms;
+      animation-timing-function: ease-out;
+    }
+  }
+
   body {
     @apply antialiased transition-colors duration-200 font-sans;
     background-color: rgb(var(--slate-950));
@@ -588,6 +596,19 @@ html[data-theme="light"] .hover\:text-slate-950:hover {
   }
 }
 
+@keyframes brand-logo-slide {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.brand-logo-track {
+  animation: brand-logo-slide 30s linear infinite;
+}
+
 @media (max-width: 640px) {
   .motion-card:hover {
     transform: none;
@@ -610,5 +631,9 @@ html[data-theme="light"] .hover\:text-slate-950:hover {
   .motion-card:hover,
   .motion-card:active {
     transform: none;
+  }
+
+  .brand-logo-track {
+    animation: none;
   }
 }

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, Sparkles } from 'lucide-react';
+import { ArrowRight, Sparkles, Star } from 'lucide-react';
 import { api } from '../../services/api';
 
 const SimilarProductsSlider = ({ id, currentProductId, categoryId = null, brand = null }) => {
@@ -66,6 +66,11 @@ const SimilarProductsSlider = ({ id, currentProductId, categoryId = null, brand 
   const formatCurrency = (amount) => {
     if (!amount) return '0 ₫';
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
+  };
+
+  const getRating = (product) => {
+    const rating = Number(product.average_rating);
+    return Number.isFinite(rating) ? rating.toFixed(1) : '5.0';
   };
 
   if (loading) {
@@ -142,6 +147,17 @@ const SimilarProductsSlider = ({ id, currentProductId, categoryId = null, brand 
               <h4 className="text-xs sm:text-sm font-bold text-slate-200 line-clamp-2 group-hover:text-sky-400 transition-colors">
                 {p.name}
               </h4>
+              <div className="flex items-center gap-1.5 text-xs">
+                <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-500" />
+                <span className="font-extrabold text-slate-200">{getRating(p)}</span>
+                {Number(p.total_reviews) > 0 ? (
+                  <span className="text-[10px] text-slate-500">
+                    ({Number(p.total_reviews)} đánh giá)
+                  </span>
+                ) : (
+                  <span className="text-[10px] text-slate-500">Chưa có đánh giá</span>
+                )}
+              </div>
             </div>
 
             <div className="pt-2 border-t border-slate-800 flex items-center justify-between">

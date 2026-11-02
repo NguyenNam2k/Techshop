@@ -2,282 +2,64 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Sparkles } from 'lucide-react';
 
-// Authentic SVG Vector Logos for Top Tech Brands (High Contrast & Adaptive for Light & Dark)
-const BRAND_SVG_LOGOS = {
-  asus: (
-    <svg viewBox="0 0 100 40" className="w-auto h-7 max-w-[110px] mx-auto">
-      {/* ROG Eye Emblem */}
-      <path
-        d="M28 6 C33 6, 38 9, 41 14 C36 12, 30 13, 26 16 C22 19, 20 24, 21 29 C17 26, 15 20, 17 14 C19 9, 23 6, 28 6 Z"
-        fill="#FF0033"
-      />
-      <path
-        d="M31 16 C35 15, 39 17, 40 21 C36 21, 33 23, 31 26 C30 22, 30 18, 31 16 Z"
-        fill="#FF0033"
-      />
-      {/* ROG Text */}
-      <text
-        x="45"
-        y="25"
-        fontFamily="sans-serif"
-        fontWeight="900"
-        fontSize="16"
-        letterSpacing="2"
-        className="fill-[#0f172a] dark:fill-white group-hover:fill-red-500 transition-colors"
-      >
-        ROG
-      </text>
-    </svg>
-  ),
-  intel: (
-    <svg viewBox="0 0 100 40" className="w-auto h-7 max-w-[100px] mx-auto">
-      <text
-        x="50"
-        y="26"
-        textAnchor="middle"
-        fontFamily="sans-serif"
-        fontWeight="800"
-        fontSize="21"
-        letterSpacing="-1"
-        className="fill-sky-600 dark:fill-sky-400 group-hover:fill-sky-500 transition-colors"
-      >
-        intel.
-      </text>
-      {/* Intel arc swoosh */}
-      <path
-        d="M20 10 C45 3, 75 3, 85 11"
-        className="stroke-sky-600 dark:stroke-sky-400"
-        strokeWidth="2.5"
-        strokeLinecap="round"
-        fill="none"
-      />
-    </svg>
-  ),
-  amd: (
-    <svg viewBox="0 0 100 40" className="w-auto h-7 max-w-[100px] mx-auto">
-      {/* AMD Arrow Chevron */}
-      <polygon points="12,10 24,10 24,22 18,16 18,28 12,28" fill="#ED1C24" />
-      <polygon points="26,12 26,24 20,24 20,18 14,18 20,12" fill="#ED1C24" />
-      <text
-        x="34"
-        y="27"
-        fontFamily="sans-serif"
-        fontWeight="900"
-        fontSize="20"
-        letterSpacing="1"
-        className="fill-[#0f172a] dark:fill-white group-hover:fill-emerald-500 transition-colors"
-      >
-        AMD
-      </text>
-    </svg>
-  ),
-  corsair: (
-    <svg viewBox="0 0 120 40" className="w-auto h-7 max-w-[120px] mx-auto">
-      {/* Corsair 3 billowing sails */}
-      <path
-        d="M10 27 C13 22, 17 16, 20 10 C19 16, 18 23, 17 28 Z"
-        className="fill-amber-500 dark:fill-yellow-400"
-      />
-      <path
-        d="M18 28 C22 20, 27 13, 31 7 C29 15, 27 23, 25 28 Z"
-        className="fill-amber-500 dark:fill-yellow-400"
-      />
-      <path
-        d="M26 28 C29 22, 33 16, 36 12 C34 18, 32 24, 31 28 Z"
-        className="fill-amber-500 dark:fill-yellow-400"
-      />
-      <text
-        x="38"
-        y="24"
-        fontFamily="sans-serif"
-        fontWeight="800"
-        fontSize="13"
-        letterSpacing="1"
-        className="fill-[#0f172a] dark:fill-white group-hover:fill-amber-500 transition-colors"
-      >
-        CORSAIR
-      </text>
-    </svg>
-  ),
-  msi: (
-    <svg viewBox="0 0 100 40" className="w-auto h-7 max-w-[95px] mx-auto">
-      {/* MSI iconic dragon-cut font */}
-      <text
-        x="50"
-        y="27"
-        textAnchor="middle"
-        fontFamily="sans-serif"
-        fontWeight="900"
-        fontSize="22"
-        fontStyle="italic"
-        letterSpacing="2"
-        className="fill-red-600 dark:fill-red-500 group-hover:fill-red-500 transition-colors"
-      >
-        msi
-      </text>
-    </svg>
-  ),
-  gigabyte: (
-    <svg viewBox="0 0 110 40" className="w-auto h-7 max-w-[110px] mx-auto">
-      {/* AORUS Falcon wing */}
-      <path
-        d="M14 26 L18 10 L28 14 L24 22 L20 20 L20 26 Z"
-        fill="#FF6600"
-      />
-      <text
-        x="32"
-        y="24"
-        fontFamily="sans-serif"
-        fontWeight="900"
-        fontSize="13"
-        letterSpacing="1.5"
-        className="fill-[#0f172a] dark:fill-white group-hover:fill-orange-500 transition-colors"
-      >
-        AORUS
-      </text>
-    </svg>
-  ),
-  kingston: (
-    <svg viewBox="0 0 110 40" className="w-auto h-7 max-w-[110px] mx-auto">
-      {/* Kingston Red Head profile silhouette */}
-      <path
-        d="M12 18 C12 13, 16 9, 21 9 C26 9, 29 13, 28 18 C28 22, 25 24, 25 27 L15 27 C15 24, 12 22, 12 18 Z"
-        fill="#E11D48"
-      />
-      <text
-        x="33"
-        y="24"
-        fontFamily="sans-serif"
-        fontWeight="800"
-        fontSize="12.5"
-        letterSpacing="1"
-        className="fill-[#0f172a] dark:fill-white group-hover:fill-rose-500 transition-colors"
-      >
-        Kingston
-      </text>
-    </svg>
-  ),
-  samsung: (
-    <svg viewBox="0 0 110 40" className="w-auto h-7 max-w-[110px] mx-auto">
-      {/* Samsung tilted ellipse badge */}
-      <ellipse
-        cx="55"
-        cy="20"
-        rx="48"
-        ry="13"
-        transform="rotate(-5 55 20)"
-        className="fill-blue-500/10 stroke-blue-600 dark:fill-blue-600/20 dark:stroke-blue-400 group-hover:fill-blue-600/25 transition-colors"
-        strokeWidth="1.5"
-      />
-      <text
-        x="55"
-        y="25"
-        textAnchor="middle"
-        fontFamily="sans-serif"
-        fontWeight="900"
-        fontSize="13"
-        letterSpacing="1.5"
-        className="fill-blue-700 dark:fill-white group-hover:fill-blue-600 transition-colors font-black"
-      >
-        SAMSUNG
-      </text>
-    </svg>
-  ),
-  nzxt: (
-    <svg viewBox="0 0 100 40" className="w-auto h-7 max-w-[95px] mx-auto">
-      <text
-        x="50"
-        y="27"
-        textAnchor="middle"
-        fontFamily="sans-serif"
-        fontWeight="900"
-        fontSize="21"
-        letterSpacing="3"
-        className="fill-purple-600 dark:fill-purple-400 group-hover:fill-purple-500 transition-colors"
-      >
-        NZXT.
-      </text>
-    </svg>
-  ),
-  logitech: (
-    <svg viewBox="0 0 110 40" className="w-auto h-7 max-w-[105px] mx-auto">
-      {/* Logitech G symbol */}
-      <path
-        d="M20 12 A10 10 0 1 0 26 25 L26 20 L18 20"
-        fill="none"
-        stroke="#00B8FC"
-        strokeWidth="3"
-        strokeLinecap="round"
-      />
-      <text
-        x="36"
-        y="25"
-        fontFamily="sans-serif"
-        fontWeight="900"
-        fontSize="17"
-        className="fill-[#0f172a] dark:fill-white group-hover:fill-sky-500 transition-colors"
-      >
-        logi
-      </text>
-    </svg>
-  ),
-  razer: (
-    <svg viewBox="0 0 100 40" className="w-auto h-7 max-w-[95px] mx-auto">
-      {/* Razer triple-snake icon */}
-      <circle cx="20" cy="20" r="8" fill="none" stroke="#22C55E" strokeWidth="2" strokeDasharray="3 3" />
-      <text
-        x="36"
-        y="25"
-        fontFamily="sans-serif"
-        fontWeight="900"
-        fontSize="14"
-        letterSpacing="3"
-        className="fill-emerald-600 dark:fill-emerald-400 group-hover:fill-emerald-500 transition-colors"
-      >
-        RAZER
-      </text>
-    </svg>
-  ),
-  keychron: (
-    <svg viewBox="0 0 110 40" className="w-auto h-7 max-w-[110px] mx-auto">
-      {/* Keychron mechanical switch badge */}
-      <rect x="12" y="12" width="16" height="16" rx="4" fill="none" stroke="#0284c7" className="dark:stroke-sky-400" strokeWidth="2" />
-      <circle cx="20" cy="20" r="3" fill="#0284c7" className="dark:fill-sky-400" />
-      <text
-        x="36"
-        y="24"
-        fontFamily="sans-serif"
-        fontWeight="800"
-        fontSize="12.5"
-        letterSpacing="1"
-        className="fill-[#0f172a] dark:fill-white group-hover:fill-sky-500 transition-colors"
-      >
-        Keychron
-      </text>
-    </svg>
-  )
-};
+// Import bộ ảnh SVG thương hiệu từ frontend/src/images/
+import asusLogo from '../../images/asus-logo.svg';
+import intelLogo from '../../images/Intel-logo.svg';
+import amdLogo from '../../images/amd-logo.svg';
+import corsairLogo from '../../images/Corsair_Gaming.svg';
+import msiLogo from '../../images/msi-logo.svg';
+import gigabyteLogo from '../../images/gigabyte_logo.svg';
+import aorusLogo from '../../images/aorus-logo.svg';
+import kingstonLogo from '../../images/kingston-technology-logo.svg';
+import hyperxLogo from '../../images/hyperx-logo.svg';
+import samsungLogo from '../../images/samsung.svg';
+import nzxtLogo from '../../images/nzxt.svg';
+import logitechLogo from '../../images/logitech.svg';
+import razerLogo from '../../images/Razer.svg';
 
+// Danh sách cấu hình các thương hiệu hàng đầu
 const FEATURED_BRANDS_CONFIG = [
-  { id: 'asus', name: 'ASUS ROG', tag: 'ASUS', desc: 'Bo mạch chủ & Card RTX 40', color: 'hover:border-red-500/50 hover:shadow-red-500/10' },
-  { id: 'intel', name: 'Intel', tag: 'Intel', desc: 'Vi xử lý Core Gen 14', color: 'hover:border-sky-500/50 hover:shadow-sky-500/10' },
-  { id: 'amd', name: 'AMD', tag: 'AMD', desc: 'Ryzen 7000 & 3D V-Cache', color: 'hover:border-emerald-500/50 hover:shadow-emerald-500/10' },
-  { id: 'corsair', name: 'Corsair', tag: 'Corsair', desc: 'RAM DDR5 & Nguồn Shift', color: 'hover:border-amber-500/50 hover:shadow-amber-500/10' },
-  { id: 'msi', name: 'MSI', tag: 'MSI', desc: 'Card đồ họa & Mainboard', color: 'hover:border-red-600/50 hover:shadow-red-600/10' },
-  { id: 'gigabyte', name: 'Gigabyte', tag: 'Gigabyte', desc: 'AORUS Gaming Series', color: 'hover:border-orange-500/50 hover:shadow-orange-500/10' },
-  { id: 'kingston', name: 'Kingston', tag: 'Kingston', desc: 'FURY Beast DDR5 & SSD', color: 'hover:border-rose-500/50 hover:shadow-rose-500/10' },
-  { id: 'samsung', name: 'Samsung', tag: 'Samsung', desc: 'SSD 990 PRO & Màn OLED', color: 'hover:border-blue-500/50 hover:shadow-blue-500/10' },
-  { id: 'nzxt', name: 'NZXT', tag: 'NZXT', desc: 'Tản nước Kraken & Vỏ H9', color: 'hover:border-purple-500/50 hover:shadow-purple-500/10' },
-  { id: 'logitech', name: 'Logitech G', tag: 'Logitech', desc: 'Chuột Superlight & Phím', color: 'hover:border-cyan-500/50 hover:shadow-cyan-500/10' },
-  { id: 'razer', name: 'Razer', tag: 'Razer', desc: 'Gear Esports Đỉnh Cao', color: 'hover:border-green-500/50 hover:shadow-green-500/10' },
-  { id: 'keychron', name: 'Keychron', tag: 'Keychron', desc: 'Bàn phím cơ Custom QMK', color: 'hover:border-sky-400/50 hover:shadow-sky-400/10' }
+  { id: 'asus', name: 'ASUS', tag: 'ASUS', logo: asusLogo, invertOnDark: true },
+  { id: 'intel', name: 'Intel', tag: 'Intel', logo: intelLogo, invertOnDark: true },
+  { id: 'amd', name: 'AMD', tag: 'AMD', logo: amdLogo, invertOnDark: true },
+  { id: 'corsair', name: 'Corsair', tag: 'Corsair', logo: corsairLogo, invertOnDark: true },
+  { id: 'msi', name: 'MSI', tag: 'MSI', logo: msiLogo, invertOnDark: true },
+  { id: 'gigabyte', name: 'Gigabyte', tag: 'Gigabyte', logo: gigabyteLogo, invertOnDark: true },
+  { id: 'aorus', name: 'AORUS', tag: 'Gigabyte', logo: aorusLogo, invertOnDark: true },
+  { id: 'kingston', name: 'Kingston', tag: 'Kingston', logo: kingstonLogo, invertOnDark: true },
+  { id: 'hyperx', name: 'HyperX', tag: 'HyperX', logo: hyperxLogo, invertOnDark: false },
+  { id: 'samsung', name: 'Samsung', tag: 'Samsung', logo: samsungLogo, invertOnDark: true },
+  { id: 'nzxt', name: 'NZXT', tag: 'NZXT', logo: nzxtLogo, invertOnDark: true },
+  { id: 'logitech', name: 'Logitech G', tag: 'Logitech', logo: logitechLogo, invertOnDark: true },
+  { id: 'razer', name: 'Razer', tag: 'Razer', logo: razerLogo, invertOnDark: false }
 ];
 
 const BrandLogosSection = () => {
   const navigate = useNavigate();
 
+  // Render từng badge hình chữ nhật (Rectangle Icon)
+  const renderBrandItem = (brand, indexKey) => (
+    <div
+      key={`${brand.id}-${indexKey}`}
+      onClick={() => navigate(`/catalog?brands=${encodeURIComponent(brand.tag)}`)}
+      title={brand.name}
+      className="w-36 sm:w-44 h-14 sm:h-16 px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 hover:border-sky-500/50 hover:bg-slate-900 transition-all duration-200 cursor-pointer flex items-center justify-center group shadow-xs hover:shadow-md hover:-translate-y-0.5 shrink-0"
+    >
+      <div className="w-full h-full flex items-center justify-center transition-transform duration-200 group-hover:scale-105">
+        <img
+          src={brand.logo}
+          alt={brand.name}
+          className={`max-h-7 max-w-[105px] sm:max-w-[125px] w-auto h-auto object-contain transition-all duration-200 ${
+            brand.invertOnDark ? 'dark:brightness-0 dark:invert' : ''
+          }`}
+          loading="lazy"
+        />
+      </div>
+    </div>
+  );
+
   return (
-    <section className="p-6 md:p-7 rounded-3xl bg-slate-900 border border-slate-800 shadow-sm space-y-6 transition-colors duration-200">
+    <section className="p-5 md:p-6 rounded-3xl bg-slate-900 border border-slate-800 shadow-sm space-y-4 transition-colors duration-200">
       {/* Header */}
       <div className="flex items-center justify-between pb-3 border-b border-slate-800">
         <div className="flex items-center gap-2.5">
@@ -291,32 +73,19 @@ const BrandLogosSection = () => {
         </span>
       </div>
 
-      {/* Grid Thương Hiệu dạng SVG Logo cao cấp */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 sm:gap-4">
-        {FEATURED_BRANDS_CONFIG.map((brand) => (
-          <div
-            key={brand.id}
-            onClick={() => {
-              navigate(`/catalog?brands=${encodeURIComponent(brand.tag)}`);
-            }}
-            className={`p-4 rounded-2xl bg-slate-950 border border-slate-800/90 ${brand.color} hover:bg-slate-900 transition-all duration-300 cursor-pointer text-center group flex flex-col justify-between items-center shadow-xs hover:shadow-xl hover:-translate-y-1`}
-          >
-            {/* Logo SVG Vector */}
-            <div className="h-10 flex items-center justify-center w-full transition-transform duration-300 group-hover:scale-110">
-              {BRAND_SVG_LOGOS[brand.id]}
-            </div>
-
-            {/* Thông tin & Subtext */}
-            <div className="mt-3 w-full border-t border-slate-800/70 pt-2">
-              <h4 className="font-bold text-xs text-slate-100 group-hover:text-sky-500 transition-colors truncate">
-                {brand.name}
-              </h4>
-              <p className="text-[10px] text-slate-400 mt-0.5 truncate group-hover:text-slate-300 transition-colors">
-                {brand.desc}
-              </p>
-            </div>
+      {/* Auto slide marquee liền mạch với bộ SVG logos */}
+      <div className="relative overflow-hidden [mask-image:linear-gradient(to_right,transparent,black_3%,black_97%,transparent)]">
+        <div className="brand-logo-track flex w-max hover:[animation-play-state:paused]">
+          {/* Cụm 1 */}
+          <div className="flex items-center gap-3 sm:gap-4 pr-3 sm:pr-4 shrink-0">
+            {FEATURED_BRANDS_CONFIG.map((brand) => renderBrandItem(brand, 'primary'))}
           </div>
-        ))}
+
+          {/* Cụm 2 (Nhân bản để tạo hiệu ứng vòng lặp vô tận liền mạch) */}
+          <div className="flex items-center gap-3 sm:gap-4 pr-3 sm:pr-4 shrink-0" aria-hidden="true">
+            {FEATURED_BRANDS_CONFIG.map((brand) => renderBrandItem(brand, 'clone'))}
+          </div>
+        </div>
       </div>
     </section>
   );

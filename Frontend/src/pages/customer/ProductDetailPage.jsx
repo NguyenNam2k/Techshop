@@ -12,7 +12,7 @@ import {
 import ProductGallery from '../../components/pdp/ProductGallery';
 import VariantSelector from '../../components/pdp/VariantSelector';
 import AddToCartSection from '../../components/pdp/AddToCartSection';
-import ProductSpecsTable from '../../components/pdp/ProductSpecsTable';
+import ProductDescriptionShowcase from '../../components/pdp/ProductDescriptionShowcase';
 import SimilarProductsSlider from '../../components/pdp/SimilarProductsSlider';
 import ProductReviews from '../../components/pdp/ProductReviews';
 import { useCart } from '../../context/CartContext';
@@ -337,9 +337,9 @@ const ProductDetailPage = () => {
             </div>
           </div>
 
-          {/* Thông số kỹ thuật (Dưới ảnh trên desktop, dưới nút mua trên mobile) */}
+          {/* Thông số kỹ thuật & Mô tả chi tiết showcase */}
           <div className="lg:col-span-7 space-y-8">
-            <ProductSpecsTable specifications={product.specifications} product={product} />
+            <ProductDescriptionShowcase product={product} />
           </div>
         </div>
 

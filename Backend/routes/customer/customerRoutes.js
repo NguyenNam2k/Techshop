@@ -1,9 +1,11 @@
 const express = require('express');
 const router = express.Router();
 const customerController = require('../../controllers/customer/customerController');
+const upload = require('../../middlewares/uploadMiddleware');
 
 router.get('/profile', customerController.getProfile);
 router.put('/profile', customerController.updateProfile);
+router.post('/profile/avatar', upload.single('avatar'), customerController.uploadAvatar);
 router.put('/change-password', customerController.changePassword);
 router.put('/addresses', customerController.updateAddresses);
 router.put('/payment-methods', customerController.updatePaymentMethods);

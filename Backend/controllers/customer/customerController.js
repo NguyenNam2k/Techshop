@@ -1,5 +1,7 @@
 const bcrypt = require('bcryptjs');
 const pool = require('../../config/db');
+const jwt = require('jsonwebtoken');
+const { uploadToCloudinary, isCloudinaryConfigured } = require('../../config/cloudinary');
 
 const DEFAULT_ADDRESSES = [];
 
@@ -707,6 +709,64 @@ async function submitReview(req, res) {
   }
 }
 
+
+/**
+ * Upload ảnh đại diện khách hàng (Customer Avatar)
+ * POST /api/customer/profile/avatar
+ */
+async function uploadAvatar(req, res) {
+  try {
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: 'Vui lòng chọn tệp hình ảnh để tải lên!'
+      });
+    }
+
+    let customerId = (req.user && req.user.id) || req.body.id || req.query.id;
+    if (!customerId) {
+      const authHeader = req.headers['authorization'];
+      if (authHeader) {
+        try {
+          const token = authHeader.split(' ')[1];
+          const decoded = jwt.verify(token, process.env.JWT_SECRET || 'techshop_super_secret_jwt_key_2026');
+          customerId = decoded.id;
+        } catch {}
+      }
+    }
+    if (!customerId) customerId = 1;
+
+    let avatarUrl = '/uploads/avatars/' + req.file.filename;
+
+    // Nếu cấu hình Cloudinary sẵn sàng -> tải lên CDN Cloudinary
+    if (typeof isCloudinaryConfigured === 'function' && isCloudinaryConfigured()) {
+      try {
+        const cloudRes = await uploadToCloudinary(req.file.path, 'techshop/avatars');
+        if (cloudRes && cloudRes.secure_url) {
+          avatarUrl = cloudRes.secure_url;
+        }
+      } catch (cloudErr) {
+        console.warn('⚠️ Lỗi tải ảnh đại diện lên Cloudinary, fallback ảnh cục bộ:', cloudErr.message);
+      }
+    }
+
+    // Cập nhật đường dẫn avatar vào database
+    await pool.query('UPDATE customers SET avatar_url = ?, updated_at = NOW() WHERE id = ?', [avatarUrl, customerId]);
+
+    return res.status(200).json({
+      success: true,
+      message: 'Cập nhật ảnh đại diện thành công!',
+      avatar_url: avatarUrl
+    });
+  } catch (error) {
+    console.error('[UploadAvatar Error]:', error);
+    return res.status(500).json({
+      success: false,
+      message: error.message || 'Lỗi khi cập nhật ảnh đại diện!'
+    });
+  }
+}
+
 module.exports = {
   getProfile,
   updateProfile,
@@ -718,5 +778,6 @@ module.exports = {
   saveVoucher,
   redeemPoints,
   createTicket,
-  submitReview
+  submitReview,
+  uploadAvatar
 };

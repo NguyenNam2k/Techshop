@@ -257,6 +257,18 @@ export const api = {
     return res.data.data;
   },
 
+  async uploadAvatar(file) {
+    const formData = new FormData();
+    formData.append('avatar', file);
+    const res = await apiClient.post('/api/customer/profile/avatar', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
+    if (!res.data?.success) {
+      throw new Error(res.data?.message || 'Không thể tải lên ảnh đại diện');
+    }
+    return res.data;
+  },
+
   async updateProfile(data) {
     const res = await apiClient.put('/api/customer/profile', data);
     if (!res.data?.success) {

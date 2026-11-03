@@ -2,15 +2,23 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 
-// Ensure destination directory exists in public/uploads/products
+// Ensure destination directory exists in public/uploads/products and public/uploads/avatars
 const uploadDir = path.join(__dirname, '..', '..', 'public', 'uploads', 'products');
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
 
+const avatarDir = path.join(__dirname, '..', '..', 'public', 'uploads', 'avatars');
+if (!fs.existsSync(avatarDir)) {
+  fs.mkdirSync(avatarDir, { recursive: true });
+}
+
 // Storage configuration
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
+    if (file.fieldname === 'avatar') {
+      return cb(null, avatarDir);
+    }
     cb(null, uploadDir);
   },
   filename: (req, file, cb) => {
@@ -19,7 +27,8 @@ const storage = multer.diskStorage({
       .toLowerCase()
       .replace(/[^a-z0-9]/g, '-');
     const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e6)}`;
-    cb(null, `prod-${cleanName}-${uniqueSuffix}${ext}`);
+    const prefix = file.fieldname === 'avatar' ? 'avatar' : 'prod';
+    cb(null, `${prefix}-${cleanName}-${uniqueSuffix}${ext}`);
   }
 });
 

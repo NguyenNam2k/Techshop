@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Link, useSearchParams, useNavigate, useParams } from 'react-router-dom';
 import {
   Package,
@@ -42,7 +42,8 @@ import {
   CreditCard,
   Share2,
   ShoppingCart,
-  Mail
+  Mail,
+  Camera
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useCart } from '../../context/CartContext';
@@ -345,9 +346,8 @@ function Pill({ tone = 'slate', children }) {
   };
   return (
     <span
-      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-bold whitespace-nowrap border ${
-        tones[tone] || tones.slate
-      }`}
+      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-bold whitespace-nowrap border ${tones[tone] || tones.slate
+        }`}
     >
       {children}
     </span>
@@ -782,11 +782,10 @@ function PaymentMethodsPanel() {
         {methods.map((m) => (
           <div
             key={m.id}
-            className={`rounded-2xl border p-5 flex flex-col justify-between h-48 transition shadow-xl ${
-              m.isDefault
-                ? 'bg-gradient-to-br from-slate-900 to-sky-950/60 border-sky-500 ring-1 ring-sky-500/30'
-                : 'bg-slate-900 border-slate-800 hover:border-slate-700'
-            }`}
+            className={`rounded-2xl border p-5 flex flex-col justify-between h-48 transition shadow-xl ${m.isDefault
+              ? 'bg-gradient-to-br from-slate-900 to-sky-950/60 border-sky-500 ring-1 ring-sky-500/30'
+              : 'bg-slate-900 border-slate-800 hover:border-slate-700'
+              }`}
           >
             <div className="space-y-2">
               <div className="flex items-center justify-between">
@@ -868,11 +867,10 @@ function PaymentMethodsPanel() {
                     key={t.id}
                     type="button"
                     onClick={() => setNewMethod((p) => ({ ...p, type: t.id }))}
-                    className={`flex-1 py-2 rounded-xl text-xs font-semibold border transition cursor-pointer ${
-                      newMethod.type === t.id
-                        ? 'bg-sky-600/20 border-sky-500 text-sky-400'
-                        : 'bg-slate-950 border-slate-800 text-slate-400'
-                    }`}
+                    className={`flex-1 py-2 rounded-xl text-xs font-semibold border transition cursor-pointer ${newMethod.type === t.id
+                      ? 'bg-sky-600/20 border-sky-500 text-sky-400'
+                      : 'bg-slate-950 border-slate-800 text-slate-400'
+                      }`}
                   >
                     {t.label}
                   </button>
@@ -1077,11 +1075,10 @@ function RewardsPanel() {
                   type="button"
                   disabled={!canAfford}
                   onClick={() => handleRedeem(r.cost, r.title)}
-                  className={`px-3.5 py-2 rounded-xl text-xs font-bold transition shrink-0 cursor-pointer ${
-                    canAfford
-                      ? 'bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-md shadow-amber-500/20'
-                      : 'bg-slate-800 text-slate-500 cursor-not-allowed opacity-60'
-                  }`}
+                  className={`px-3.5 py-2 rounded-xl text-xs font-bold transition shrink-0 cursor-pointer ${canAfford
+                    ? 'bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-md shadow-amber-500/20'
+                    : 'bg-slate-800 text-slate-500 cursor-not-allowed opacity-60'
+                    }`}
                 >
                   Đổi ngay
                 </button>
@@ -1357,7 +1354,7 @@ function ProfilePanel({ user, setUser }) {
     email: user?.email || '',
     phone: user?.phone || '',
     address: user?.address || '',
-    avatar_url: user?.avatar || DEFAULT_AVATAR,
+    avatar_url: user?.avatar || user?.avatar_url || DEFAULT_AVATAR,
     birth_date: '',
     gender: 'male',
     bio: '',
@@ -1384,6 +1381,40 @@ function ProfilePanel({ user, setUser }) {
   const [flashMsg, setFlashMsg] = useState('');
   const [showAddAddressModal, setShowAddAddressModal] = useState(false);
   const [editingAddressId, setEditingAddressId] = useState(null);
+  const fileInputRef = useRef(null);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+
+  const handleAvatarFileChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      flash('Vui lòng chỉ chọn tệp hình ảnh!');
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      flash('Kích thước ảnh tối đa là 5MB!');
+      return;
+    }
+
+    try {
+      setUploadingAvatar(true);
+      const res = await api.uploadAvatar(file);
+      if (res.success && res.avatar_url) {
+        setProfile((prev) => ({ ...prev, avatar_url: res.avatar_url }));
+        if (typeof setUser === 'function') {
+          setUser((prev) => (prev ? { ...prev, avatar: res.avatar_url, avatar_url: res.avatar_url } : prev));
+        }
+        flash('Cập nhật ảnh đại diện thành công!');
+      }
+    } catch (err) {
+      flash(err.message || 'Lỗi tải ảnh đại diện lên máy chủ!');
+    } finally {
+      setUploadingAvatar(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
 
   const [newAddr, setNewAddr] = useState({
     title: 'Nhà riêng',
@@ -1436,6 +1467,10 @@ function ProfilePanel({ user, setUser }) {
             savedAddresses: data.savedAddresses || []
           }));
           setTwoFactorEnabled(Boolean(data.two_factor_enabled));
+          if (typeof setUser === 'function' && (data.avatar_url || data.avatar)) {
+            const av = data.avatar_url || data.avatar;
+            setUser((prev) => (prev ? { ...prev, avatar: av, avatar_url: av } : prev));
+          }
         }
       } catch (e) {
         console.warn('Could not load profile from BE:', e);
@@ -1445,7 +1480,7 @@ function ProfilePanel({ user, setUser }) {
     return () => {
       active = false;
     };
-  }, [user?.id, user?.name, user?.email]);
+  }, [user?.id, user?.name, user?.email, setUser]);
 
   const handleSaveProfile = async (e) => {
     e.preventDefault();
@@ -1465,6 +1500,7 @@ function ProfilePanel({ user, setUser }) {
           phone: profile.phone,
           address: profile.address,
           avatar: profile.avatar_url,
+          avatar_url: profile.avatar_url,
           role: 'customer'
         }));
       }
@@ -1640,13 +1676,37 @@ function ProfilePanel({ user, setUser }) {
       <div className="rounded-2xl border border-slate-800 bg-gradient-to-r from-slate-900 via-slate-900/90 to-sky-950/40 p-6 shadow-2xl relative overflow-hidden">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-5 relative z-10">
           <div className="flex items-center gap-4">
-            <div className="relative shrink-0">
+            <div className="relative shrink-0 group">
               <img
                 src={profile.avatar_url || DEFAULT_AVATAR}
                 alt={profile.name}
-                className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl object-cover border-2 border-sky-500/40 shadow-lg"
+                className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl object-cover border-2 border-sky-500/40 shadow-lg transition-transform group-hover:scale-102"
               />
-              <span className="absolute bottom-0 right-0 w-4 h-4 rounded-full bg-emerald-500 border-2 border-slate-900" />
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploadingAvatar}
+                className="absolute inset-0 bg-slate-950/65 rounded-2xl flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200 cursor-pointer text-white backdrop-blur-[2px]"
+                title="Thay đổi ảnh đại diện"
+              >
+                {uploadingAvatar ? (
+                  <Loader2 className="w-5 h-5 animate-spin text-sky-400" />
+                ) : (
+                  <>
+                    <Camera className="w-5 h-5 text-sky-300 drop-shadow" />
+                    <span className="text-[10px] font-semibold mt-1 text-sky-100">Đổi ảnh</span>
+                  </>
+                )}
+              </button>
+
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleAvatarFileChange}
+              />
+              <span className="absolute bottom-0 right-0 w-4 h-4 rounded-full bg-emerald-500 border-2 border-slate-900 shadow-sm" />
             </div>
 
             <div className="space-y-1">
@@ -1710,11 +1770,10 @@ function ProfilePanel({ user, setUser }) {
               key={tab.id}
               type="button"
               onClick={() => setActiveSubTab(tab.id)}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition whitespace-nowrap cursor-pointer ${
-                isActive
-                  ? 'bg-sky-600 text-white shadow-md shadow-sky-600/20'
-                  : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
-              }`}
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition whitespace-nowrap cursor-pointer ${isActive
+                ? 'bg-sky-600 text-white shadow-md shadow-sky-600/20'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+                }`}
             >
               <Icon className="w-3.5 h-3.5 shrink-0" />
               <span>{tab.label}</span>
@@ -1903,11 +1962,10 @@ function ProfilePanel({ user, setUser }) {
                           key={g.id}
                           type="button"
                           onClick={() => setProfile((p) => ({ ...p, gender: g.id }))}
-                          className={`flex-1 py-2 rounded-xl text-xs font-semibold border transition cursor-pointer ${
-                            profile.gender === g.id
-                              ? 'bg-sky-600/20 border-sky-500 text-sky-400 shadow-sm'
-                              : 'bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-700'
-                          }`}
+                          className={`flex-1 py-2 rounded-xl text-xs font-semibold border transition cursor-pointer ${profile.gender === g.id
+                            ? 'bg-sky-600/20 border-sky-500 text-sky-400 shadow-sm'
+                            : 'bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-700'
+                            }`}
                         >
                           {g.label}
                         </button>
@@ -1947,100 +2005,99 @@ function ProfilePanel({ user, setUser }) {
               )}
             </div>
 
-          {/* Right Card: Saved Address Book */}
-          <div className="lg:col-span-5 rounded-2xl border border-slate-800 bg-slate-900 p-6 space-y-4 shadow-xl">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-200 flex items-center gap-2">
-                <MapPin className="w-4 h-4 text-emerald-400" />
-                <span>Sổ địa chỉ nhận hàng</span>
-              </h3>
-              <button
-                type="button"
-                onClick={handleOpenAddAddress}
-                className="flex items-center gap-1 text-xs font-bold text-sky-400 hover:text-sky-300 transition cursor-pointer"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                <span>Thêm mới</span>
-              </button>
-            </div>
+            {/* Right Card: Saved Address Book */}
+            <div className="lg:col-span-5 rounded-2xl border border-slate-800 bg-slate-900 p-6 space-y-4 shadow-xl">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-200 flex items-center gap-2">
+                  <MapPin className="w-4 h-4 text-emerald-400" />
+                  <span>Sổ địa chỉ nhận hàng</span>
+                </h3>
+                <button
+                  type="button"
+                  onClick={handleOpenAddAddress}
+                  className="flex items-center gap-1 text-xs font-bold text-sky-400 hover:text-sky-300 transition cursor-pointer"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Thêm mới</span>
+                </button>
+              </div>
 
-            <div className="space-y-3">
-              {profile.savedAddresses && profile.savedAddresses.length > 0 ? (
-                profile.savedAddresses.map((addr) => (
-                  <div
-                    key={addr.id}
-                    className={`p-3.5 rounded-xl border transition ${
-                      addr.isDefault
+              <div className="space-y-3">
+                {profile.savedAddresses && profile.savedAddresses.length > 0 ? (
+                  profile.savedAddresses.map((addr) => (
+                    <div
+                      key={addr.id}
+                      className={`p-3.5 rounded-xl border transition ${addr.isDefault
                         ? 'bg-slate-950/80 border-sky-500/50 shadow-sm shadow-sky-500/10'
                         : 'bg-slate-950/50 border-slate-800 hover:border-slate-700'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-bold text-white">{addr.title}</span>
-                        {addr.isDefault && (
-                          <span className="px-1.5 py-0.5 rounded text-[9px] font-extrabold uppercase bg-sky-500/20 text-sky-400 border border-sky-500/40">
-                            Mặc định
-                          </span>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={() => handleOpenEditAddress(addr)}
-                          className="text-[10px] text-sky-400 hover:text-sky-300 font-medium transition cursor-pointer flex items-center gap-1"
-                          title="Sửa địa chỉ này"
-                        >
-                          <Edit3 className="w-3 h-3" />
-                          <span>Sửa</span>
-                        </button>
-                        {!addr.isDefault && (
+                        }`}
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-bold text-white">{addr.title}</span>
+                          {addr.isDefault && (
+                            <span className="px-1.5 py-0.5 rounded text-[9px] font-extrabold uppercase bg-sky-500/20 text-sky-400 border border-sky-500/40">
+                              Mặc định
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2">
                           <button
                             type="button"
-                            onClick={() => handleSetDefaultAddress(addr.id)}
-                            className="text-[10px] text-slate-400 hover:text-sky-400 transition cursor-pointer"
+                            onClick={() => handleOpenEditAddress(addr)}
+                            className="text-[10px] text-sky-400 hover:text-sky-300 font-medium transition cursor-pointer flex items-center gap-1"
+                            title="Sửa địa chỉ này"
                           >
-                            Đặt mặc định
+                            <Edit3 className="w-3 h-3" />
+                            <span>Sửa</span>
                           </button>
-                        )}
-                        {profile.savedAddresses.length > 1 && (
-                          <button
-                            type="button"
-                            onClick={() => handleDeleteAddress(addr.id)}
-                            className="p-1 text-slate-500 hover:text-rose-400 transition cursor-pointer"
-                            title="Xóa địa chỉ"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        )}
+                          {!addr.isDefault && (
+                            <button
+                              type="button"
+                              onClick={() => handleSetDefaultAddress(addr.id)}
+                              className="text-[10px] text-slate-400 hover:text-sky-400 transition cursor-pointer"
+                            >
+                              Đặt mặc định
+                            </button>
+                          )}
+                          {profile.savedAddresses.length > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteAddress(addr.id)}
+                              className="p-1 text-slate-500 hover:text-rose-400 transition cursor-pointer"
+                              title="Xóa địa chỉ"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </div>
                       </div>
-                    </div>
 
-                    <div className="text-xs text-slate-300 mt-1.5 font-medium">
-                      {addr.recipientName} · <span className="font-mono text-slate-400">{addr.phone}</span>
+                      <div className="text-xs text-slate-300 mt-1.5 font-medium">
+                        {addr.recipientName} · <span className="font-mono text-slate-400">{addr.phone}</span>
+                      </div>
+                      <div className="text-[11px] text-slate-400 mt-1 leading-relaxed">{addr.address}</div>
                     </div>
-                    <div className="text-[11px] text-slate-400 mt-1 leading-relaxed">{addr.address}</div>
+                  ))
+                ) : (
+                  <div className="p-6 text-center rounded-xl bg-slate-950/40 border border-dashed border-slate-800 text-slate-400 space-y-2">
+                    <MapPin className="w-8 h-8 text-slate-600 mx-auto" />
+                    <p className="text-xs font-medium">Bạn chưa lưu địa chỉ giao hàng nào.</p>
+                    <button
+                      type="button"
+                      onClick={handleOpenAddAddress}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-sky-600/20 hover:bg-sky-600/30 text-sky-400 text-xs font-semibold border border-sky-500/30 transition cursor-pointer"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>Thêm địa chỉ ngay</span>
+                    </button>
                   </div>
-                ))
-              ) : (
-                <div className="p-6 text-center rounded-xl bg-slate-950/40 border border-dashed border-slate-800 text-slate-400 space-y-2">
-                  <MapPin className="w-8 h-8 text-slate-600 mx-auto" />
-                  <p className="text-xs font-medium">Bạn chưa lưu địa chỉ giao hàng nào.</p>
-                  <button
-                    type="button"
-                    onClick={handleOpenAddAddress}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-sky-600/20 hover:bg-sky-600/30 text-sky-400 text-xs font-semibold border border-sky-500/30 transition cursor-pointer"
-                  >
-                    <Plus className="w-3.5 h-3.5" />
-                    <span>Thêm địa chỉ ngay</span>
-                  </button>
-                </div>
-              )}
+                )}
+              </div>
             </div>
           </div>
         </div>
-      </div>
-    )}
+      )}
 
       {/* Sub-tab 2: Password & Two-Factor Authentication */}
       {activeSubTab === 'security' && (
@@ -2129,9 +2186,8 @@ function ProfilePanel({ user, setUser }) {
                     {[1, 2, 3, 4].map((step) => (
                       <div
                         key={step}
-                        className={`rounded-full transition-all ${
-                          step <= pwdStrength.score ? pwdStrength.color : 'bg-slate-800'
-                        }`}
+                        className={`rounded-full transition-all ${step <= pwdStrength.score ? pwdStrength.color : 'bg-slate-800'
+                          }`}
                       />
                     ))}
                   </div>
@@ -2245,9 +2301,8 @@ function ProfilePanel({ user, setUser }) {
                     <div className="text-[11px] text-slate-400 mt-0.5 leading-relaxed">{item.desc}</div>
                   </div>
                   <div
-                    className={`w-11 h-6 flex items-center rounded-full p-1 transition shrink-0 ${
-                      isChecked ? 'bg-sky-600 justify-end' : 'bg-slate-800 justify-start'
-                    }`}
+                    className={`w-11 h-6 flex items-center rounded-full p-1 transition shrink-0 ${isChecked ? 'bg-sky-600 justify-end' : 'bg-slate-800 justify-start'
+                      }`}
                   >
                     <div className="w-4 h-4 rounded-full bg-white shadow-md transition" />
                   </div>
@@ -2290,11 +2345,10 @@ function ProfilePanel({ user, setUser }) {
                     key={t}
                     type="button"
                     onClick={() => setNewAddr((prev) => ({ ...prev, title: t }))}
-                    className={`flex-1 py-1.5 rounded-lg text-xs font-semibold border transition cursor-pointer ${
-                      newAddr.title === t
-                        ? 'bg-sky-600/20 border-sky-500 text-sky-400'
-                        : 'bg-slate-950 border-slate-800 text-slate-400'
-                    }`}
+                    className={`flex-1 py-1.5 rounded-lg text-xs font-semibold border transition cursor-pointer ${newAddr.title === t
+                      ? 'bg-sky-600/20 border-sky-500 text-sky-400'
+                      : 'bg-slate-950 border-slate-800 text-slate-400'
+                      }`}
                   >
                     {t}
                   </button>
@@ -2533,11 +2587,10 @@ function ReviewsPanel({ orders }) {
                             aria-label={`${star} sao`}
                           >
                             <Star
-                              className={`w-4 h-4 ${
-                                star <= currentRating
-                                  ? 'fill-amber-400 text-amber-400'
-                                  : 'text-slate-600'
-                              }`}
+                              className={`w-4 h-4 ${star <= currentRating
+                                ? 'fill-amber-400 text-amber-400'
+                                : 'text-slate-600'
+                                }`}
                             />
                           </button>
                         ))}
@@ -2749,11 +2802,10 @@ function ChatPanel() {
               className={`flex ${m.sender === 'user' ? 'justify-end' : 'justify-start'}`}
             >
               <div
-                className={`max-w-md rounded-2xl p-3.5 text-xs leading-relaxed ${
-                  m.sender === 'user'
-                    ? 'bg-sky-600 text-white rounded-br-none shadow-md shadow-sky-600/20'
-                    : 'bg-slate-950 border border-slate-800 text-slate-200 rounded-bl-none shadow-inner'
-                }`}
+                className={`max-w-md rounded-2xl p-3.5 text-xs leading-relaxed ${m.sender === 'user'
+                  ? 'bg-sky-600 text-white rounded-br-none shadow-md shadow-sky-600/20'
+                  : 'bg-slate-950 border border-slate-800 text-slate-200 rounded-bl-none shadow-inner'
+                  }`}
               >
                 {m.text}
               </div>
@@ -2827,6 +2879,32 @@ export default function OrdersPage() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tabParam, activeTab, navigate]);
+
+  // Tự động đồng bộ thông tin hồ sơ mới nhất (avatar, họ tên...) từ database
+  useEffect(() => {
+    let active = true;
+    if (user?.id && typeof setUser === 'function') {
+      api.getProfile(user.id)
+        .then((data) => {
+          if (active && data) {
+            setUser((prev) => {
+              if (!prev) return prev;
+              const av = data.avatar_url || data.avatar || prev.avatar || prev.avatar_url;
+              return {
+                ...prev,
+                name: data.name || prev.name,
+                avatar: av,
+                avatar_url: av
+              };
+            });
+          }
+        })
+        .catch(() => {});
+    }
+    return () => {
+      active = false;
+    };
+  }, [user?.id, setUser]);
 
   const fetchOrders = useCallback(async (opts) => {
     const silent = opts?.silent === true;
@@ -2945,16 +3023,19 @@ export default function OrdersPage() {
             <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 shadow-lg">
               <div className="flex items-center gap-3.5 pb-4 mb-3 border-b border-slate-800">
                 <img
-                  src={user?.avatar || DEFAULT_AVATAR}
-                  alt={user?.name || 'Đặng Minh Thuận'}
+                  src={user?.avatar || user?.avatar_url || DEFAULT_AVATAR}
+                  alt={user?.name || 'Khách hàng'}
                   className="w-12 h-12 rounded-xl object-cover border border-slate-700 shadow-sm shrink-0"
+                  onError={(e) => {
+                    e.currentTarget.src = DEFAULT_AVATAR;
+                  }}
                 />
                 <div className="min-w-0">
                   <div className="text-sm font-bold text-white truncate">
-                    {user?.name || 'Đặng Minh Thuận'}
+                    {user?.name || 'Khách hàng'}
                   </div>
-                  <div className="text-xs font-semibold text-sky-400 mt-0.5 truncate">
-                    {user?.role || 'Thành viên VIP Diamond'}
+                  <div className="text-xs font-semibold text-sky-400 mt-0.5 truncate capitalize">
+                    {user?.role || 'Khách hàng'}
                   </div>
                 </div>
               </div>
@@ -2973,11 +3054,10 @@ export default function OrdersPage() {
                           key={item.id}
                           type="button"
                           onClick={() => setActiveTab(item.id)}
-                          className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition cursor-pointer ${
-                            isActive
-                              ? 'bg-sky-600 text-white shadow-md shadow-sky-600/20'
-                              : 'text-slate-300 hover:text-white hover:bg-slate-800/80'
-                          }`}
+                          className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition cursor-pointer ${isActive
+                            ? 'bg-sky-600 text-white shadow-md shadow-sky-600/20'
+                            : 'text-slate-300 hover:text-white hover:bg-slate-800/80'
+                            }`}
                         >
                           <Icon className="w-4 h-4 shrink-0" />
                           <span>{item.label}</span>
@@ -3062,11 +3142,10 @@ export default function OrdersPage() {
                         return (
                           <div
                             key={order.orderId}
-                            className={`rounded-2xl border transition-all overflow-hidden ${
-                              isOpen
-                                ? 'bg-slate-900 border-sky-500 shadow-xl shadow-sky-500/10 ring-1 ring-sky-500/30'
-                                : 'bg-slate-900/90 border-slate-800 hover:border-slate-700'
-                            }`}
+                            className={`rounded-2xl border transition-all overflow-hidden ${isOpen
+                              ? 'bg-slate-900 border-sky-500 shadow-xl shadow-sky-500/10 ring-1 ring-sky-500/30'
+                              : 'bg-slate-900/90 border-slate-800 hover:border-slate-700'
+                              }`}
                           >
                             <button
                               type="button"
@@ -3091,9 +3170,8 @@ export default function OrdersPage() {
                                       {order.orderId}
                                     </span>
                                     <span
-                                      className={`px-2 py-0.5 rounded-md text-[10px] font-bold border ${
-                                        PHASE_BADGES[phase] || 'bg-slate-800 text-slate-300'
-                                      }`}
+                                      className={`px-2 py-0.5 rounded-md text-[10px] font-bold border ${PHASE_BADGES[phase] || 'bg-slate-800 text-slate-300'
+                                        }`}
                                     >
                                       {order.statusLabel || ORDER_PHASES[phase]?.title}
                                     </span>
@@ -3121,9 +3199,8 @@ export default function OrdersPage() {
                                   </span>
                                 </div>
                                 <div
-                                  className={`p-1 rounded-lg transition-transform ${
-                                    isOpen ? 'rotate-180 text-sky-400' : 'text-slate-500'
-                                  }`}
+                                  className={`p-1 rounded-lg transition-transform ${isOpen ? 'rotate-180 text-sky-400' : 'text-slate-500'
+                                    }`}
                                 >
                                   <ChevronDown className="w-4 h-4" />
                                 </div>
@@ -3141,13 +3218,12 @@ export default function OrdersPage() {
                                     return (
                                       <li key={step.title} className="relative">
                                         <span
-                                          className={`absolute -left-[37px] top-0 w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold transition-all ${
-                                            done
-                                              ? 'bg-sky-500 text-slate-950 shadow-md shadow-sky-500/30'
-                                              : isCurrent
+                                          className={`absolute -left-[37px] top-0 w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold transition-all ${done
+                                            ? 'bg-sky-500 text-slate-950 shadow-md shadow-sky-500/30'
+                                            : isCurrent
                                               ? 'bg-slate-900 border-2 border-sky-400 text-sky-400 ring-4 ring-sky-500/20'
                                               : 'bg-slate-800 text-slate-500 border border-slate-700'
-                                          }`}
+                                            }`}
                                         >
                                           {done ? (
                                             <Check className="w-3.5 h-3.5 stroke-[3]" />
@@ -3159,9 +3235,8 @@ export default function OrdersPage() {
                                         <div className="space-y-1">
                                           <div className="flex items-center gap-2">
                                             <span
-                                              className={`text-xs font-bold ${
-                                                done || isCurrent ? 'text-white' : 'text-slate-500'
-                                              }`}
+                                              className={`text-xs font-bold ${done || isCurrent ? 'text-white' : 'text-slate-500'
+                                                }`}
                                             >
                                               {step.title}
                                             </span>

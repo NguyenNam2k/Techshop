@@ -41,6 +41,11 @@ export function AuthProvider({ children }) {
       if (!roleLower || roleLower.includes('vip') || roleLower.includes('diamond')) {
         normalizedUser.role = 'customer';
       }
+      if (normalizedUser.avatar || normalizedUser.avatar_url) {
+        const av = normalizedUser.avatar || normalizedUser.avatar_url;
+        normalizedUser.avatar = av;
+        normalizedUser.avatar_url = av;
+      }
       localStorage.setItem(USER_KEY, JSON.stringify(normalizedUser));
       localStorage.setItem(LEGACY_USER_KEY, JSON.stringify(normalizedUser));
       setUserState(normalizedUser);
@@ -67,6 +72,11 @@ export function AuthProvider({ children }) {
       const r = String(finalUser.role || '').toLowerCase();
       if (!r || r.includes('vip') || r.includes('diamond')) {
         finalUser.role = 'customer';
+      }
+      if (finalUser.avatar || finalUser.avatar_url) {
+        const av = finalUser.avatar || finalUser.avatar_url;
+        finalUser.avatar = av;
+        finalUser.avatar_url = av;
       }
       try {
         localStorage.setItem(USER_KEY, JSON.stringify(finalUser));

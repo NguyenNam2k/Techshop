@@ -472,7 +472,24 @@ export default function Header() {
                 className="flex items-center gap-2 p-1 pr-2.5 rounded-full bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-sky-500/60 transition cursor-pointer shadow-sm"
               >
                 <div className="relative">
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-sky-500 to-blue-600 flex items-center justify-center text-white font-black text-xs border border-sky-400/30">
+                  {user.avatar || user.avatar_url ? (
+                    <img
+                      src={user.avatar || user.avatar_url}
+                      alt={user.name || 'Avatar'}
+                      className="w-8 h-8 rounded-full object-cover border border-sky-400/30"
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none';
+                        if (e.currentTarget.nextElementSibling) {
+                          e.currentTarget.nextElementSibling.style.display = 'flex';
+                        }
+                      }}
+                    />
+                  ) : null}
+                  <div
+                    className={`w-8 h-8 rounded-full bg-gradient-to-tr from-sky-500 to-blue-600 items-center justify-center text-white font-black text-xs border border-sky-400/30 ${
+                      user.avatar || user.avatar_url ? 'hidden' : 'flex'
+                    }`}
+                  >
                     {(user.name || user.email || 'U')[0].toUpperCase()}
                   </div>
                   <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border-2 border-slate-900 bg-emerald-400" />
@@ -488,7 +505,24 @@ export default function Header() {
                 <div className="bg-slate-900 rounded-2xl shadow-2xl border border-slate-800 overflow-hidden">
                   {/* User Info Header */}
                   <div className="p-4 bg-slate-950/80 border-b border-slate-800 flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-sky-500 to-indigo-600 flex items-center justify-center text-white font-extrabold text-sm shrink-0 shadow-md">
+                    {user.avatar || user.avatar_url ? (
+                      <img
+                        src={user.avatar || user.avatar_url}
+                        alt={user.name || 'Avatar'}
+                        className="w-10 h-10 rounded-full object-cover border border-sky-400/30 shrink-0 shadow-md"
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                          if (e.currentTarget.nextElementSibling) {
+                            e.currentTarget.nextElementSibling.style.display = 'flex';
+                          }
+                        }}
+                      />
+                    ) : null}
+                    <div
+                      className={`w-10 h-10 rounded-full bg-gradient-to-tr from-sky-500 to-indigo-600 items-center justify-center text-white font-extrabold text-sm shrink-0 shadow-md ${
+                        user.avatar || user.avatar_url ? 'hidden' : 'flex'
+                      }`}
+                    >
                       {(user.name || user.email || 'U')[0].toUpperCase()}
                     </div>
                     <div className="min-w-0">

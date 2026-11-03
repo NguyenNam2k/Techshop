@@ -16,6 +16,7 @@ const VIETQR_CONFIG = {
       : 'CONG TY TNHH TECHSHOP VIET NAM',
   template: process.env.VIETQR_TEMPLATE || 'compact2'
 };
+const VIETQR_PAYMENT_TIMEOUT_MINUTES = 15;
 
 function httpError(message, statusCode = 400) {
   const error = new Error(message);
@@ -63,6 +64,7 @@ async function getOrdersTableMeta(connection) {
     hasDeliveryMethod: colMap.has('delivery_method'),
     hasDistanceKm: colMap.has('shipping_distance_km'),
     hasStoreName: colMap.has('delivery_store_name'),
+    hasPaymentExpiresAt: colMap.has('payment_expires_at'),
     customerIdNullable: colMap.get('customer_id')?.Null === 'YES'
   };
   return ordersColumnsCache;
@@ -243,6 +245,10 @@ async function createOrder({
     const orderCode = `ORD-${Date.now()}-${Math.floor(1000 + Math.random() * 9000)}`;
     const initialPaymentStatus = 'unpaid';
     const initialOrderStatus = 'pending';
+    const paymentExpiresAt =
+      paymentMethod === 'vietqr_banking'
+        ? new Date(Date.now() + VIETQR_PAYMENT_TIMEOUT_MINUTES * 60 * 1000)
+        : null;
 
     const tableMeta = await getOrdersTableMeta(connection);
     let resolvedCustomerId = owner?.column === 'customer_id' ? owner.id : null;
@@ -303,6 +309,12 @@ async function createOrder({
     if (tableMeta.hasStoreName) {
       insertCols.push('delivery_store_name');
       insertVals.push(shippingQuote.nearestStore.name);
+    }
+    if (tableMeta.hasPaymentExpiresAt) {
+      insertCols.push('payment_expires_at');
+      insertVals.push(
+        paymentExpiresAt
+      );
     }
 
     const placeholders = insertCols.map(() => '?').join(', ');
@@ -392,7 +404,8 @@ async function createOrder({
       awaitingPayment: isAwaitingPayment({
         shipping_status: initialOrderStatus,
         payment_method: paymentMethod,
-        payment_status: initialPaymentStatus
+        payment_status: initialPaymentStatus,
+        payment_expires_at: paymentExpiresAt
       }),
       phase: phaseForOrder({
         shipping_status: initialOrderStatus,
@@ -417,7 +430,8 @@ async function createOrder({
         paymentMethod === 'vietqr_banking'
           ? generateVietQRUrl({ amount: finalAmount, orderCode })
           : null,
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString(),
+      paymentExpiresAt: paymentExpiresAt?.toISOString() || null
     };
   } catch (error) {
     if (transactionStarted) await connection.rollback();
@@ -428,6 +442,7 @@ async function createOrder({
 }
 
 async function getOrderByCode(orderCode) {
+  await expireUnpaidOrderIfNeeded(orderCode);
   const connection = await pool.getConnection();
   try {
     const [orderRows] = await connection.query(
@@ -454,6 +469,9 @@ async function getOrderByCode(orderCode) {
       paymentMethod,
       paymentMethodCode: order.payment_method,
       paymentStatus: order.payment_status,
+      paymentExpiresAt: order.payment_expires_at
+        ? new Date(order.payment_expires_at).toISOString()
+        : null,
       awaitingPayment: isAwaitingPayment(order),
       orderStatus: order.shipping_status,
       shippingStatus: order.shipping_status,
@@ -503,8 +521,49 @@ function isAwaitingPayment(order) {
   return (
     order.payment_method === 'vietqr_banking' &&
     order.payment_status !== 'paid' &&
-    order.shipping_status === 'pending'
+    order.shipping_status === 'pending' &&
+    order.payment_expires_at && new Date(order.payment_expires_at).getTime() > Date.now()
   );
+}
+
+async function expireUnpaidOrderIfNeeded(orderCode) {
+  const cleanCode = String(orderCode || '').trim();
+  if (!cleanCode) return false;
+  const [rows] = await pool.query(
+    `SELECT payment_status, shipping_status, payment_expires_at
+     FROM orders
+     WHERE order_code = ? AND payment_method = 'vietqr_banking'
+     LIMIT 1`,
+    [cleanCode]
+  );
+  const order = rows[0];
+  if (
+    !order ||
+    order.payment_status === 'paid' ||
+    order.shipping_status !== 'pending' ||
+    !order.payment_expires_at ||
+    new Date(order.payment_expires_at).getTime() > Date.now()
+  ) {
+    return false;
+  }
+  const result = await cancelUnpaidOrder(cleanCode);
+  return result.success === true;
+}
+
+async function expirePendingVietqrOrders() {
+  const [rows] = await pool.query(
+    `SELECT order_code
+     FROM orders
+     WHERE payment_method = 'vietqr_banking'
+       AND payment_status = 'unpaid'
+       AND shipping_status = 'pending'
+       AND payment_expires_at IS NOT NULL
+       AND payment_expires_at <= NOW()`
+  );
+  for (const row of rows) {
+    await expireUnpaidOrderIfNeeded(row.order_code);
+  }
+  return rows.length;
 }
 
 function phaseForOrder(order) {
@@ -577,6 +636,9 @@ function mapCustomerOrder(order, items) {
     orderStatus: shippingStatus,
     statusLabel: statusLabelForOrder(order),
     paymentStatus: order.payment_status,
+    paymentExpiresAt: order.payment_expires_at
+      ? new Date(order.payment_expires_at).toISOString()
+      : null,
     paymentMethod: PAYMENT_METHOD_LABEL[order.payment_method] || order.payment_method,
     paymentMethodCode: order.payment_method,
     awaitingPayment: isAwaitingPayment(order),
@@ -669,21 +731,24 @@ async function getCustomerOrders(customerId) {
 async function requestOrderCancellation(customerId, orderCode, reason) {
   const cleanCode = String(orderCode || '').trim();
   const cleanReason = String(reason || '').trim();
-  if (!cleanCode) throw httpError('Mã đơn hàng không hợp lệ.');
+  if (!cleanCode) throw httpError('M? ??n h?ng kh?ng h?p l?.');
   if (cleanReason.length < 5 || cleanReason.length > 500) {
-    throw httpError('Lý do hủy đơn phải từ 5 đến 500 ký tự.');
+    throw httpError('L? do h?y ??n ph?i t? 5 ??n 500 k? t?.');
   }
 
   const connection = await pool.getConnection();
   try {
     await connection.beginTransaction();
     const [rows] = await connection.query(
-      `SELECT id, shipping_status, cancel_requested_at, cancel_request_reason
+      `SELECT id, customer_id, shipping_status, cancel_requested_at, cancel_request_reason
        FROM orders WHERE order_code = ? LIMIT 1 FOR UPDATE`,
       [cleanCode]
     );
-    if (!rows.length) throw httpError('Không tìm thấy đơn hàng.', 404);
+    if (!rows.length) throw httpError('Kh?ng t?m th?y ??n h?ng.', 404);
     const order = rows[0];
+    if (customerId && Number(order.customer_id) !== Number(customerId)) {
+      throw httpError('B?n kh?ng c? quy?n thao t?c ??n h?ng n?y.', 403);
+    }
     if (order.cancel_requested_at) {
       await connection.commit();
       return {
@@ -694,9 +759,8 @@ async function requestOrderCancellation(customerId, orderCode, reason) {
       };
     }
     if (!['pending', 'processing'].includes(order.shipping_status)) {
-      throw httpError('Đơn hàng này không thể hủy ở trạng thái hiện tại.', 409);
+      throw httpError('??n h?ng n?y kh?ng th? h?y ? tr?ng th?i hi?n t?i.', 409);
     }
-
     await connection.query(
       `UPDATE orders SET cancel_request_reason = ?, cancel_requested_at = NOW()
        WHERE id = ?`,
@@ -704,6 +768,119 @@ async function requestOrderCancellation(customerId, orderCode, reason) {
     );
     await connection.commit();
     return { orderCode: cleanCode, reason: cleanReason, alreadyRequested: false };
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
+  }
+}
+
+async function updateOrderStatus(orderCode, shippingStatus) {
+  const allowedStatuses = ['pending', 'processing', 'shipping', 'delivered', 'cancelled'];
+  if (!allowedStatuses.includes(shippingStatus)) {
+    throw httpError('Trạng thái giao hàng không hợp lệ.');
+  }
+  const [result] = await pool.query(
+    'UPDATE orders SET shipping_status = ?, updated_at = NOW() WHERE order_code = ?',
+    [shippingStatus, String(orderCode || '').trim()]
+  );
+  if (result.affectedRows !== 1) throw httpError('Không tìm thấy đơn hàng.', 404);
+  return { orderCode, shippingStatus };
+}
+
+async function requestReturn(customerId, orderCode, reason) {
+  const cleanReason = String(reason || '').trim();
+  if (cleanReason.length < 5 || cleanReason.length > 500) {
+    throw httpError('Lý do trả hàng phải từ 5 đến 500 ký tự.');
+  }
+  const connection = await pool.getConnection();
+  try {
+    await connection.beginTransaction();
+    const [orders] = await connection.query(
+      `SELECT id, customer_id, shipping_status, payment_method, updated_at
+       FROM orders WHERE order_code = ? LIMIT 1 FOR UPDATE`,
+      [String(orderCode || '').trim()]
+    );
+    const order = orders[0];
+    if (!order) throw httpError('Không tìm thấy đơn hàng.', 404);
+    if (customerId && Number(order.customer_id) !== Number(customerId)) {
+      throw httpError('Bạn không có quyền thao tác đơn hàng này.', 403);
+    }
+    if (order.shipping_status !== 'delivered') {
+      throw httpError('Chỉ được yêu cầu trả hàng sau khi đã giao thành công.', 409);
+    }
+    if (new Date(order.updated_at).getTime() < Date.now() - 7 * 24 * 60 * 60 * 1000) {
+      throw httpError('Đã quá thời hạn yêu cầu trả hàng 7 ngày.', 409);
+    }
+    const [recent] = await connection.query(
+      `SELECT id FROM return_requests
+       WHERE order_id = ? AND status IN ('pending', 'approved', 'refunded') LIMIT 1`,
+      [order.id]
+    );
+    if (recent.length) throw httpError('Đơn hàng đã có yêu cầu trả/hoàn tiền.', 409);
+    await connection.query(
+      `INSERT INTO return_requests (order_id, customer_id, reason, refund_method)
+       VALUES (?, ?, ?, ?)`,
+      [order.id, order.customer_id, cleanReason, order.payment_method === 'cod' ? 'manual_bank' : 'original_method']
+    );
+    await connection.commit();
+    return { success: true, message: 'Đã gửi yêu cầu trả hàng, chờ manager xét duyệt.' };
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
+  }
+}
+
+async function getReturnRequests() {
+  const [rows] = await pool.query(
+    `SELECT rr.*, o.order_code, o.payment_method, o.final_amount
+     FROM return_requests rr JOIN orders o ON o.id = rr.order_id
+     ORDER BY rr.created_at DESC`
+  );
+  return rows;
+}
+
+async function reviewReturnRequest(requestId, status, managerNote = '') {
+  if (!['approved', 'rejected'].includes(status)) throw httpError('Trạng thái xử lý không hợp lệ.');
+  const connection = await pool.getConnection();
+  try {
+    await connection.beginTransaction();
+    const [rows] = await connection.query(
+      'SELECT * FROM return_requests WHERE id = ? LIMIT 1 FOR UPDATE',
+      [Number(requestId)]
+    );
+    const request = rows[0];
+    if (!request) throw httpError('Không tìm thấy yêu cầu trả hàng.', 404);
+    if (request.status !== 'pending') throw httpError('Yêu cầu này đã được xử lý.', 409);
+    if (status === 'approved') {
+      const [items] = await connection.query(
+        'SELECT variant_id, quantity FROM order_items WHERE order_id = ?',
+        [request.order_id]
+      );
+      for (const item of items) {
+        if (item.variant_id) {
+          await connection.query(
+            `UPDATE product_variants SET stock = stock + ?, status = 'available', updated_at = NOW()
+             WHERE id = ?`,
+            [item.quantity, item.variant_id]
+          );
+        }
+      }
+      await connection.query(
+        `UPDATE orders SET payment_status = 'refunded', shipping_status = 'cancelled', updated_at = NOW()
+         WHERE id = ?`,
+        [request.order_id]
+      );
+    }
+    await connection.query(
+      'UPDATE return_requests SET status = ?, manager_note = ?, updated_at = NOW() WHERE id = ?',
+      [status, String(managerNote || '').trim() || null, request.id]
+    );
+    await connection.commit();
+    return { success: true, message: status === 'approved' ? 'Đã duyệt return và ghi nhận refund.' : 'Đã từ chối yêu cầu.' };
   } catch (error) {
     await connection.rollback();
     throw error;
@@ -770,10 +947,16 @@ async function cancelUnpaidOrder(orderCode) {
 module.exports = {
   cancelUnpaidOrder,
   createOrder,
+  expirePendingVietqrOrders,
+  expireUnpaidOrderIfNeeded,
+  requestOrderCancellation,
+  requestReturn,
+  updateOrderStatus,
+  getReturnRequests,
+  reviewReturnRequest,
   getOrderByCode,
   getCustomerOrders,
   getAllOrders,
-  requestOrderCancellation,
   phaseForOrder,
   statusLabelForOrder,
   generateVietQRUrl

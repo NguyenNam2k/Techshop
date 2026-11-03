@@ -62,7 +62,7 @@ export default function CartPage() {
               <span>/</span>
               <span className="text-slate-200 font-semibold">Giỏ hàng của bạn</span>
             </nav>
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-white flex items-center gap-3">
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-100 flex items-center gap-3">
               <ShoppingBag className="w-7 h-7 text-sky-400" />
               <span>Giỏ Hàng</span>
               <span className="text-sm font-bold px-3 py-1 rounded-full bg-sky-500/15 text-sky-400 border border-sky-500/30">

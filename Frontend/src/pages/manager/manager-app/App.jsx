@@ -16,6 +16,7 @@ import InventoryLogsView from './views/InventoryLogsView';
 import CouponsView from './views/CouponsView';
 import ReportsView from './views/ReportsView';
 import StaffsView from './views/StaffsView';
+import ReturnsView from './views/ReturnsView';
 
 export default function App({ user: propUser, onLogout: propLogout }) {
   // Resolve current user (từ AuthContext props hoặc localStorage fallback)
@@ -427,6 +428,7 @@ export default function App({ user: propUser, onLogout: propLogout }) {
           {activeView === 'staffs' && (
             <StaffsView onStaffUpdated={() => loadStaffs()} />
           )}
+          {activeView === 'returns' && <ReturnsView />}
         </div>
       </main>
 

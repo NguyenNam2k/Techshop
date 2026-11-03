@@ -346,7 +346,7 @@ const ProductDetailPage = () => {
         {/* Đánh giá & nhận xét từ khách hàng */}
         <ProductReviews productId={product.id} productName={product.name} />
 
-        {/* Sản phẩm cùng danh mục */}
+        {/* Sản phẩm cùng danh mục */}xu
         <SimilarProductsSlider
           id={product.id}
           currentProductId={product.id}

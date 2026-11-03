@@ -306,6 +306,7 @@ CREATE TABLE `orders` (
     `shipping_address` TEXT NOT NULL,
     `payment_method` ENUM('cod', 'vietqr_banking') NOT NULL DEFAULT 'cod',
     `payment_status` ENUM('unpaid', 'paid', 'refunded') NOT NULL DEFAULT 'unpaid',
+    `payment_expires_at` TIMESTAMP NULL DEFAULT NULL,
     `shipping_status` ENUM('pending', 'processing', 'shipping', 'delivered', 'cancelled') NOT NULL DEFAULT 'pending',
     `total_amount` DECIMAL(12, 2) NOT NULL DEFAULT 0.00,
     `shipping_fee` DECIMAL(12, 2) NOT NULL DEFAULT 0.00,
@@ -322,6 +323,7 @@ CREATE TABLE `orders` (
     INDEX `idx_orders_customer` (`customer_id`),
     INDEX `idx_orders_shipping_status` (`shipping_status`),
     INDEX `idx_orders_payment_status` (`payment_status`),
+    INDEX `idx_orders_payment_expires_at` (`payment_expires_at`),
     INDEX `idx_orders_created_at` (`created_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -345,6 +347,22 @@ CREATE TABLE `order_items` (
     CONSTRAINT `fk_order_items_variant` 
         FOREIGN KEY (`variant_id`) REFERENCES `product_variants` (`id`) 
         ON DELETE SET NULL ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE `return_requests` (
+    `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    `order_id` INT UNSIGNED NOT NULL,
+    `customer_id` INT UNSIGNED NOT NULL,
+    `reason` VARCHAR(500) NOT NULL,
+    `status` ENUM('pending', 'approved', 'rejected', 'refunded') NOT NULL DEFAULT 'pending',
+    `refund_method` VARCHAR(50) NULL,
+    `manager_note` VARCHAR(500) NULL,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    CONSTRAINT `fk_return_order` FOREIGN KEY (`order_id`) REFERENCES `orders` (`id`) ON DELETE CASCADE,
+    CONSTRAINT `fk_return_customer` FOREIGN KEY (`customer_id`) REFERENCES `customers` (`id`) ON DELETE RESTRICT,
+    INDEX `idx_return_order` (`order_id`),
+    INDEX `idx_return_status` (`status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ==============================================================================

@@ -71,7 +71,7 @@ export default function SuccessPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-slate-950/80 p-5 rounded-2xl border border-slate-800 text-sm">
             <div className="space-y-1.5">
               <span className="text-xs font-bold uppercase text-slate-500">Thông tin người nhận</span>
-              <p className="font-bold text-white">{order.recipientName}</p>
+              <p className="font-bold text-slate-100">{order.recipientName}</p>
               <p className="text-slate-300 font-mono text-xs">{order.recipientPhone}</p>
               <p className="text-slate-400 text-xs">{order.shippingAddress}</p>
             </div>
@@ -103,7 +103,7 @@ export default function SuccessPage() {
               {(order.items || []).map((item, idx) => (
                 <div key={idx} className="p-4 flex items-center justify-between gap-4 text-sm">
                   <div>
-                    <p className="font-bold text-white">{item.product_name || item.name}</p>
+                    <p className="font-bold text-slate-100">{item.product_name || item.name}</p>
                     <p className="text-xs text-slate-400">
                       Phiên bản:{' '}
                       {item.variant_name ||
@@ -122,7 +122,7 @@ export default function SuccessPage() {
           <div className="flex flex-col sm:flex-row gap-3 pt-2">
             <Link
               to="/profile/orders"
-              className="flex-1 py-3.5 px-5 rounded-xl bg-slate-800 border border-slate-700 hover:bg-slate-700 text-slate-200 font-bold text-center transition text-sm"
+              className="flex-1 py-3.5 px-5 rounded-xl bg-slate-800 border border-slate-700 hover:bg-slate-700 text-slate-100 font-bold text-center transition text-sm"
             >
               Xem Đơn Hàng Của Tôi →
             </Link>

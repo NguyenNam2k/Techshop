@@ -261,6 +261,23 @@ export const api = {
     }
   },
 
+  async requestOrderCancellation(orderCode, reason) {
+    const res = await apiClient.post(`/api/orders/${encodeURIComponent(orderCode)}/cancel-request`, { reason });
+    return res.data;
+  },
+
+  async requestReturn(orderCode, reason) {
+    const res = await apiClient.post(`/api/orders/${encodeURIComponent(orderCode)}/return-request`, { reason });
+    return res.data;
+  },
+
+  async updateOrderStatus(orderCode, shippingStatus) {
+    const res = await apiClient.patch(`/api/orders/${encodeURIComponent(orderCode)}/status`, {
+      shippingStatus
+    });
+    return res.data;
+  },
+
   async getOrder(orderCode) {
     const res = await apiClient.get(`/api/orders/${encodeURIComponent(orderCode)}`);
     return res.data;

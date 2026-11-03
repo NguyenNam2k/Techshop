@@ -172,14 +172,14 @@ const ProductReviews = ({ productId, productName = 'sản phẩm' }) => {
           </p>
         </div>
 
-        <button
+        {/* <button
           type="button"
           onClick={() => setShowForm(!showForm)}
           className="px-4 py-2.5 rounded-xl bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold transition flex items-center gap-2 shadow-lg shadow-sky-600/20 cursor-pointer"
         >
           <Sparkles className="w-4 h-4" />
           <span>{showForm ? 'Đóng khung đánh giá' : 'Viết đánh giá của bạn'}</span>
-        </button>
+        </button> */}
       </div>
 
       {/* Thông báo thành công */}

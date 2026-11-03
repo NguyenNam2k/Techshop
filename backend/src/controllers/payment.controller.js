@@ -1,4 +1,5 @@
 const pool = require('../config/database');
+const orderService = require('../services/order.service');
 
 const ORDER_CODE_REGEX = /ORD[\s-]*(\d{13})[\s-]*(\d{4})/i;
 
@@ -48,17 +49,31 @@ async function bankWebhook(req, res) {
     if (!order || order.payment_method !== 'vietqr_banking') {
       return res.status(200).json({ success: true, message: 'Order not found or not a VietQR order.' });
     }
-    if (order.payment_status === 'paid') {
+    if (order.payment_status === 'unpaid') {
+      await orderService.expireUnpaidOrderIfNeeded(orderCode);
+    }
+    const [activeRows] = await pool.query(
+      'SELECT id, final_amount, payment_status FROM orders WHERE order_code = ? LIMIT 1',
+      [orderCode]
+    );
+    const activeOrder = activeRows[0];
+    if (!activeOrder) {
+      return res.status(200).json({ success: true, message: 'Order expired or no longer available.' });
+    }
+    if (activeOrder.payment_status === 'paid') {
       return res.status(200).json({ success: true, message: 'Order already paid.' });
     }
-    if (amount < Number(order.final_amount)) {
+    if (amount < Number(activeOrder.final_amount)) {
       return res.status(200).json({ success: true, message: 'Transfer amount is less than order total.' });
     }
 
-    await pool.query(
-      "UPDATE orders SET payment_status = 'paid', updated_at = NOW() WHERE id = ? AND payment_status = 'unpaid'",
-      [order.id]
+    const [updateResult] = await pool.query(
+      "UPDATE orders SET payment_status = 'paid', updated_at = NOW() WHERE id = ? AND payment_status = 'unpaid' AND payment_expires_at > NOW()",
+      [activeOrder.id]
     );
+    if (updateResult.affectedRows !== 1) {
+      return res.status(200).json({ success: true, message: 'Order expired or already processed.' });
+    }
     return res.status(200).json({ success: true, message: `Order ${orderCode} marked as paid.` });
   } catch (error) {
     console.error('Error in bankWebhook:', error);
@@ -69,8 +84,9 @@ async function bankWebhook(req, res) {
 async function getPaymentStatus(req, res) {
   try {
     const orderCode = String(req.params.orderCode || '').trim();
+    await orderService.expireUnpaidOrderIfNeeded(orderCode);
     const [rows] = await pool.query(
-      'SELECT payment_status, payment_method FROM orders WHERE order_code = ? LIMIT 1',
+      'SELECT payment_status, payment_method, payment_expires_at FROM orders WHERE order_code = ? LIMIT 1',
       [orderCode]
     );
     if (!rows.length) {
@@ -82,7 +98,10 @@ async function getPaymentStatus(req, res) {
         orderCode,
         paymentMethod: rows[0].payment_method,
         paymentStatus: rows[0].payment_status,
-        paid: rows[0].payment_status === 'paid'
+        paid: rows[0].payment_status === 'paid',
+        paymentExpiresAt: rows[0].payment_expires_at
+          ? new Date(rows[0].payment_expires_at).toISOString()
+          : null
       }
     });
   } catch (error) {
@@ -106,11 +125,15 @@ async function simulatePayment(req, res) {
     if (!order) {
       return res.status(404).json({ success: false, message: `Không tìm thấy đơn hàng ${orderCode}.` });
     }
+    await orderService.expireUnpaidOrderIfNeeded(orderCode);
 
-    await pool.query(
-      "UPDATE orders SET payment_status = 'paid', updated_at = NOW() WHERE id = ?",
+    const [updateResult] = await pool.query(
+      "UPDATE orders SET payment_status = 'paid', updated_at = NOW() WHERE id = ? AND payment_status = 'unpaid' AND payment_expires_at > NOW()",
       [order.id]
     );
+    if (updateResult.affectedRows !== 1) {
+      return res.status(409).json({ success: false, message: 'Đơn hàng đã hết thời gian thanh toán.' });
+    }
 
     return res.status(200).json({
       success: true,

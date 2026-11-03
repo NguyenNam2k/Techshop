@@ -503,7 +503,7 @@ export default function Header() {
                       {(user.name || user.email || 'U')[0].toUpperCase()}
                     </div>
                     <div className="min-w-0">
-                      <p className="text-xs font-bold text-white truncate">
+                      <p className="text-xs font-bold text-slate-100 truncate">
                         {user.name || 'Người dùng'}
                       </p>
                       <p className="text-[11px] text-slate-400 truncate">
@@ -540,7 +540,7 @@ export default function Header() {
 
                     <Link
                       to="/profile/orders"
-                      className="flex items-center justify-between px-3 py-2 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800 transition"
+                      className="flex items-center justify-between px-3 py-2 rounded-xl text-slate-200 hover:text-slate-100 hover:bg-slate-800 transition"
                     >
                       <span className="flex items-center gap-2.5">
                         <Package className="w-4 h-4 text-indigo-400" />
@@ -550,7 +550,7 @@ export default function Header() {
 
                     <Link
                       to="/profile/account"
-                      className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800 transition"
+                      className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-slate-200 hover:text-slate-100 hover:bg-slate-800 transition"
                     >
                       <User className="w-4 h-4 text-sky-400" />
                       <span>Hồ sơ &amp; Bảo mật</span>

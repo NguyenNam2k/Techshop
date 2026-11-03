@@ -67,6 +67,41 @@ async function initDatabaseSchema() {
       // Column already exists
     }
 
+    try {
+      await connection.query(
+        "ALTER TABLE `orders` ADD COLUMN `payment_expires_at` TIMESTAMP NULL DEFAULT NULL AFTER `payment_status`"
+      );
+    } catch (e) {
+      // Column already exists or the orders table is not ready yet.
+    }
+    try {
+      await connection.query(
+        `UPDATE \`orders\`
+         SET \`payment_expires_at\` = DATE_ADD(\`created_at\`, INTERVAL 15 MINUTE)
+         WHERE \`payment_method\` = 'vietqr_banking'
+           AND \`payment_status\` = 'unpaid'
+           AND \`shipping_status\` = 'pending'
+           AND \`payment_expires_at\` IS NULL`
+      );
+    } catch (e) {
+      // The orders table may not have been created yet.
+    }
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS \`return_requests\` (
+        \`id\` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        \`order_id\` INT UNSIGNED NOT NULL,
+        \`customer_id\` INT UNSIGNED NOT NULL,
+        \`reason\` VARCHAR(500) NOT NULL,
+        \`status\` ENUM('pending', 'approved', 'rejected', 'refunded') NOT NULL DEFAULT 'pending',
+        \`refund_method\` VARCHAR(50) NULL,
+        \`manager_note\` VARCHAR(500) NULL,
+        \`created_at\` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        \`updated_at\` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        INDEX \`idx_return_order\` (\`order_id\`),
+        INDEX \`idx_return_status\` (\`status\`)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+
     // 2b. Ensure username column exists in customers, managers, staffs
     for (const tbl of ['customers', 'managers', 'staffs']) {
       try {

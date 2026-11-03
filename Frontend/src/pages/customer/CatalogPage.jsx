@@ -166,7 +166,7 @@ function CatalogPage() {
               }
             }}
             className={`hover:text-blue-400 transition-colors shrink-0 ${
-              !currentCategory && !currentSearch ? 'text-white font-semibold' : ''
+              !currentCategory && !currentSearch ? 'text-slate-200 font-semibold' : ''
             }`}
           >
             Sản phẩm & Linh kiện
@@ -196,7 +196,7 @@ function CatalogPage() {
             <div>
               <div className="flex items-center gap-2.5">
                 <span className="text-2xl">{categoryInfo?.icon || '🛍️'}</span>
-                <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight">
+                <h1 className="text-xl sm:text-2xl font-black text-slate-100 tracking-tight">
                   {currentSearch ? (
                     <span>
                       Kết quả cho: <span className="text-blue-400">"{currentSearch}"</span>
@@ -213,8 +213,8 @@ function CatalogPage() {
                   <span className="text-slate-300 font-normal">{categoryInfo.desc} • </span>
                 )}
                 <span>
-                  Hiển thị <strong className="text-white">{products.length}</strong> trên tổng số{' '}
-                  <strong className="text-white">{pagination.total}</strong> sản phẩm
+                  Hiển thị <strong className="text-slate-100">{products.length}</strong> trên tổng số{' '}
+                  <strong className="text-slate-100">{pagination.total}</strong> sản phẩm
                 </span>
               </p>
             </div>
@@ -235,7 +235,7 @@ function CatalogPage() {
                 <select
                   value={currentSort}
                   onChange={(e) => updateQueryParam('sort', e.target.value)}
-                  className="bg-slate-900 text-xs text-white border border-slate-700 rounded-xl px-3 py-2 outline-none focus:border-blue-500 cursor-pointer"
+                  className="bg-slate-900 text-xs text-slate-100 border border-slate-700 rounded-xl px-3 py-2 outline-none focus:border-blue-500 cursor-pointer"
                 >
                   <option value="newest">✨ Mới nhất</option>
                   <option value="price_asc">💵 Giá: Thấp đến Cao</option>

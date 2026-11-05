@@ -41,7 +41,8 @@ import {
   Cpu,
   CreditCard,
   Share2,
-  ShoppingCart
+  ShoppingCart,
+  X
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useCart } from '../../context/CartContext';
@@ -2880,9 +2881,12 @@ export default function OrdersPage() {
     if (!returnModalOrder || returnReason.trim().length < 5) return;
     try {
       setReturnSubmitting(true);
-      await api.requestReturn(returnModalOrder.orderCode || returnModalOrder.orderId, returnReason.trim());
+      const code = returnModalOrder.orderCode || returnModalOrder.orderId;
+      await api.requestReturn(code, returnReason.trim());
       await fetchOrders({ silent: true });
       setReturnModalOrder(null);
+      setPaidNotice(`Đã gửi yêu cầu trả hàng cho đơn ${code}. Đơn vị CSKH sẽ tiếp nhận và xử lý cho bạn.`);
+      setTimeout(() => setPaidNotice(''), 6000);
     } catch (error) {
       setPaidNotice(error.response?.data?.message || error.message || 'Không thể gửi yêu cầu trả hàng.');
     } finally {
@@ -3424,34 +3428,81 @@ export default function OrdersPage() {
         }}
       />
       {returnModalOrder && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/75 p-4 backdrop-blur-sm">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/75 p-4 backdrop-blur-sm animate-fade-in">
           <div className="w-full max-w-md rounded-2xl border border-slate-700 bg-slate-900 p-5 shadow-2xl">
-            <div className="flex items-center justify-between gap-3">
-              <h2 className="text-base font-extrabold text-slate-100">Yêu cầu trả hàng / hoàn tiền</h2>
-              <button type="button" onClick={() => setReturnModalOrder(null)} className="text-slate-400 hover:text-slate-100">
+            <div className="flex items-center justify-between gap-3 border-b border-slate-800 pb-3">
+              <div className="flex items-center gap-2 text-rose-400">
+                <AlertCircle className="h-5 w-5" />
+                <h2 className="text-base font-extrabold text-slate-100">Yêu cầu trả hàng / Hoàn tiền</h2>
+              </div>
+              <button
+                type="button"
+                onClick={() => setReturnModalOrder(null)}
+                className="text-slate-400 hover:text-slate-100 p-1 rounded-lg hover:bg-slate-800 transition cursor-pointer"
+              >
                 <X className="h-5 w-5" />
               </button>
             </div>
-            <p className="mt-2 text-xs text-slate-400">
-              Đơn {returnModalOrder.orderCode || returnModalOrder.orderId}. Vui lòng nêu rõ lý do để staff/manager xử lý.
+            
+            <p className="mt-3 text-xs text-slate-400">
+              Đơn hàng: <strong className="font-mono text-sky-400 font-bold">{returnModalOrder.orderCode || returnModalOrder.orderId}</strong>
             </p>
+            <p className="mt-1 text-xs text-slate-400">
+              Vui lòng chọn hoặc nêu rõ lý do để nhân viên CSKH / Kho tiếp nhận thẩm định:
+            </p>
+
+            {/* Quick preset reason chips */}
+            <div className="mt-2.5 flex flex-wrap gap-1.5">
+              {[
+                'Sản phẩm bị lỗi kỹ thuật / không lên nguồn',
+                'Giao sai phiên bản hoặc mã linh kiện',
+                'Thiếu phụ kiện / cáp nguồn đi kèm',
+                'Không tương thích kích thước case/mainboard'
+              ].map((preset) => (
+                <button
+                  key={preset}
+                  type="button"
+                  onClick={() => setReturnReason(preset)}
+                  className={`text-[11px] px-2.5 py-1 rounded-lg border transition cursor-pointer ${
+                    returnReason === preset
+                      ? 'bg-rose-500/20 text-rose-300 border-rose-500/40 font-semibold'
+                      : 'bg-slate-800/80 text-slate-300 border-slate-700/60 hover:bg-slate-800'
+                  }`}
+                >
+                  {preset}
+                </button>
+              ))}
+            </div>
+
             <textarea
               value={returnReason}
               onChange={(event) => setReturnReason(event.target.value)}
-              placeholder="Ví dụ: sản phẩm lỗi, sai mẫu hoặc thiếu phụ kiện..."
-              className="mt-4 min-h-28 w-full rounded-xl border border-slate-700 bg-slate-950 p-3 text-sm text-slate-100 outline-none placeholder:text-slate-500 focus:border-sky-500"
+              placeholder="Nhập chi tiết tình trạng sản phẩm (tối thiểu 5 ký tự)..."
+              className="mt-3 min-h-24 w-full rounded-xl border border-slate-700 bg-slate-950 p-3 text-xs text-slate-100 outline-none placeholder:text-slate-500 focus:border-rose-500"
             />
-            <div className="mt-4 flex justify-end gap-2">
-              <button type="button" onClick={() => setReturnModalOrder(null)} className="rounded-lg border border-slate-700 px-4 py-2 text-xs font-bold text-slate-300">
-                Đóng
+            
+            <div className="mt-4 flex items-center justify-end gap-2 border-t border-slate-800 pt-3">
+              <button
+                type="button"
+                onClick={() => setReturnModalOrder(null)}
+                className="rounded-xl border border-slate-700 px-4 py-2 text-xs font-bold text-slate-300 hover:bg-slate-800 transition cursor-pointer"
+              >
+                Hủy bỏ
               </button>
               <button
                 type="button"
                 disabled={returnSubmitting || returnReason.trim().length < 5}
                 onClick={submitReturnRequest}
-                className="rounded-lg bg-rose-600 px-4 py-2 text-xs font-bold text-white disabled:opacity-50"
+                className="rounded-xl bg-rose-600 hover:bg-rose-500 px-4 py-2 text-xs font-bold text-white transition disabled:opacity-40 cursor-pointer shadow-lg shadow-rose-600/20 flex items-center gap-1.5"
               >
-                {returnSubmitting ? 'Đang gửi...' : 'Gửi yêu cầu'}
+                {returnSubmitting ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <span>Đang gửi...</span>
+                  </>
+                ) : (
+                  <span>Gửi yêu cầu đổi trả</span>
+                )}
               </button>
             </div>
           </div>

@@ -2,6 +2,7 @@ const pool = require('../config/database');
 const cartService = require('./cart.service');
 const couponService = require('./coupon.service');
 const shippingService = require('./shipping.service');
+const { publishStaffEvent } = require('./realtime.service');
 
 const rawAccountNo = String(process.env.VIETQR_ACCOUNT_NO || '').trim();
 const rawAccountName = String(process.env.VIETQR_ACCOUNT_NAME || '').trim();
@@ -389,6 +390,14 @@ async function createOrder({
 
     await connection.commit();
     transactionStarted = false;
+    publishStaffEvent('order.created', {
+      orderCode,
+      phase: 1,
+      shippingStatus: initialOrderStatus,
+      paymentStatus: initialPaymentStatus,
+      recipientName: cleanName,
+      finalAmount
+    });
 
     return {
       orderId,
@@ -567,6 +576,7 @@ async function expirePendingVietqrOrders() {
 }
 
 function phaseForOrder(order) {
+  if (order.customer_decision === 'received' || order.customer_decision === 'return_requested') return 5;
   return isConfirmedOrder(order) ? 1 : (ORDER_PHASE[order.shipping_status] ?? 0);
 }
 
@@ -635,6 +645,7 @@ function mapCustomerOrder(order, items) {
     shippingStatus,
     orderStatus: shippingStatus,
     statusLabel: statusLabelForOrder(order),
+    customerDecision: order.customer_decision || null,
     paymentStatus: order.payment_status,
     paymentExpiresAt: order.payment_expires_at
       ? new Date(order.payment_expires_at).toISOString()
@@ -731,43 +742,71 @@ async function getCustomerOrders(customerId) {
 async function requestOrderCancellation(customerId, orderCode, reason) {
   const cleanCode = String(orderCode || '').trim();
   const cleanReason = String(reason || '').trim();
-  if (!cleanCode) throw httpError('M? ??n h?ng kh?ng h?p l?.');
+  if (!cleanCode) throw httpError('Mã đơn hàng không hợp lệ.');
   if (cleanReason.length < 5 || cleanReason.length > 500) {
-    throw httpError('L? do h?y ??n ph?i t? 5 ??n 500 k? t?.');
+    throw httpError('Lý do hủy đơn phải từ 5 đến 500 ký tự.');
   }
 
   const connection = await pool.getConnection();
   try {
     await connection.beginTransaction();
     const [rows] = await connection.query(
-      `SELECT id, customer_id, shipping_status, cancel_requested_at, cancel_request_reason
+      `SELECT id, customer_id, recipient_name, payment_method, payment_status, shipping_status, cancel_requested_at, cancel_request_reason
        FROM orders WHERE order_code = ? LIMIT 1 FOR UPDATE`,
       [cleanCode]
     );
-    if (!rows.length) throw httpError('Kh?ng t?m th?y ??n h?ng.', 404);
+    if (!rows.length) throw httpError('Không tìm thấy đơn hàng.', 404);
     const order = rows[0];
     if (customerId && Number(order.customer_id) !== Number(customerId)) {
-      throw httpError('B?n kh?ng c? quy?n thao t?c ??n h?ng n?y.', 403);
+      throw httpError('Bạn không có quyền thao tác đơn hàng này.', 403);
     }
-    if (order.cancel_requested_at) {
+    if (order.shipping_status === 'cancelled') {
       await connection.commit();
-      return {
-        orderCode: cleanCode,
-        requestedAt: order.cancel_requested_at,
-        reason: order.cancel_request_reason,
-        alreadyRequested: true
-      };
+      return { orderCode: cleanCode, reason: cleanReason, alreadyRequested: true };
     }
     if (!['pending', 'processing'].includes(order.shipping_status)) {
-      throw httpError('??n h?ng n?y kh?ng th? h?y ? tr?ng th?i hi?n t?i.', 409);
+      throw httpError('Đơn hàng đã bàn giao vận chuyển, không thể hủy trực tiếp.', 409);
     }
+
+    // Hoàn trả lại tồn kho sản phẩm khi đơn bị hủy
+    const [items] = await connection.query(
+      `SELECT variant_id, quantity FROM order_items WHERE order_id = ?`,
+      [order.id]
+    );
+    for (const item of items) {
+      if (item.variant_id && item.quantity > 0) {
+        await connection.query(
+          `UPDATE product_variants
+           SET stock = stock + ?,
+               status = CASE WHEN stock + ? > 0 THEN 'available' ELSE status END,
+               updated_at = NOW()
+           WHERE id = ?`,
+          [item.quantity, item.quantity, item.variant_id]
+        );
+      }
+    }
+
+    // Cập nhật trạng thái đơn sang cancelled
     await connection.query(
-      `UPDATE orders SET cancel_request_reason = ?, cancel_requested_at = NOW()
+      `UPDATE orders 
+       SET shipping_status = 'cancelled',
+           cancel_request_reason = ?, 
+           cancel_requested_at = NOW(),
+           updated_at = NOW()
        WHERE id = ?`,
       [cleanReason, order.id]
     );
     await connection.commit();
-    return { orderCode: cleanCode, reason: cleanReason, alreadyRequested: false };
+
+    // Phát sự kiện realtime SSE tới bàn làm việc Staff tự động
+    publishStaffEvent('order.cancelled', {
+      orderCode: cleanCode,
+      reason: cleanReason,
+      customerName: order.recipient_name,
+      previousStatus: order.shipping_status
+    });
+
+    return { orderCode: cleanCode, reason: cleanReason, status: 'cancelled' };
   } catch (error) {
     await connection.rollback();
     throw error;
@@ -781,15 +820,82 @@ async function updateOrderStatus(orderCode, shippingStatus) {
   if (!allowedStatuses.includes(shippingStatus)) {
     throw httpError('Trạng thái giao hàng không hợp lệ.');
   }
+  const cleanCode = String(orderCode || '').trim();
+  const [rows] = await pool.query(
+    'SELECT shipping_status, payment_method, payment_status FROM orders WHERE order_code = ? LIMIT 1',
+    [cleanCode]
+  );
+  const order = rows[0];
+  if (!order) throw httpError('Không tìm thấy đơn hàng.', 404);
+  const validTransition =
+    shippingStatus === 'cancelled'
+      ? ['pending', 'processing'].includes(order.shipping_status)
+      : (order.shipping_status === 'pending' &&
+          shippingStatus === 'processing' &&
+          (order.payment_method === 'cod' || order.payment_status === 'paid')) ||
+        (order.shipping_status === 'processing' && shippingStatus === 'shipping') ||
+        (order.shipping_status === 'shipping' && shippingStatus === 'delivered');
+  if (!validTransition) {
+    throw httpError('Không thể chuyển trạng thái đơn hàng theo thứ tự hiện tại.', 409);
+  }
   const [result] = await pool.query(
-    'UPDATE orders SET shipping_status = ?, updated_at = NOW() WHERE order_code = ?',
-    [shippingStatus, String(orderCode || '').trim()]
+    `UPDATE orders SET shipping_status = ?,
+       payment_status = CASE WHEN ? = 'delivered' AND payment_method = 'cod' THEN 'paid' ELSE payment_status END,
+       updated_at = NOW() WHERE order_code = ?`,
+    [shippingStatus, shippingStatus, cleanCode]
   );
   if (result.affectedRows !== 1) throw httpError('Không tìm thấy đơn hàng.', 404);
-  return { orderCode, shippingStatus };
+  publishStaffEvent('order.status_changed', { orderCode: cleanCode, shippingStatus });
+  return { orderCode: cleanCode, shippingStatus };
+}
+
+async function confirmCustomerDecision(customerId, orderCode, decision) {
+  if (!['received', 'return_requested'].includes(decision)) {
+    throw httpError('Lựa chọn nhận hàng không hợp lệ.');
+  }
+  const cleanCode = String(orderCode || '').trim();
+  const connection = await pool.getConnection();
+  try {
+    await connection.beginTransaction();
+    const [rows] = await connection.query(
+      'SELECT id, customer_id, shipping_status, customer_decision FROM orders WHERE order_code = ? LIMIT 1 FOR UPDATE',
+      [cleanCode]
+    );
+    const order = rows[0];
+    if (!order) throw httpError('Không tìm thấy đơn hàng.', 404);
+    if (customerId && Number(order.customer_id) !== Number(customerId)) {
+      throw httpError('Bạn không có quyền thao tác đơn hàng này.', 403);
+    }
+    if (order.shipping_status !== 'delivered') {
+      throw httpError('Chỉ được chọn kết quả sau khi đơn đã giao thành công.', 409);
+    }
+    if (order.customer_decision) {
+      throw httpError('Đơn hàng đã được xác nhận trước đó.', 409);
+    }
+    await connection.query(
+      'UPDATE orders SET customer_decision = ?, updated_at = NOW() WHERE id = ?',
+      [decision, order.id]
+    );
+    if (decision === 'return_requested') {
+      await connection.query(
+        `INSERT INTO return_requests (order_id, customer_id, reason, refund_method)
+         VALUES (?, ?, 'Khách hàng yêu cầu trả hàng sau khi nhận hàng.', 'manual_bank')`,
+        [order.id, order.customer_id]
+      );
+    }
+    await connection.commit();
+    publishStaffEvent('order.customer_decision', { orderCode: cleanCode, decision, phase: 5 });
+    return { orderCode: cleanCode, decision, phase: 5 };
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
+  }
 }
 
 async function requestReturn(customerId, orderCode, reason) {
+  const cleanCode = String(orderCode || '').trim();
   const cleanReason = String(reason || '').trim();
   if (cleanReason.length < 5 || cleanReason.length > 500) {
     throw httpError('Lý do trả hàng phải từ 5 đến 500 ký tự.');
@@ -800,7 +906,7 @@ async function requestReturn(customerId, orderCode, reason) {
     const [orders] = await connection.query(
       `SELECT id, customer_id, shipping_status, payment_method, updated_at
        FROM orders WHERE order_code = ? LIMIT 1 FOR UPDATE`,
-      [String(orderCode || '').trim()]
+      [cleanCode]
     );
     const order = orders[0];
     if (!order) throw httpError('Không tìm thấy đơn hàng.', 404);
@@ -824,7 +930,16 @@ async function requestReturn(customerId, orderCode, reason) {
        VALUES (?, ?, ?, ?)`,
       [order.id, order.customer_id, cleanReason, order.payment_method === 'cod' ? 'manual_bank' : 'original_method']
     );
+    await connection.query(
+      `UPDATE orders SET customer_decision = 'return_requested', updated_at = NOW() WHERE id = ?`,
+      [order.id]
+    );
     await connection.commit();
+    publishStaffEvent('order.customer_decision', {
+      orderCode: cleanCode,
+      decision: 'return_requested',
+      phase: 5
+    });
     return { success: true, message: 'Đã gửi yêu cầu trả hàng, chờ manager xét duyệt.' };
   } catch (error) {
     await connection.rollback();
@@ -836,8 +951,20 @@ async function requestReturn(customerId, orderCode, reason) {
 
 async function getReturnRequests() {
   const [rows] = await pool.query(
-    `SELECT rr.*, o.order_code, o.payment_method, o.final_amount
-     FROM return_requests rr JOIN orders o ON o.id = rr.order_id
+    `SELECT rr.*, o.order_code, o.payment_method, o.final_amount,
+            COALESCE(
+              (
+                SELECT GROUP_CONCAT(DISTINCT oi.product_name ORDER BY oi.id SEPARATOR ', ')
+                FROM order_items oi
+                WHERE oi.order_id = rr.order_id
+              ),
+              'Sản phẩm trong đơn hàng'
+            ) AS product_name,
+            COALESCE(o.recipient_name, c.name, 'Khách hàng') AS customer_name,
+            COALESCE(o.recipient_phone, c.phone, '') AS customer_phone
+     FROM return_requests rr
+     JOIN orders o ON o.id = rr.order_id
+     LEFT JOIN customers c ON c.id = rr.customer_id
      ORDER BY rr.created_at DESC`
   );
   return rows;
@@ -954,6 +1081,7 @@ module.exports = {
   updateOrderStatus,
   getReturnRequests,
   reviewReturnRequest,
+  confirmCustomerDecision,
   getOrderByCode,
   getCustomerOrders,
   getAllOrders,

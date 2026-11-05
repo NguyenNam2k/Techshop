@@ -66,7 +66,8 @@ const ORDER_PHASES = [
   { title: 'Đã xác nhận', desc: 'Đơn hàng & thanh toán đã được xác nhận' },
   { title: 'Đang chuẩn bị hàng', desc: 'Kiểm tra, đóng gói và dán tem bảo hành' },
   { title: 'Đã bàn giao vận chuyển', desc: 'Kiện hàng đã được giao cho đơn vị vận chuyển' },
-  { title: 'Giao hàng thành công', desc: 'Khách hàng đã nhận hàng' }
+  { title: 'Giao hàng thành công', desc: 'Khách hàng đã nhận hàng' },
+  { title: 'Khách hàng xác nhận', desc: 'Đã nhận hàng hoặc yêu cầu trả hàng' }
 ];
 
 const PHASE_BADGES = {
@@ -74,7 +75,8 @@ const PHASE_BADGES = {
   1: 'bg-sky-500/15 border-sky-500/30 text-sky-400',
   2: 'bg-indigo-500/15 border-indigo-500/30 text-indigo-400',
   3: 'bg-blue-500/15 border-blue-500/30 text-blue-400',
-  4: 'bg-emerald-500/15 border-emerald-500/30 text-emerald-400'
+  4: 'bg-emerald-500/15 border-emerald-500/30 text-emerald-400',
+  5: 'bg-violet-500/15 border-violet-500/30 text-violet-400'
 };
 
 const SEED_WISHLIST = [
@@ -2735,82 +2737,6 @@ function TicketsPanel() {
   );
 }
 
-/* ---------- 10. CHAT PANEL ---------- */
-
-function ChatPanel() {
-  const [messages, setMessages] = useState([
-    {
-      sender: 'bot',
-      text: 'Xin chào! Techshop có thể hỗ trợ tư vấn thiết bị, kiểm tra độ tương thích hoặc tình trạng đơn hàng gì cho bạn hôm nay ạ?'
-    }
-  ]);
-  const [inputVal, setInputVal] = useState('');
-
-  const handleSend = (e) => {
-    e.preventDefault();
-    if (!inputVal.trim()) return;
-    const userText = inputVal.trim();
-    setInputVal('');
-    setMessages((prev) => [...prev, { sender: 'user', text: userText }]);
-    setTimeout(() => {
-      setMessages((prev) => [
-        ...prev,
-        {
-          sender: 'bot',
-          text: 'Chuyên viên kỹ thuật Techshop đã nhận được tin nhắn và đang kiểm tra cấu hình thiết bị cho bạn. Vui lòng chờ giây lát!'
-        }
-      ]);
-    }, 800);
-  };
-
-  return (
-    <div className="space-y-6">
-      <Head
-        title="Chat Tư Vấn Kỹ Thuật"
-        desc="Trò chuyện trực tiếp cùng chuyên gia phần cứng và hỗ trợ bảo hành."
-      />
-
-      <div className="rounded-2xl border border-slate-800 bg-slate-900 p-5 shadow-xl flex flex-col h-[460px]">
-        <div className="flex-1 overflow-y-auto space-y-3 pr-2">
-          {messages.map((m, idx) => (
-            <div
-              key={idx}
-              className={`flex ${m.sender === 'user' ? 'justify-end' : 'justify-start'}`}
-            >
-              <div
-                className={`max-w-md rounded-2xl p-3.5 text-xs leading-relaxed ${
-                  m.sender === 'user'
-                    ? 'bg-sky-600 text-white rounded-br-none shadow-md shadow-sky-600/20'
-                    : 'bg-slate-950 border border-slate-800 text-slate-200 rounded-bl-none shadow-inner'
-                }`}
-              >
-                {m.text}
-              </div>
-            </div>
-          ))}
-        </div>
-
-        <form onSubmit={handleSend} className="pt-3 border-t border-slate-800 flex gap-2">
-          <input
-            type="text"
-            value={inputVal}
-            onChange={(e) => setInputVal(e.target.value)}
-            placeholder="Nhập câu hỏi của bạn..."
-            className="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-sky-500"
-          />
-          <button
-            type="submit"
-            className="px-4 py-2.5 rounded-xl bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold transition shadow-md shadow-sky-600/20 cursor-pointer flex items-center gap-1.5 shrink-0"
-          >
-            <Send className="w-3.5 h-3.5" />
-            <span>Gửi</span>
-          </button>
-        </form>
-      </div>
-    </div>
-  );
-}
-
 /* ---------- MAIN ORDERS / DASHBOARD PAGE ---------- */
 
 export default function OrdersPage() {
@@ -2964,8 +2890,15 @@ export default function OrdersPage() {
     }
   };
 
-  const handleConfirmReceived = () => {
-    setPaidNotice(`Đã ghi nhận bạn nhận hàng cho đơn ${selectedOrder?.orderCode || selectedOrder?.orderId}.`);
+  const handleConfirmReceived = async () => {
+    if (!selectedOrder) return;
+    try {
+      await api.confirmCustomerDecision(selectedOrder.orderCode || selectedOrder.orderId, 'received');
+      await fetchOrders({ silent: true });
+      setPaidNotice(`Đã ghi nhận bạn nhận hàng cho đơn ${selectedOrder.orderCode || selectedOrder.orderId}.`);
+    } catch (error) {
+      setPaidNotice(error.response?.data?.message || error.message || 'Không thể xác nhận nhận hàng.');
+    }
   };
 
   const selectedOrder = orders.find((o) => o.orderId === selectedOrderId) || orders[0];
@@ -3383,10 +3316,34 @@ export default function OrdersPage() {
                               <span className="text-emerald-400 font-semibold flex items-center gap-1">
                                 <CheckCircle2 className="w-3.5 h-3.5" /> Đã thanh toán
                               </span>
+                            ) : selectedOrder.paymentStatus === 'refunded' ? (
+                              <span className="text-cyan-400 font-semibold flex items-center gap-1">
+                                <CheckCircle2 className="w-3.5 h-3.5" /> Đã hoàn tiền (Refunded)
+                              </span>
                             ) : (
                               <span className="text-amber-400 font-semibold">Chưa thanh toán</span>
                             )}
-                            <div className="flex flex-wrap gap-2 pt-2">
+                          </div>
+                        )}
+
+                        {selectedOrder?.shippingStatus === 'cancelled' && (
+                          <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs space-y-1">
+                            <div className="font-bold flex items-center gap-1.5 text-rose-400">
+                              <AlertCircle className="w-3.5 h-3.5" /> Đơn hàng đã bị hủy
+                            </div>
+                            {selectedOrder.cancellationReason && (
+                              <div className="text-[11px] text-slate-300">
+                                <span className="text-slate-400">Lý do:</span> {selectedOrder.cancellationReason}
+                              </div>
+                            )}
+                            {selectedOrder.paymentStatus === 'refunded' && (
+                              <div className="text-[11px] text-cyan-400 font-medium pt-0.5">
+                                ✓ Đã ghi nhận hoàn tiền về tài khoản ngân hàng của bạn.
+                              </div>
+                            )}
+                          </div>
+                        )}
+                        <div className="flex flex-wrap gap-2 pt-2">
                               {selectedOrder?.canRequestCancellation && !selectedOrder?.cancellationRequestedAt && (
                                 <button
                                   type="button"
@@ -3396,7 +3353,9 @@ export default function OrdersPage() {
                                   Yêu cầu hủy đơn
                                 </button>
                               )}
-                              {selectedOrder?.shippingStatus === 'delivered' && selectedOrder?.paymentStatus !== 'refunded' && (
+                              {selectedOrder?.shippingStatus === 'delivered' &&
+                                !selectedOrder?.customerDecision &&
+                                selectedOrder?.paymentStatus !== 'refunded' && (
                                 <>
                                   <button
                                     type="button"
@@ -3415,8 +3374,6 @@ export default function OrdersPage() {
                                 </>
                               )}
                             </div>
-                          </div>
-                        )}
                         <div className="flex items-center justify-between pt-2 border-t border-slate-800/80">
                           <span className="text-sm font-bold text-slate-100">Tổng cộng:</span>
                           <span className="text-base font-extrabold font-mono text-sky-400">

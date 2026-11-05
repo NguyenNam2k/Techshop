@@ -42,6 +42,40 @@ export default function SupportBubble() {
     }
   }, [isOpen, messages, isTyping]);
 
+  // Synchronize incoming replies from Staff Portal via localStorage
+  useEffect(() => {
+    const handleStorageChange = (e) => {
+      if (e.key === 'techshop_support_tickets' && e.newValue) {
+        try {
+          const tickets = JSON.parse(e.newValue);
+          const activeTicket = tickets.find((t) => t.ticket_id === 'TK-4821');
+          if (activeTicket && activeTicket.messages) {
+            const staffMsgs = activeTicket.messages.filter((m) => m.sender === 'staff');
+            if (staffMsgs.length > 0) {
+              const latestStaff = staffMsgs[staffMsgs.length - 1];
+              setMessages((prev) => {
+                if (prev.some((m) => m.text.includes(latestStaff.text))) return prev;
+                return [
+                  ...prev,
+                  {
+                    id: Date.now(),
+                    sender: 'bot',
+                    time: latestStaff.time,
+                    text: `👨‍💼 [${latestStaff.sender_name}]: ${latestStaff.text}`
+                  }
+                ];
+              });
+            }
+          }
+        } catch (err) {
+          console.warn('SupportBubble storage sync error:', err);
+        }
+      }
+    };
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
+
   const handleSend = (customText) => {
     const text = (customText || inputVal).trim();
     if (!text) return;
@@ -54,6 +88,38 @@ export default function SupportBubble() {
       ...prev,
       { id: Date.now(), sender: 'user', time: timeStr, text }
     ]);
+
+    // Persist to Staff Portal support tickets storage
+    try {
+      const saved = localStorage.getItem('techshop_support_tickets');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        const updated = parsed.map((tk) => {
+          if (tk.ticket_id === 'TK-4821') {
+            return {
+              ...tk,
+              unread: (tk.unread || 0) + 1,
+              status: tk.status === 'closed' ? 'open' : tk.status,
+              messages: [
+                ...tk.messages,
+                {
+                  id: `cust-${Date.now()}`,
+                  sender: 'customer',
+                  sender_name: tk.customer_name || 'Khách hàng',
+                  text,
+                  time: timeStr,
+                  date: 'Hôm nay'
+                }
+              ]
+            };
+          }
+          return tk;
+        });
+        localStorage.setItem('techshop_support_tickets', JSON.stringify(updated));
+      }
+    } catch (e) {
+      console.warn('Failed to sync SupportBubble to staff portal storage', e);
+    }
 
     setIsTyping(true);
 

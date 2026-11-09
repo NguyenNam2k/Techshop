@@ -48,6 +48,7 @@ const orderRoutes = require('./routes/customer/orderRoutes');
 const shippingRoutes = require('./routes/customer/shippingRoutes');
 const paymentRoutes = require('./routes/customer/paymentRoutes');
 const { testConnection } = require('./config/database');
+const emailService = require('./services/customer/emailService');
 
 // 3. Phục vụ Manager App SPA nếu đã build dist (Duong's Manager Portal)
 const managerAppDist = path.join(__dirname, '../views/manager-app/dist');
@@ -62,7 +63,7 @@ if (fs.existsSync(managerAppDist)) {
     }
   };
   app.use('/manager', express.static(managerAppDist, staticDistOptions));
-  app.get(['/manager', '/manager/*'], (req, res, next) => {
+  app.get(['/manager', '/manager/{*splat}'], (req, res, next) => {
     if (req.path.startsWith('/manager/api')) return next();
     res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
     res.sendFile(path.join(managerAppDist, 'index.html'));
@@ -107,7 +108,7 @@ app.get('/api/health', (req, res) => {
 app.get('/dashboard', (req, res) => res.redirect('/'));
 
 // Route mặc định điều hướng tới Giao diện Khách hàng (SPA React Catalog)
-app.get('*', (req, res) => {
+app.get('/{*splat}', (req, res) => {
   if (req.path.startsWith('/api')) {
     return res.status(404).json({ success: false, message: 'Resource not found' });
   }
@@ -128,6 +129,12 @@ async function startServer() {
     console.log(`🛍️ Customer Catalog Web:         http://localhost:${PORT}/catalog`);
     console.log(`🔑 Auth API Endpoint:            http://localhost:${PORT}/api/auth`);
     console.log(`=================================================`);
+
+    // Tự động quét và gửi bù email xác nhận cho các đơn bị sót do server sập hoặc restart
+    emailService.retryPendingConfirmationEmails().catch(() => {});
+    setInterval(() => {
+      emailService.retryPendingConfirmationEmails().catch(() => {});
+    }, 5 * 60 * 1000);
   });
 }
 

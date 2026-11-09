@@ -2,14 +2,15 @@ const pool = require('../../config/db');
 const cartService = require('./cartService');
 const couponService = require('./couponService');
 const shippingService = require('./shippingService');
+const emailService = require('./emailService');
 
 const rawAccountNo = String(process.env.VIETQR_ACCOUNT_NO || '').trim();
 const rawAccountName = String(process.env.VIETQR_ACCOUNT_NAME || '').trim();
 
 const VIETQR_CONFIG = {
-  bankId: String(process.env.VIETQR_BANK_ID || 'MB').trim() || 'MB',
-  bankName: String(process.env.VIETQR_BANK_NAME || 'MBBank').trim() || 'MBBank',
-  accountNo: /^\d{6,20}$/.test(rawAccountNo) ? rawAccountNo : '0358599999',
+  bankId: String(process.env.VIETQR_BANK_ID || 'BIDV').trim() || 'BIDV',
+  bankName: String(process.env.VIETQR_BANK_NAME || 'BIDVBank').trim() || '',
+  accountNo: /^\d{6,20}$/.test(rawAccountNo) ? rawAccountNo : '1160570126',
   accountName:
     rawAccountName && !/^your[_\s-]/i.test(rawAccountName)
       ? rawAccountName
@@ -63,6 +64,7 @@ async function getOrdersTableMeta(connection) {
     hasDeliveryMethod: colMap.has('delivery_method'),
     hasDistanceKm: colMap.has('shipping_distance_km'),
     hasStoreName: colMap.has('delivery_store_name'),
+    hasRecipientEmail: colMap.has('recipient_email'),
     customerIdNullable: colMap.get('customer_id')?.Null === 'YES'
   };
   return ordersColumnsCache;
@@ -73,6 +75,7 @@ async function createOrder({
   sessionToken,
   recipientName,
   recipientPhone,
+  recipientEmail,
   shippingAddress,
   provinceId,
   wardId,
@@ -85,6 +88,7 @@ async function createOrder({
   const cleanPhone = String(recipientPhone || '').trim();
   const cleanAddress = String(shippingAddress || '').trim();
   const cleanNotes = String(orderNotes || '').trim();
+  let cleanEmail = String(recipientEmail || '').trim();
   if (!cleanName || !cleanPhone || !cleanAddress) {
     throw httpError('Vui lòng nhập đầy đủ họ tên, số điện thoại và địa chỉ nhận hàng.');
   }
@@ -122,11 +126,14 @@ async function createOrder({
     let owner = null;
     if (customerId) {
       const [customers] = await connection.query(
-        "SELECT id FROM customers WHERE id = ? AND status = 'active' LIMIT 1",
+        "SELECT id, email FROM customers WHERE id = ? AND status = 'active' LIMIT 1",
         [customerId]
       );
       if (customers.length) {
         owner = { column: 'customer_id', id: customerId };
+        if (!cleanEmail && customers[0]?.email) {
+          cleanEmail = String(customers[0].email).trim();
+        }
       }
     }
     if (!owner && sessionToken) {
@@ -304,6 +311,10 @@ async function createOrder({
       insertCols.push('delivery_store_name');
       insertVals.push(shippingQuote.nearestStore.name);
     }
+    if (tableMeta.hasRecipientEmail) {
+      insertCols.push('recipient_email');
+      insertVals.push(cleanEmail || null);
+    }
 
     const placeholders = insertCols.map(() => '?').join(', ');
     const [orderResult] = await connection.query(
@@ -378,11 +389,19 @@ async function createOrder({
     await connection.commit();
     transactionStarted = false;
 
+    // Gửi email xác nhận đặt hàng ngay nếu là đơn COD
+    if (paymentMethod === 'cod') {
+      emailService.sendOrderConfirmationEmail(orderCode).catch((err) => {
+        console.error(`[COD Order] Lỗi gửi email xác nhận cho đơn ${orderCode}:`, err.message);
+      });
+    }
+
     return {
       orderId,
       orderCode,
       recipientName: cleanName,
       recipientPhone: cleanPhone,
+      recipientEmail: cleanEmail || null,
       shippingAddress: cleanAddress,
       paymentMethod,
       paymentStatus: initialPaymentStatus,
@@ -446,6 +465,7 @@ async function getOrderByCode(orderCode) {
       orderCode: order.order_code,
       recipientName: order.recipient_name,
       recipientPhone: order.recipient_phone,
+      recipientEmail: order.recipient_email || null,
       shippingAddress: order.shipping_address,
       shippingFee: Number(order.shipping_fee || 0),
       deliveryMethod: order.delivery_method || 'express',

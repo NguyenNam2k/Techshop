@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import {
   MapPin,
   Phone,
+  Mail,
   User,
   CreditCard,
   Truck,
@@ -64,6 +65,7 @@ const CheckoutPage = () => {
   const [formData, setFormData] = useState({
     recipientName: user?.name || user?.username || '',
     recipientPhone: user?.phone || '',
+    recipientEmail: user?.email || '',
     provinceId: DEFAULT_PROVINCE_ID,
     wardId: DEFAULT_WARD_ID,
     streetAddress: user?.address || 'Số 123 Nguyễn Huệ',
@@ -77,6 +79,7 @@ const CheckoutPage = () => {
         ...prev,
         recipientName: prev.recipientName || user.name || user.username || '',
         recipientPhone: prev.recipientPhone || user.phone || '',
+        recipientEmail: prev.recipientEmail || user.email || '',
         streetAddress: prev.streetAddress || user.address || ''
       }));
     }
@@ -279,6 +282,7 @@ const CheckoutPage = () => {
       const response = await api.createOrder({
         recipientName: formData.recipientName.trim(),
         recipientPhone: formData.recipientPhone.trim(),
+        recipientEmail: (formData.recipientEmail || user?.email || '').trim(),
         provinceId: formData.provinceId,
         wardId: formData.wardId,
         shippingAddress: composeFullAddress(),
@@ -615,6 +619,25 @@ const CheckoutPage = () => {
                         className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-950 border border-slate-700 focus:border-sky-500 text-sm text-white outline-none transition"
                       />
                     </div>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-300 uppercase mb-1.5 flex items-center justify-between">
+                    <span>Email nhận hóa đơn &amp; xác nhận thanh toán *</span>
+                    <span className="text-[10px] text-sky-400 font-normal">Tự động gửi email khi thanh toán</span>
+                  </label>
+                  <div className="relative">
+                    <Mail className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                    <input
+                      type="email"
+                      name="recipientEmail"
+                      value={formData.recipientEmail}
+                      onChange={handleInputChange}
+                      required
+                      placeholder="Ví dụ: customer@gmail.com"
+                      className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-950 border border-slate-700 focus:border-sky-500 text-sm text-white outline-none transition"
+                    />
                   </div>
                 </div>
 

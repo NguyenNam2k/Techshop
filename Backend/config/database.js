@@ -60,9 +60,19 @@ async function initDatabaseSchema() {
       `);
     }
 
-    // 3. Ensure permissions column exists in staffs table
+    // 3. Ensure permissions column exists in staffs table & recipient_email in orders table
     try {
       await connection.query("ALTER TABLE `staffs` ADD COLUMN `permissions` JSON NULL");
+    } catch (e) {
+      // Column already exists or error handled
+    }
+    try {
+      await connection.query("ALTER TABLE `orders` ADD COLUMN `recipient_email` VARCHAR(255) NULL AFTER `recipient_phone`");
+    } catch (e) {
+      // Column already exists or error handled
+    }
+    try {
+      await connection.query("ALTER TABLE `orders` ADD COLUMN `confirmation_email_sent` TINYINT(1) NOT NULL DEFAULT 0, ADD COLUMN `email_sent_at` TIMESTAMP NULL");
     } catch (e) {
       // Column already exists or error handled
     }

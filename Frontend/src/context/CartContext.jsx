@@ -13,9 +13,9 @@ function normalizeCartItem(item) {
 
   const variantId = Number(
     item.variant_id ||
-      item.variantId ||
-      variantObj.id ||
-      item.id
+    item.variantId ||
+    variantObj.id ||
+    item.id
   );
   const cartItemId = Number(item.cart_item_id || item.cartItemId || item.id || variantId);
   const productId = Number(item.product_id || item.productId || productObj.id || variantId);
@@ -30,18 +30,18 @@ function normalizeCartItem(item) {
   const color = String(item.color || variantObj.color || 'Tiêu chuẩn');
   const specVersion = String(
     item.spec_version ||
-      item.specVersion ||
-      variantObj.spec_version ||
-      variantObj.specVersion ||
-      'Bản tiêu chuẩn'
+    item.specVersion ||
+    variantObj.spec_version ||
+    variantObj.specVersion ||
+    'Bản tiêu chuẩn'
   );
 
   const variantLabel =
     typeof item.variant === 'string' && item.variant.trim()
       ? item.variant
       : color && specVersion && color !== specVersion
-      ? `${color} - ${specVersion}`
-      : color || specVersion || 'Tiêu chuẩn';
+        ? `${color} - ${specVersion}`
+        : color || specVersion || 'Tiêu chuẩn';
 
   const price = Number(
     item.unit_price ?? item.price ?? variantObj.price ?? productObj.base_price ?? 0
@@ -50,17 +50,17 @@ function normalizeCartItem(item) {
   const stock = Number(item.stock ?? variantObj.stock ?? 20);
   const image = String(
     item.image_url ||
-      variantObj.image_url ||
-      productObj.thumbnail_url ||
-      (typeof item.image === 'string' ? item.image : '') ||
-      ''
+    variantObj.image_url ||
+    productObj.thumbnail_url ||
+    (typeof item.image === 'string' ? item.image : '') ||
+    ''
   );
 
   const rawVariants = Array.isArray(item.variants)
     ? item.variants
     : Array.isArray(productObj.available_variants)
-    ? productObj.available_variants
-    : [];
+      ? productObj.available_variants
+      : [];
 
   const categorySlug = item.category_slug || productObj.category_slug || '';
   const categoryId = item.category_id || productObj.category_id || null;
@@ -75,11 +75,11 @@ function normalizeCartItem(item) {
   const mappedVariants = hideVariants
     ? []
     : rawVariants.map((v) => ({
-        ...v,
-        id: Number(v.id),
-        price: Number(v.price || 0),
-        stock: Number(v.stock ?? 0)
-      }));
+      ...v,
+      id: Number(v.id),
+      price: Number(v.price || 0),
+      stock: Number(v.stock ?? 0)
+    }));
 
   return {
     id: variantId || cartItemId,
@@ -293,22 +293,21 @@ export function CartProvider({ children }) {
         prev.map((item) =>
           item.id === id || item.cartItemId === id || item.variantId === id
             ? {
-                ...item,
-                id: targetVariantId,
-                variantId: targetVariantId,
-                sku: matchedVariant.sku || item.sku,
-                color: matchedVariant.color || item.color,
-                specVersion: matchedVariant.spec_version || item.specVersion,
-                variant: `${matchedVariant.color || 'Tiêu chuẩn'} - ${
-                  matchedVariant.spec_version || 'Bản tiêu chuẩn'
+              ...item,
+              id: targetVariantId,
+              variantId: targetVariantId,
+              sku: matchedVariant.sku || item.sku,
+              color: matchedVariant.color || item.color,
+              specVersion: matchedVariant.spec_version || item.specVersion,
+              variant: `${matchedVariant.color || 'Tiêu chuẩn'} - ${matchedVariant.spec_version || 'Bản tiêu chuẩn'
                 }`,
-                price: Number(matchedVariant.price || item.price),
-                stock: Number(matchedVariant.stock ?? item.stock),
-                quantity: Math.min(
-                  item.quantity,
-                  Math.max(1, Number(matchedVariant.stock || 1))
-                )
-              }
+              price: Number(matchedVariant.price || item.price),
+              stock: Number(matchedVariant.stock ?? item.stock),
+              quantity: Math.min(
+                item.quantity,
+                Math.max(1, Number(matchedVariant.stock || 1))
+              )
+            }
             : item
         )
       );
@@ -386,12 +385,12 @@ export function useCart() {
     return {
       cartItems: [],
       loading: false,
-      addToCart: async () => {},
-      updateQuantity: async () => {},
-      updateItemVariant: async () => {},
-      removeItem: async () => {},
-      clearCart: async () => {},
-      refreshCart: async () => {},
+      addToCart: async () => { },
+      updateQuantity: async () => { },
+      updateItemVariant: async () => { },
+      removeItem: async () => { },
+      clearCart: async () => { },
+      refreshCart: async () => { },
       cartCount: 0,
       subtotal: 0
     };

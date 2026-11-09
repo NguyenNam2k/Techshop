@@ -8,6 +8,7 @@ async function createOrder(req, res) {
       sessionToken: req.headers['x-session-token'],
       recipientName: req.body.recipientName,
       recipientPhone: req.body.recipientPhone,
+      recipientEmail: req.body.recipientEmail,
       shippingAddress: req.body.shippingAddress,
       provinceId: req.body.provinceId,
       wardId: req.body.wardId,

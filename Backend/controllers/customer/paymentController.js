@@ -1,4 +1,5 @@
 const pool = require('../../config/db');
+const emailService = require('../../services/customer/emailService');
 
 const ORDER_CODE_REGEX = /ORD[\s-]*(\d{13})[\s-]*(\d{4})/i;
 
@@ -59,6 +60,12 @@ async function bankWebhook(req, res) {
       "UPDATE orders SET payment_status = 'paid', updated_at = NOW() WHERE id = ? AND payment_status = 'unpaid'",
       [order.id]
     );
+
+    // Gửi email xác nhận thanh toán thành công (bất đồng bộ)
+    emailService.sendPaymentSuccessEmail(orderCode).catch((err) => {
+      console.error(`[Webhook] Lỗi khi gửi email xác nhận thanh toán cho đơn ${orderCode}:`, err);
+    });
+
     return res.status(200).json({ success: true, message: `Order ${orderCode} marked as paid.` });
   } catch (error) {
     console.error('Error in bankWebhook:', error);
@@ -111,6 +118,11 @@ async function simulatePayment(req, res) {
       "UPDATE orders SET payment_status = 'paid', updated_at = NOW() WHERE id = ?",
       [order.id]
     );
+
+    // Gửi email xác nhận thanh toán thành công (bất đồng bộ)
+    emailService.sendPaymentSuccessEmail(orderCode).catch((err) => {
+      console.error(`[SimulatePayment] Lỗi khi gửi email xác nhận thanh toán cho đơn ${orderCode}:`, err);
+    });
 
     return res.status(200).json({
       success: true,

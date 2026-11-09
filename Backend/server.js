@@ -48,7 +48,6 @@ const orderRoutes = require('./routes/customer/orderRoutes');
 const shippingRoutes = require('./routes/customer/shippingRoutes');
 const paymentRoutes = require('./routes/customer/paymentRoutes');
 const { testConnection } = require('./config/database');
-const emailService = require('./services/customer/emailService');
 
 // 3. Phục vụ Manager App SPA nếu đã build dist (Duong's Manager Portal)
 const managerAppDist = path.join(__dirname, '../views/manager-app/dist');
@@ -129,12 +128,6 @@ async function startServer() {
     console.log(`🛍️ Customer Catalog Web:         http://localhost:${PORT}/catalog`);
     console.log(`🔑 Auth API Endpoint:            http://localhost:${PORT}/api/auth`);
     console.log(`=================================================`);
-
-    // Tự động quét và gửi bù email xác nhận cho các đơn bị sót do server sập hoặc restart
-    emailService.retryPendingConfirmationEmails().catch(() => {});
-    setInterval(() => {
-      emailService.retryPendingConfirmationEmails().catch(() => {});
-    }, 5 * 60 * 1000);
   });
 }
 

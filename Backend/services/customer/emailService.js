@@ -323,47 +323,9 @@ async function sendOrderConfirmationEmail(orderCode) {
   }
 }
 
-/**
- * Cơ chế tự phục hồi (Self-Healing / Retry Worker)
- * Quét CSDL tìm các đơn hàng đã thanh toán (paid) hoặc COD nhưng chưa gửi được email
- * (do máy chủ sập đột ngột, restart hoặc mất mạng) để tự động gửi bù ngay lập tức.
- */
-async function retryPendingConfirmationEmails() {
-  try {
-    const [pendingOrders] = await pool.query(
-      `SELECT order_code, payment_method, payment_status
-       FROM orders
-       WHERE (confirmation_email_sent = 0 OR confirmation_email_sent IS NULL)
-         AND (payment_status = 'paid' OR payment_method = 'cod')
-         AND created_at >= NOW() - INTERVAL 7 DAY
-       ORDER BY id ASC
-       LIMIT 10`
-    );
-
-    if (!pendingOrders.length) return;
-
-    console.log(`[EMAIL RECOVERY] Phát hiện ${pendingOrders.length} đơn hàng chưa nhận được email (do hệ thống sập/restart trước đó). Đang tiến hành gửi bù tự động...`);
-
-    for (const ord of pendingOrders) {
-      try {
-        if (ord.payment_status === 'paid') {
-          await sendPaymentSuccessEmail(ord.order_code);
-        } else if (ord.payment_method === 'cod') {
-          await sendOrderConfirmationEmail(ord.order_code);
-        }
-      } catch (err) {
-        console.error(`[EMAIL RECOVERY] Lỗi khi gửi bù cho đơn ${ord.order_code}:`, err.message);
-      }
-    }
-  } catch (error) {
-    console.error('[EMAIL RECOVERY] Lỗi quét CSDL tìm đơn chưa gửi email:', error.message);
-  }
-}
-
 module.exports = {
   sendPaymentSuccessEmail,
   sendOrderConfirmationEmail,
-  retryPendingConfirmationEmails,
   buildPaymentSuccessHtml
 };
 

@@ -65,8 +65,8 @@ const cartRoutes = loadBackendSrcRoute('./src/routes/cart.routes');
 const customerProfileRoutes = loadBackendSrcRoute('./src/routes/customer.routes');
 const supportRoutes = loadBackendSrcRoute('./src/routes/support.routes');
 const { testConnection } = require('./config/database');
-const { expirePendingVietqrOrders } = require('./src/services/order.service');
-const { attachSupportWebSocket } = require('./src/services/realtime.service');
+const { expirePendingVietqrOrders } = loadBackendSrcRoute('./src/services/order.service');
+const { attachSupportWebSocket } = loadBackendSrcRoute('./src/services/realtime.service');
 
 // 3. Phục vụ Manager App SPA nếu đã build dist (Duong's Manager Portal)
 const managerAppDist = path.join(__dirname, '../views/manager-app/dist');

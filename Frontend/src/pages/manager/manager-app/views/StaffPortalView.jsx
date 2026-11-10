@@ -1627,7 +1627,7 @@ export default function StaffPortalView({ embedded = false }) {
                 <CheckCircle2 className="w-4 h-4 shrink-0" />
                 <span>{toastMsg}</span>
               </span>
-              <span className="text-[10px] font-mono opacity-80">MySQL Committed</span>
+              
             </div>
           )}
         </header>
@@ -2065,11 +2065,11 @@ export default function StaffPortalView({ embedded = false }) {
                       : '!bg-[#ffffff] !border-[#e2e8f0] !text-[#0f172a]'
                   }`}
                 >
-                  {/* Drawer Header: Order code, created_at, current status badge */}
+                  {/* Drawer Header: Order code, current status badge */}
                   <div
-                    className={`p-4 border-b ${t.borderColor} ${t.tableHeaderBg} flex items-start justify-between gap-2`}
+                    className={`p-4 border-b ${t.borderColor} ${t.tableHeaderBg} flex items-center justify-between gap-2`}
                   >
-                    <div className="min-w-0 space-y-1">
+                    <div className="min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className={`font-mono text-sm font-extrabold ${t.brandAccentText}`}>
                           {selectedOrder.order_code}
@@ -2083,12 +2083,6 @@ export default function StaffPortalView({ embedded = false }) {
                         >
                           {SHIPPING_STATUS_META[selectedOrder.shipping_status]?.shortLabel}
                         </StatusBadge>
-                      </div>
-                      <div className={`text-[11px] font-mono ${t.textMuted}`}>
-                        created_at: {selectedOrder.created_at} · Staff:{' '}
-                        <strong className={t.textPrimary}>
-                          {selectedOrder.processed_by_staff_id || 'Chưa gán (Unassigned)'}
-                        </strong>
                       </div>
                     </div>
 
@@ -2122,7 +2116,7 @@ export default function StaffPortalView({ embedded = false }) {
                         }`}
                       >
                         <Ban className="w-4 h-4 shrink-0" />
-                        <span>Đơn hàng đã bị hủy (shipping_status = 'cancelled')</span>
+                        <span>Đơn hàng đã bị hủy</span>
                       </div>
                     ) : (
                       <div className="grid grid-cols-4 gap-1.5 pt-1">
@@ -2433,12 +2427,12 @@ export default function StaffPortalView({ embedded = false }) {
               Close Ticket) and Chat with Customer.
              ================================================================== */}
           {activeMenu === 'tickets' && (
-            <div className={`w-full h-[calc(100vh-210px)] min-h-[640px] rounded-2xl border ${t.borderColor} ${t.surfaceCard} flex overflow-hidden shadow-2xl`}>
+            <div className={`w-full h-[calc(100vh-210px)] min-h-[640px] rounded-2xl border ${t.borderColor} ${t.surfaceCard} flex overflow-hidden ${isDark ? 'shadow-2xl' : 'shadow-sm'}`}>
               
               {/* -------------------------------------------------------------
                   PANE 1: CONVERSATION & TICKET LIST (Left Sidebar, 330px-360px)
                   ------------------------------------------------------------- */}
-              <div className={`w-80 lg:w-[350px] shrink-0 border-r ${t.borderColor} flex flex-col h-full ${isDark ? 'bg-[#0f172a]/60' : 'bg-slate-50/80'}`}>
+              <div className={`w-80 lg:w-[350px] shrink-0 border-r ${t.borderColor} flex flex-col h-full ${isDark ? 'bg-[#0f172a]/60' : 'bg-[#f8fafc]'}`}>
                 {/* Search & Filter Header */}
                 <div className={`p-3 border-b ${t.borderColor} space-y-2.5 shrink-0 ${isDark ? 'bg-[#131b2e]' : 'bg-white'}`}>
                   <div className="flex items-center justify-between">
@@ -2448,7 +2442,11 @@ export default function StaffPortalView({ embedded = false }) {
                         Hội thoại CSKH &amp; Ticket
                       </span>
                     </div>
-                    <span className="text-[10px] font-mono px-2 py-0.5 rounded-full font-bold bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+                    <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full font-bold border ${
+                      isDark
+                        ? 'bg-cyan-500/10 text-cyan-400 border-cyan-500/20'
+                        : 'bg-[#ecfeff] text-[#0891b2] border-[#0891b2]/25'
+                    }`}>
                       {supportTickets.length} cuộc hội thoại
                     </span>
                   </div>
@@ -2490,14 +2488,20 @@ export default function StaffPortalView({ embedded = false }) {
                           onClick={() => setTicketFilter(tab.key)}
                           className={`px-2.5 py-1 rounded-lg text-[11px] font-bold whitespace-nowrap transition cursor-pointer flex items-center gap-1 ${
                             isActive
-                              ? `${t.brandGradient} text-white shadow-xs`
+                              ? `${t.brandGradient} text-[#ffffff] shadow-xs`
                               : isDark
-                                ? 'bg-slate-800 text-slate-400 hover:text-slate-200 hover:bg-slate-700/80'
-                                : 'bg-slate-200/80 text-slate-600 hover:text-slate-900 hover:bg-slate-300'
+                                ? 'bg-[#1e293b] text-[#94a3b8] hover:text-[#e2e8f0] hover:bg-[#334155]/80'
+                                : 'bg-[#f1f5f9] text-[#475569] hover:text-[#0f172a] hover:bg-[#e2e8f0]'
                           }`}
                         >
                           <span>{tab.label}</span>
-                          <span className={`text-[9px] px-1 py-0.2 rounded-full ${isActive ? 'bg-white/25 text-white' : 'bg-slate-700/20 text-inherit'}`}>
+                          <span className={`text-[9px] px-1 py-0.2 rounded-full ${
+                            isActive
+                              ? 'bg-white/25 text-[#ffffff]'
+                              : isDark
+                                ? 'bg-[#0f172a]/70 text-[#cbd5e1]'
+                                : 'bg-white text-[#475569] border border-[#e2e8f0]'
+                          }`}>
                             {tab.count}
                           </span>
                         </button>
@@ -2507,7 +2511,7 @@ export default function StaffPortalView({ embedded = false }) {
                 </div>
 
                 {/* Conversation List */}
-                <div className="flex-1 overflow-y-auto divide-y divide-slate-800/10 [scrollbar-width:thin]">
+                <div className={`flex-1 overflow-y-auto divide-y ${t.divideColor} [scrollbar-width:thin]`}>
                   {filteredTicketList.length === 0 && (
                     <div className={`p-8 text-center text-xs ${t.textMuted}`}>
                       Không tìm thấy ticket hoặc hội thoại nào phù hợp.
@@ -2535,20 +2539,22 @@ export default function StaffPortalView({ embedded = false }) {
                           isSelected
                             ? isDark
                               ? 'bg-[#1e293b] border-l-4 border-l-[#06b6d4] shadow-inner'
-                              : 'bg-cyan-50/90 border-l-4 border-l-[#0891b2] shadow-xs'
-                            : t.rowHover
+                              : 'bg-[#ecfeff] border-l-4 border-l-[#0891b2] shadow-xs'
+                            : isDark
+                              ? 'hover:bg-[#1a243b]'
+                              : 'hover:bg-white'
                         }`}
                       >
                         <div className="flex items-start gap-3">
                           {/* Avatar with Online badge */}
                           <div className="relative shrink-0">
-                            <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-cyan-500 to-indigo-600 flex items-center justify-center text-white font-extrabold text-xs shadow-sm">
+                            <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-cyan-500 to-indigo-600 flex items-center justify-center text-[#ffffff] font-extrabold text-xs shadow-sm">
                               {tk.customer_name.slice(0, 2).toUpperCase()}
                             </div>
                             <span
                               className={`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border-2 ${
-                                isDark ? 'border-slate-900' : 'border-white'
-                              } ${tk.status === 'closed' ? 'bg-slate-400' : 'bg-emerald-400'}`}
+                                isDark ? 'border-[#0f172a]' : 'border-white'
+                              } ${tk.status === 'closed' ? 'bg-[#94a3b8]' : 'bg-emerald-400'}`}
                             />
                           </div>
 
@@ -2564,15 +2570,21 @@ export default function StaffPortalView({ embedded = false }) {
                             </div>
 
                             <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
-                              <span className="font-mono text-[10px] font-extrabold text-cyan-400">
+                              <span className={`font-mono text-[10px] font-extrabold ${t.brandAccentText}`}>
                                 #{tk.ticket_id}
                               </span>
-                              <span className={`text-[10px] px-1.5 py-0.2 rounded font-semibold ${
+                              <span className={`text-[10px] px-1.5 py-0.2 rounded font-semibold border ${
                                 tk.category === 'warranty'
-                                  ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
-                                  : tk.category === 'pc_build'
-                                    ? 'bg-violet-500/10 text-violet-400 border border-violet-500/20'
-                                    : 'bg-sky-500/10 text-sky-400 border border-sky-500/20'
+                                  ? isDark
+                                    ? 'bg-rose-500/10 text-rose-400 border-rose-500/20'
+                                    : 'bg-[#fff1f2] text-[#e11d48] border-[#e11d48]/20'
+                                  : tk.category === 'pc_build' || tk.category === 'build_pc'
+                                    ? isDark
+                                      ? 'bg-violet-500/10 text-violet-400 border-violet-500/20'
+                                      : 'bg-[#f5f3ff] text-[#7c3aed] border-[#7c3aed]/20'
+                                    : isDark
+                                      ? 'bg-sky-500/10 text-sky-400 border-sky-500/20'
+                                      : 'bg-[#f0f9ff] text-[#0284c7] border-[#0284c7]/20'
                               }`}>
                                 {tk.category_label.split('&')[0]}
                               </span>
@@ -2580,11 +2592,11 @@ export default function StaffPortalView({ embedded = false }) {
 
                             <p className={`text-[11px] truncate mt-1 ${
                               isSelected
-                                ? isDark ? 'text-slate-200' : 'text-slate-800 font-medium'
+                                ? isDark ? 'text-[#e2e8f0]' : 'text-[#0f172a] font-medium'
                                 : t.textMuted
                             }`}>
                               {lastMsg?.sender === 'staff' ? (
-                                <span className="font-semibold text-cyan-400">Bạn: </span>
+                                <span className={`font-semibold ${t.brandAccentText}`}>Bạn: </span>
                               ) : null}
                               {lastMsg?.text || 'Bắt đầu cuộc trò chuyện'}
                             </p>
@@ -2596,7 +2608,9 @@ export default function StaffPortalView({ embedded = false }) {
                               <span className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse shadow-sm shadow-amber-400/50" title="Chờ tiếp nhận" />
                             )}
                             {tk.unread > 0 && (
-                              <span className="w-4 h-4 rounded-full bg-cyan-500 text-slate-950 text-[9px] font-black flex items-center justify-center shadow">
+                              <span className={`w-4 h-4 rounded-full text-[9px] font-black flex items-center justify-center shadow ${
+                                isDark ? 'bg-cyan-500 text-[#020617]' : 'bg-[#0891b2] text-[#ffffff]'
+                              }`}>
                                 {tk.unread}
                               </span>
                             )}
@@ -2616,7 +2630,7 @@ export default function StaffPortalView({ embedded = false }) {
                   {/* Top Header Bar of Active Conversation */}
                   <div className={`p-3.5 border-b ${t.borderColor} flex items-center justify-between gap-3 shrink-0 ${isDark ? 'bg-[#131b2e]' : 'bg-white'}`}>
                     <div className="flex items-center gap-3 min-w-0">
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-cyan-500 to-indigo-600 flex items-center justify-center text-white font-extrabold text-sm shadow">
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-cyan-500 to-indigo-600 flex items-center justify-center text-[#ffffff] font-extrabold text-sm shadow">
                         {selectedTicket.customer_name.slice(0, 2).toUpperCase()}
                       </div>
                       <div className="min-w-0">
@@ -2637,19 +2651,28 @@ export default function StaffPortalView({ embedded = false }) {
                             {selectedTicket.priority_label}
                           </StatusBadge>
                         </div>
-                        <div className="flex items-center gap-2 text-[11px] text-slate-400 mt-0.5 flex-wrap">
-                          <span>SĐT: <strong className="font-mono text-slate-300">{selectedTicket.customer_phone}</strong></span>
-                          <span>•</span>
-                          <span
-                            className="font-mono text-cyan-400 font-semibold cursor-pointer hover:underline flex items-center gap-1"
-                            onClick={() => handleJumpToOrder(selectedTicket.order_code)}
-                            title="Nhấp để xem đơn hàng này trong phần Xử lý đơn"
-                          >
-                            <span>Đơn: {selectedTicket.order_code}</span>
-                            <ExternalLink className="w-3 h-3" />
+                        <div className={`flex items-center gap-2 text-[11px] ${t.textMuted} mt-0.5 flex-wrap`}>
+                          <span>
+                            SĐT:{' '}
+                            <strong className={selectedTicket.customer_phone ? `font-mono ${t.textPrimary}` : `font-normal italic ${t.textMuted}`}>
+                              {selectedTicket.customer_phone || 'Chưa có'}
+                            </strong>
                           </span>
                           <span>•</span>
-                          <span className="flex items-center gap-1 text-emerald-400 font-medium">
+                          {selectedTicket.order_code ? (
+                            <span
+                              className={`font-mono ${t.brandAccentText} font-semibold cursor-pointer hover:underline flex items-center gap-1`}
+                              onClick={() => handleJumpToOrder(selectedTicket.order_code)}
+                              title="Nhấp để xem đơn hàng này trong phần Xử lý đơn"
+                            >
+                              <span>Đơn: {selectedTicket.order_code}</span>
+                              <ExternalLink className="w-3 h-3" />
+                            </span>
+                          ) : (
+                            <span className="italic">Chưa gắn đơn hàng</span>
+                          )}
+                          <span>•</span>
+                          <span className={`flex items-center gap-1 font-medium ${isDark ? 'text-emerald-400' : 'text-[#059669]'}`}>
                             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
                             Đang trực tuyến
                           </span>
@@ -2663,7 +2686,11 @@ export default function StaffPortalView({ embedded = false }) {
                         <button
                           type="button"
                           onClick={() => handleAssignTicket(selectedTicket.ticket_id)}
-                          className="px-3 py-1.5 rounded-xl text-xs font-bold bg-cyan-400 hover:bg-cyan-300 text-slate-950 shadow-md shadow-cyan-500/20 transition flex items-center gap-1.5 cursor-pointer"
+                          className={`px-3 py-1.5 rounded-xl text-xs font-bold shadow-md transition flex items-center gap-1.5 cursor-pointer ${
+                            isDark
+                              ? 'bg-cyan-400 hover:bg-cyan-300 text-slate-950 shadow-cyan-500/20'
+                              : 'bg-[#0891b2] hover:bg-[#0e7490] text-[#ffffff] shadow-cyan-600/20'
+                          }`}
                           title="Tiếp nhận xử lý ticket này"
                         >
                           <CheckCircle2 className="w-3.5 h-3.5" />
@@ -2675,7 +2702,7 @@ export default function StaffPortalView({ embedded = false }) {
                         <button
                           type="button"
                           onClick={() => handleCloseTicket(selectedTicket.ticket_id)}
-                          className="px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow-md shadow-emerald-600/20 transition flex items-center gap-1.5 cursor-pointer"
+                          className="px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-[#ffffff] shadow-md shadow-emerald-600/20 transition flex items-center gap-1.5 cursor-pointer"
                           title="Đóng ticket (Hoàn tất hỗ trợ)"
                         >
                           <Check className="w-3.5 h-3.5" />
@@ -2685,7 +2712,11 @@ export default function StaffPortalView({ embedded = false }) {
                         <button
                           type="button"
                           onClick={() => handleReopenTicket(selectedTicket.ticket_id)}
-                          className="px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30 transition flex items-center gap-1.5 cursor-pointer"
+                          className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition flex items-center gap-1.5 cursor-pointer ${
+                            isDark
+                              ? 'bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border-amber-500/30'
+                              : 'bg-[#fffbeb] hover:bg-amber-100 text-[#d97706] border-[#d97706]/30'
+                          }`}
                           title="Mở lại ticket này"
                         >
                           <RotateCcw className="w-3.5 h-3.5" />
@@ -2696,10 +2727,14 @@ export default function StaffPortalView({ embedded = false }) {
                       <button
                         type="button"
                         onClick={() => handleEscalateTicket(selectedTicket.ticket_id)}
-                        className="px-2.5 py-1.5 rounded-xl text-xs font-semibold bg-violet-500/10 hover:bg-violet-500/20 text-violet-400 border border-violet-500/30 transition flex items-center gap-1 cursor-pointer hidden md:flex"
+                        className={`px-2.5 py-1.5 rounded-xl text-xs font-semibold border transition flex items-center gap-1 cursor-pointer hidden md:flex ${
+                          isDark
+                            ? 'bg-violet-500/10 hover:bg-violet-500/20 text-violet-400 border-violet-500/30'
+                            : 'bg-[#f5f3ff] hover:bg-violet-100 text-[#7c3aed] border-[#7c3aed]/25'
+                        }`}
                         title="Chuyển sang bộ phận kỹ sư phần cứng"
                       >
-                        <Sparkles className="w-3.5 h-3.5 text-violet-400" />
+                        <Sparkles className={`w-3.5 h-3.5 ${isDark ? 'text-violet-400' : 'text-[#7c3aed]'}`} />
                         <span>Chuyển Kỹ Thuật</span>
                       </button>
 
@@ -2708,8 +2743,10 @@ export default function StaffPortalView({ embedded = false }) {
                         onClick={() => setIsTicketDrawerOpen(!isTicketDrawerOpen)}
                         className={`p-2 rounded-xl border transition cursor-pointer ${
                           isTicketDrawerOpen
-                            ? 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30'
-                            : `${t.subtleSurface} ${t.textMuted} hover:text-white`
+                            ? isDark
+                              ? 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30'
+                              : 'bg-[#ecfeff] text-[#0891b2] border-[#0891b2]/30'
+                            : `${t.subtleSurface} ${t.textMuted} ${isDark ? 'hover:text-white' : 'hover:text-[#0f172a]'}`
                         }`}
                         title="Bật/Tắt thông tin chi tiết ticket"
                       >
@@ -2719,9 +2756,13 @@ export default function StaffPortalView({ embedded = false }) {
                   </div>
 
                   {/* Scrollable Chat Feed Area */}
-                  <div className={`flex-1 overflow-y-auto p-4 space-y-3.5 ${isDark ? 'bg-slate-950/40' : 'bg-slate-100/60'} [scrollbar-width:thin]`}>
+                  <div className={`flex-1 overflow-y-auto p-4 space-y-3.5 ${isDark ? 'bg-[#0b1220]' : 'bg-[#f1f5f9]'} [scrollbar-width:thin]`}>
                     <div className="flex justify-center">
-                      <span className={`px-3 py-1 rounded-full text-[10px] font-mono font-medium ${isDark ? 'bg-slate-800 text-slate-400 border border-slate-700' : 'bg-slate-200 text-slate-600'}`}>
+                      <span className={`px-3 py-1 rounded-full text-[10px] font-mono font-medium border ${
+                        isDark
+                          ? 'bg-[#1e293b] text-[#94a3b8] border-[#334155]'
+                          : 'bg-white text-[#475569] border-[#e2e8f0] shadow-xs'
+                      }`}>
                         Hôm nay, 5 tháng 11, 2026
                       </span>
                     </div>
@@ -2730,7 +2771,11 @@ export default function StaffPortalView({ embedded = false }) {
                       if (m.sender === 'system') {
                         return (
                           <div key={m.id} className="flex justify-center my-2">
-                            <span className="px-3.5 py-1 rounded-lg text-[11px] font-medium bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 max-w-lg text-center leading-relaxed">
+                            <span className={`px-3.5 py-1 rounded-lg text-[11px] font-medium border max-w-lg text-center leading-relaxed ${
+                              isDark
+                                ? 'bg-cyan-500/10 text-cyan-300 border-cyan-500/20'
+                                : 'bg-[#ecfeff] text-[#0e7490] border-[#0891b2]/25'
+                            }`}>
                               {m.text}
                             </span>
                           </div>
@@ -2742,26 +2787,26 @@ export default function StaffPortalView({ embedded = false }) {
                         <div key={m.id} className={`flex flex-col ${isStaff ? 'items-end' : 'items-start'} space-y-1`}>
                           <div className="flex items-end gap-2 max-w-[80%]">
                             {!isStaff && (
-                              <div className="w-7 h-7 rounded-full bg-indigo-600 flex items-center justify-center text-white text-[10px] font-bold shrink-0 mb-1">
+                              <div className="w-7 h-7 rounded-full bg-indigo-600 flex items-center justify-center text-[#ffffff] text-[10px] font-bold shrink-0 mb-1">
                                 {selectedTicket.customer_name.slice(0, 1)}
                               </div>
                             )}
                             <div
                               className={`p-3 rounded-2xl text-xs leading-relaxed whitespace-pre-line shadow-sm ${
                                 isStaff
-                                  ? `${t.brandGradient} text-white rounded-br-xs shadow-cyan-500/10`
+                                  ? `${t.brandGradient} text-[#ffffff] rounded-br-xs shadow-cyan-500/10`
                                   : isDark
-                                    ? 'bg-[#1e293b] text-slate-100 border border-slate-800 rounded-bl-xs'
-                                    : 'bg-white text-slate-800 border border-slate-200 rounded-bl-xs shadow-xs'
+                                    ? 'bg-[#1e293b] text-[#f1f5f9] border border-[#334155] rounded-bl-xs'
+                                    : 'bg-white text-[#0f172a] border border-[#e2e8f0] rounded-bl-xs shadow-xs'
                               }`}
                             >
                               {m.text}
                             </div>
                           </div>
-                          <div className={`flex items-center gap-1.5 ${isStaff ? 'pr-1' : 'pl-9'} text-[10px] text-slate-400 font-mono`}>
+                          <div className={`flex items-center gap-1.5 ${isStaff ? 'pr-1' : 'pl-9'} text-[10px] ${t.textMuted} font-mono`}>
                             <span>{m.time}</span>
                             {isStaff && (
-                              <span className="flex items-center gap-0.5 text-cyan-400 font-semibold">
+                              <span className={`flex items-center gap-0.5 font-semibold ${t.brandAccentText}`}>
                                 <CheckCheck className="w-3 h-3" />
                                 <span>Đã nhận</span>
                               </span>
@@ -2781,10 +2826,10 @@ export default function StaffPortalView({ embedded = false }) {
                         el.scrollLeft += e.deltaY;
                       }
                     }}
-                    className={`px-4 py-2 border-t ${t.borderColor} ${isDark ? 'bg-[#0f172a]/70' : 'bg-slate-50'} flex items-center gap-1.5 overflow-x-auto no-scrollbar shrink-0`}
+                    className={`px-4 py-2 border-t ${t.borderColor} ${isDark ? 'bg-[#0f172a]/70' : 'bg-[#f8fafc]'} flex items-center gap-1.5 overflow-x-auto no-scrollbar shrink-0`}
                   >
                     <span className={`text-[10px] font-black uppercase tracking-wider ${t.textMuted} shrink-0 mr-1 flex items-center gap-1`}>
-                      <Sparkles className="w-3 h-3 text-cyan-400" />
+                      <Sparkles className={`w-3 h-3 ${t.brandAccentText}`} />
                       Gợi ý:
                     </span>
                     {CANNED_REPLIES.map((canned, idx) => (
@@ -2794,8 +2839,8 @@ export default function StaffPortalView({ embedded = false }) {
                         onClick={() => handleSendChatMessage(canned)}
                         className={`px-2.5 py-1 rounded-lg text-[11px] font-medium whitespace-nowrap border transition cursor-pointer shrink-0 ${
                           isDark
-                            ? 'bg-slate-800/80 hover:bg-cyan-500/20 text-slate-300 hover:text-cyan-300 border-slate-700/60 hover:border-cyan-500/40'
-                            : 'bg-white hover:bg-cyan-50 text-slate-700 hover:text-cyan-700 border-slate-200 hover:border-cyan-300 shadow-xs'
+                            ? 'bg-[#1e293b]/80 hover:bg-cyan-500/20 text-[#cbd5e1] hover:text-cyan-300 border-[#334155]/60 hover:border-cyan-500/40'
+                            : 'bg-white hover:bg-[#ecfeff] text-[#334155] hover:text-[#0891b2] border-[#e2e8f0] hover:border-[#0891b2]/40 shadow-xs'
                         }`}
                         title="Nhấp để gửi ngay phản hồi mẫu này"
                       >
@@ -2815,7 +2860,9 @@ export default function StaffPortalView({ embedded = false }) {
                     <button
                       type="button"
                       onClick={() => triggerToast('Đã mở hộp thoại tải ảnh / biên bản lỗi linh kiện')}
-                      className={`p-2 rounded-xl text-slate-400 hover:text-cyan-400 transition cursor-pointer hover:bg-slate-800/50`}
+                      className={`p-2 rounded-xl transition cursor-pointer ${t.textMuted} ${
+                        isDark ? 'hover:text-cyan-400 hover:bg-[#1e293b]' : 'hover:text-[#0891b2] hover:bg-[#f1f5f9]'
+                      }`}
                       title="Đính kèm ảnh hiện trạng lỗi linh kiện"
                     >
                       <Paperclip className="w-4 h-4" />
@@ -2830,7 +2877,7 @@ export default function StaffPortalView({ embedded = false }) {
                     <button
                       type="submit"
                       disabled={!chatInputText.trim()}
-                      className={`px-4 py-2.5 rounded-xl text-xs font-bold text-white transition flex items-center gap-1.5 cursor-pointer disabled:opacity-40 shadow-md ${t.brandGradient}`}
+                      className={`px-4 py-2.5 rounded-xl text-xs font-bold text-[#ffffff] transition flex items-center gap-1.5 cursor-pointer disabled:opacity-40 shadow-md ${t.brandGradient}`}
                     >
                       <Send className="w-3.5 h-3.5" />
                       <span>Gửi</span>
@@ -2838,7 +2885,7 @@ export default function StaffPortalView({ embedded = false }) {
                   </form>
                 </div>
               ) : (
-                <div className="flex-1 flex items-center justify-center text-xs text-slate-400">
+                <div className={`flex-1 flex items-center justify-center text-xs ${t.textMuted}`}>
                   Chọn một cuộc hội thoại từ danh sách bên trái để bắt đầu.
                 </div>
               )}
@@ -2851,7 +2898,7 @@ export default function StaffPortalView({ embedded = false }) {
                   {/* Header of details drawer */}
                   <div className={`p-3.5 border-b ${t.borderColor} flex items-center justify-between shrink-0`}>
                     <div className="flex items-center gap-2">
-                      <FileText className="w-4 h-4 text-cyan-400" />
+                      <FileText className={`w-4 h-4 ${t.brandAccentText}`} />
                       <span className={`text-xs font-black tracking-tight ${t.textPrimary}`}>
                         Thông tin Ticket &amp; Khách hàng
                       </span>
@@ -2859,7 +2906,7 @@ export default function StaffPortalView({ embedded = false }) {
                     <button
                       type="button"
                       onClick={() => setIsTicketDrawerOpen(false)}
-                      className={`p-1 rounded-lg ${t.textMuted} hover:text-white transition cursor-pointer`}
+                      className={`p-1 rounded-lg ${t.textMuted} ${isDark ? 'hover:text-white' : 'hover:text-[#0f172a]'} transition cursor-pointer`}
                       title="Ẩn bảng chi tiết"
                     >
                       <X className="w-3.5 h-3.5" />
@@ -2870,27 +2917,31 @@ export default function StaffPortalView({ embedded = false }) {
                     {/* Customer Card */}
                     <div className={`p-3.5 rounded-xl border ${t.borderColor} ${t.subtleSurface} space-y-2.5`}>
                       <div className="flex items-center gap-2.5">
-                        <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-cyan-500 to-indigo-600 flex items-center justify-center text-white font-extrabold text-xs shadow-xs">
+                        <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-cyan-500 to-indigo-600 flex items-center justify-center text-[#ffffff] font-extrabold text-xs shadow-xs">
                           {selectedTicket.customer_name.slice(0, 2).toUpperCase()}
                         </div>
                         <div>
                           <div className={`text-xs font-extrabold ${t.textPrimary}`}>
                             {selectedTicket.customer_name}
                           </div>
-                          <div className="text-[10px] text-emerald-400 font-medium">
-                            Khách hàng đã xác thực
+                          <div className={`text-[10px] font-medium ${isDark ? 'text-emerald-400' : 'text-[#059669]'}`}>
+                            {selectedTicket.customer_id ? 'Khách hàng đã xác thực' : 'Khách vãng lai'}
                           </div>
                         </div>
                       </div>
 
-                      <div className="space-y-1.5 text-[11px] pt-1 border-t border-inherit">
-                        <div className="flex items-center gap-2 text-slate-400">
-                          <Phone className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                          <span className="font-mono text-slate-200">{selectedTicket.customer_phone}</span>
+                      <div className={`space-y-1.5 text-[11px] pt-2 border-t ${t.borderColor}`}>
+                        <div className={`flex items-center gap-2 ${t.textMuted}`}>
+                          <Phone className={`w-3.5 h-3.5 ${t.textMuted} shrink-0`} />
+                          <span className={selectedTicket.customer_phone ? `font-mono ${t.textPrimary}` : `italic ${t.textMuted}`}>
+                            {selectedTicket.customer_phone || 'Chưa cập nhật SĐT'}
+                          </span>
                         </div>
-                        <div className="flex items-start gap-2 text-slate-400">
-                          <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0 mt-0.5" />
-                          <span className="text-slate-300 leading-tight">{selectedTicket.customer_address}</span>
+                        <div className={`flex items-start gap-2 ${t.textMuted}`}>
+                          <MapPin className={`w-3.5 h-3.5 ${t.textMuted} shrink-0 mt-0.5`} />
+                          <span className={selectedTicket.customer_address ? `${isDark ? 'text-[#cbd5e1]' : 'text-[#334155]'} leading-tight` : `italic ${t.textMuted} leading-tight`}>
+                            {selectedTicket.customer_address || 'Chưa cập nhật địa chỉ'}
+                          </span>
                         </div>
                       </div>
                     </div>
@@ -2903,11 +2954,11 @@ export default function StaffPortalView({ embedded = false }) {
                       <div className="space-y-2 text-xs">
                         <div className="flex items-center justify-between">
                           <span className={t.textMuted}>Mã Ticket:</span>
-                          <span className="font-mono font-black text-cyan-400">#{selectedTicket.ticket_id}</span>
+                          <span className={`font-mono font-black ${t.brandAccentText}`}>#{selectedTicket.ticket_id}</span>
                         </div>
-                        <div className="flex items-center justify-between">
+                        <div className="flex items-center justify-between gap-2">
                           <span className={t.textMuted}>Phân loại:</span>
-                          <span className="font-semibold text-slate-200">{selectedTicket.category_label}</span>
+                          <span className={`font-semibold text-right ${t.textPrimary}`}>{selectedTicket.category_label}</span>
                         </div>
                         <div className="flex items-center justify-between">
                           <span className={t.textMuted}>Mức độ:</span>
@@ -2917,11 +2968,11 @@ export default function StaffPortalView({ embedded = false }) {
                         </div>
                         <div className="flex items-center justify-between">
                           <span className={t.textMuted}>Nhân viên phụ trách:</span>
-                          <span className="font-bold text-violet-400">{selectedTicket.assigned_staff || 'Chưa gán'}</span>
+                          <span className={`font-bold ${isDark ? 'text-violet-400' : 'text-[#7c3aed]'}`}>{selectedTicket.assigned_staff || 'Chưa gán'}</span>
                         </div>
                         <div className="flex items-center justify-between">
                           <span className={t.textMuted}>Thời gian tạo:</span>
-                          <span className="font-mono text-[11px] text-slate-400">{selectedTicket.created_at}</span>
+                          <span className={`font-mono text-[11px] ${t.textMuted}`}>{selectedTicket.created_at}</span>
                         </div>
                       </div>
                     </div>
@@ -2932,23 +2983,24 @@ export default function StaffPortalView({ embedded = false }) {
                         <span className={`text-[10px] font-black uppercase tracking-wider ${t.textMuted}`}>
                           Đơn hàng đính kèm
                         </span>
-                        <span className="font-mono text-xs font-bold text-cyan-400">
-                          {selectedTicket.order_code}
+                        <span className={`font-mono text-xs font-bold ${selectedTicket.order_code ? t.brandAccentText : t.textMuted}`}>
+                          {selectedTicket.order_code || 'Không có'}
                         </span>
                       </div>
                       <div className="flex items-baseline justify-between">
-                        <span className="text-xs text-slate-400">Tổng giá trị:</span>
-                        <span className="font-mono text-sm font-extrabold text-white">
+                        <span className={`text-xs ${t.textMuted}`}>Tổng giá trị:</span>
+                        <span className={`font-mono text-sm font-extrabold ${t.textPrimary}`}>
                           {formatVND(selectedTicket.order_amount)}
                         </span>
                       </div>
                       <button
                         type="button"
+                        disabled={!selectedTicket.order_code}
                         onClick={() => handleJumpToOrder(selectedTicket.order_code)}
-                        className={`w-full py-2 rounded-xl text-xs font-bold border transition flex items-center justify-center gap-1.5 cursor-pointer ${
+                        className={`w-full py-2 rounded-xl text-xs font-bold border transition flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${
                           isDark
-                            ? 'bg-slate-800 hover:bg-slate-700 text-cyan-300 border-slate-700 hover:border-cyan-500/40'
-                            : 'bg-white hover:bg-cyan-50 text-cyan-700 border-slate-300 shadow-xs'
+                            ? 'bg-[#1e293b] hover:bg-[#334155] text-[#67e8f9] border-[#334155] hover:border-cyan-500/40'
+                            : 'bg-white hover:bg-[#ecfeff] text-[#0891b2] border-[#e2e8f0] hover:border-[#0891b2]/40 shadow-xs'
                         }`}
                       >
                         <ExternalLink className="w-3.5 h-3.5" />
@@ -2962,7 +3014,7 @@ export default function StaffPortalView({ embedded = false }) {
                         <span className={`text-[10px] font-black uppercase tracking-wider ${t.textMuted}`}>
                           Ghi chú nội bộ cho ca trực
                         </span>
-                        <span className="text-[10px] text-slate-500">(Khách không thấy)</span>
+                        <span className={`text-[10px] ${t.textMuted}`}>(Khách không thấy)</span>
                       </div>
                       <textarea
                         rows={3}
@@ -2974,7 +3026,11 @@ export default function StaffPortalView({ embedded = false }) {
                       <button
                         type="button"
                         onClick={() => handleSaveInternalNotes(selectedTicket.ticket_id)}
-                        className="w-full py-1.5 rounded-xl text-xs font-bold bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/30 transition cursor-pointer"
+                        className={`w-full py-1.5 rounded-xl text-xs font-bold border transition cursor-pointer ${
+                          isDark
+                            ? 'bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border-cyan-500/30'
+                            : 'bg-[#ecfeff] hover:bg-cyan-100 text-[#0e7490] border-[#0891b2]/30'
+                        }`}
                       >
                         Lưu ghi chú nội bộ
                       </button>

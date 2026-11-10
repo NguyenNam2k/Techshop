@@ -9,6 +9,7 @@ router.delete('/:orderCode/cancel-unpaid', orderController.cancelUnpaidOrder);
 router.post('/:orderCode/cancel-request', orderController.requestCancellation);
 router.post('/:orderCode/return-request', orderController.requestReturn);
 router.patch('/:orderCode/status', orderController.updateStatus);
+router.post('/:orderCode/customer-decision', orderController.confirmCustomerDecision);
 router.get('/:orderCode', orderController.getOrderDetail);
 
 module.exports = router;

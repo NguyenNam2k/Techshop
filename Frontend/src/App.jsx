@@ -28,6 +28,7 @@ import PermissionManagement from './pages/admin/PermissionManagement';
 
 // Manager pages
 import ManagerProductsPage from './pages/manager/ManagerProductsPage';
+import StaffPage from './pages/staff/StaffPage';
 
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { CartProvider } from './context/CartContext';
@@ -51,21 +52,29 @@ function AppContent() {
       return <Navigate to="/admin" replace />;
     }
 
-    // 2. Manager / Staff không được phép vào các trang của role khác (admin, customer...)
-    if (
-      (userRole === 'manager' || userRole === 'staff') &&
-      !location.pathname.startsWith('/manager')
-    ) {
+    // 2. Staff chỉ được phép vào trang staff (/staff)
+    if (userRole === 'staff' && !location.pathname.startsWith('/staff')) {
+      return <Navigate to="/staff" replace />;
+    }
+
+    // 3. Manager chỉ được phép vào trang manager (/manager)
+    if (userRole === 'manager' && !location.pathname.startsWith('/manager')) {
       return <Navigate to="/manager/products" replace />;
     }
 
-    // 3. Customer không được phép vào trang của Admin
-    if (userRole === 'customer' && location.pathname.startsWith('/admin')) {
+    // 4. Customer không được phép vào trang quản trị / vận hành (admin, manager, staff)
+    if (
+      userRole === 'customer' &&
+      (location.pathname.startsWith('/admin') ||
+        location.pathname.startsWith('/manager') ||
+        location.pathname.startsWith('/staff'))
+    ) {
       return <Navigate to="/catalog" replace />;
     }
   }
 
   const isStandalone =
+    location.pathname.startsWith('/staff') ||
     location.pathname.startsWith('/manager') ||
     location.pathname.startsWith('/admin') ||
     location.pathname === '/login' ||
@@ -141,6 +150,24 @@ function AppContent() {
           {/* Auth routes */}
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
+
+          {/* Staff routes - Bàn làm việc Vận hành & Đơn hàng độc lập */}
+          <Route
+            path="/staff"
+            element={
+              <ProtectedRoute allowedRoles={['staff', 'manager', 'admin']}>
+                <StaffPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/staff/*"
+            element={
+              <ProtectedRoute allowedRoles={['staff', 'manager', 'admin']}>
+                <StaffPage />
+              </ProtectedRoute>
+            }
+          />
 
           {/* Manager routes - Giao diện Manager Portal từ nhánh feature/manager-duong */}
           <Route path="/manager" element={<Navigate to="/manager/products" replace />} />

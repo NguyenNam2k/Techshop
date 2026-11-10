@@ -308,6 +308,7 @@ CREATE TABLE `orders` (
     `payment_status` ENUM('unpaid', 'paid', 'refunded') NOT NULL DEFAULT 'unpaid',
     `payment_expires_at` TIMESTAMP NULL DEFAULT NULL,
     `shipping_status` ENUM('pending', 'processing', 'shipping', 'delivered', 'cancelled') NOT NULL DEFAULT 'pending',
+    `customer_decision` ENUM('received', 'return_requested') NULL DEFAULT NULL,
     `total_amount` DECIMAL(12, 2) NOT NULL DEFAULT 0.00,
     `shipping_fee` DECIMAL(12, 2) NOT NULL DEFAULT 0.00,
     `final_amount` DECIMAL(12, 2) NOT NULL DEFAULT 0.00,
@@ -616,9 +617,107 @@ WHERE r.role_name = 'staff'
     'reviews.view', 'reviews.reply'
   );
 
+-- 7. N?p t?i kho?n Staff m?u cho h? th?ng v?n h?nh
+-- M?t kh?u m?c ??nh: staff123 (Bcrypt: $2a$10$DIw2FjIlK2cMlFhEBMFR5OLKXUzf2Lvd28eC8zyYuVO445Mhqale2)
+INSERT INTO `staffs` (`id`, `username`, `staff_code`, `full_name`, `email`, `password_hash`, `department`, `phone`, `status`, `created_at`, `updated_at`)
+VALUES
+(1, 'staff1', 'STF001', 'L? V?n T? (Sales Lead)', 'staff1@techshop.vn', '$2a$10$DIw2FjIlK2cMlFhEBMFR5OLKXUzf2Lvd28eC8zyYuVO445Mhqale2', 'Sales', '0966123456', 'active', NOW(), NOW()),
+(2, 'staff2', 'STF002', 'Ph?m H?i D??ng (Warehouse Officer)', 'staff2@techshop.vn', '$2a$10$DIw2FjIlK2cMlFhEBMFR5OLKXUzf2Lvd28eC8zyYuVO445Mhqale2', 'Warehouse', '0966654321', 'active', NOW(), NOW()),
+(3, 'staff3', 'STF-102', 'Nguy?n V?n Nam (Fulfillment & Operations)', 'staff3@techshop.vn', '$2a$10$DIw2FjIlK2cMlFhEBMFR5OLKXUzf2Lvd28eC8zyYuVO445Mhqale2', 'Warehouse', '0966789012', 'active', NOW(), NOW())
+ON DUPLICATE KEY UPDATE
+  `username` = VALUES(`username`),
+  `staff_code` = VALUES(`staff_code`),
+  `full_name` = VALUES(`full_name`),
+  `email` = VALUES(`email`),
+  `password_hash` = VALUES(`password_hash`),
+  `department` = VALUES(`department`),
+  `phone` = VALUES(`phone`),
+  `status` = 'active',
+  `updated_at` = NOW();
+
+-- 8. Dữ liệu vận hành Staff Portal lấy từ database, không hardcode trên frontend
+INSERT INTO `staff_schedules` (`staff_id`, `work_date`, `shift`, `note`)
+SELECT 3, CURDATE(), 'morning', 'Ca trực vận hành kho'
+WHERE EXISTS (SELECT 1 FROM `staffs` WHERE `id` = 3)
+  AND NOT EXISTS (
+    SELECT 1 FROM `staff_schedules`
+    WHERE `staff_id` = 3 AND `work_date` = CURDATE()
+  );
+
+INSERT INTO `staff_tasks`
+  (`id`, `staff_id`, `manager_id`, `title`, `description`, `priority`, `status`, `due_date`)
+VALUES
+  (101, 3, 1, 'Tiếp nhận và xuất phiếu kho đơn đã thanh toán',
+   'Kiểm tra niêm phong và đóng gói đơn hàng trước khi bàn giao vận chuyển.',
+   'urgent', 'completed', CURDATE()),
+  (102, 3, 1, 'Quét serial và dán tem bảo hành sản phẩm',
+   'Đối soát serial với phiếu bảo hành điện tử của sản phẩm.',
+   'high', 'completed', CURDATE()),
+  (103, 3, 1, 'Bàn giao kiện hàng cho đơn vị vận chuyển',
+   'Lập biên bản bàn giao và xác nhận số lượng kiện hàng.',
+   'high', 'completed', CURDATE()),
+  (104, 3, 1, 'Kiểm đếm tồn kho khu vực Gaming Gear',
+   'Đối chiếu tồn kho thực tế với số liệu trên hệ thống.',
+   'medium', 'completed', CURDATE()),
+  (105, 3, 1, 'Thẩm định yêu cầu đổi trả và hoàn tiền',
+   'Kiểm tra điều kiện bảo hành và xác nhận tình trạng sản phẩm.',
+   'urgent', 'in_progress', CURDATE()),
+  (106, 3, 1, 'Kiểm tra và phản hồi đánh giá khách hàng',
+   'Xử lý các đánh giá mới và hoàn tất biên bản giao ca.',
+   'low', 'todo', CURDATE())
+ON DUPLICATE KEY UPDATE
+  `staff_id` = VALUES(`staff_id`),
+  `manager_id` = VALUES(`manager_id`),
+  `title` = VALUES(`title`),
+  `description` = VALUES(`description`),
+  `priority` = VALUES(`priority`),
+  `status` = VALUES(`status`),
+  `due_date` = VALUES(`due_date`),
+  `updated_at` = NOW();
+
 SET FOREIGN_KEY_CHECKS = 1;
 
 -- ==============================================================================
 -- HOÀN TẤT KHỞI TẠO CẤU TRÚC DATABASE TECHSHOP_DB (23 BẢNG + RBAC SEED)
 -- Để nạp dữ liệu danh mục & reviews đầy đủ, chạy: seed_full_catalog.sql
 -- ==============================================================================
+
+-- ==============================================================================
+-- SUPPORT TICKET & CUSTOMER CHAT (Realtime WebSocket: Customer <-> Staff)
+-- ==============================================================================
+CREATE TABLE IF NOT EXISTS `support_tickets` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `ticket_code` VARCHAR(20) NOT NULL,
+  `customer_id` INT DEFAULT NULL,
+  `customer_name` VARCHAR(150) NOT NULL DEFAULT 'Khách hàng',
+  `customer_phone` VARCHAR(30) NOT NULL DEFAULT '',
+  `customer_email` VARCHAR(150) NOT NULL DEFAULT '',
+  `customer_address` VARCHAR(255) NOT NULL DEFAULT '',
+  `order_code` VARCHAR(50) NOT NULL DEFAULT '',
+  `order_amount` DECIMAL(15,2) NOT NULL DEFAULT 0,
+  `category` VARCHAR(50) NOT NULL DEFAULT 'general',
+  `priority` VARCHAR(20) NOT NULL DEFAULT 'medium',
+  `status` VARCHAR(20) NOT NULL DEFAULT 'open',
+  `assigned_staff` VARCHAR(150) NOT NULL DEFAULT '',
+  `subject` VARCHAR(255) NOT NULL DEFAULT '',
+  `internal_notes` TEXT,
+  `unread` INT NOT NULL DEFAULT 0,
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_support_tickets_code` (`ticket_code`),
+  KEY `idx_support_tickets_status` (`status`),
+  KEY `idx_support_tickets_updated` (`updated_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `ticket_messages` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `ticket_id` INT NOT NULL,
+  `sender_type` VARCHAR(20) NOT NULL DEFAULT 'customer',
+  `sender_name` VARCHAR(150) NOT NULL DEFAULT '',
+  `text` TEXT NOT NULL,
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_ticket_messages_ticket` (`ticket_id`),
+  KEY `idx_ticket_messages_created` (`created_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

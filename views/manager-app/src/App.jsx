@@ -15,7 +15,7 @@ import BatchStockView from './views/BatchStockView';
 import InventoryLogsView from './views/InventoryLogsView';
 import CouponsView from './views/CouponsView';
 import ReportsView from './views/ReportsView';
-import StaffsView from './views/StaffsView';
+import StaffPortalView from './views/StaffPortalView';
 
 export default function App({ user: propUser, onLogout: propLogout }) {
   // Resolve current user (từ AuthContext props hoặc localStorage fallback)
@@ -78,7 +78,7 @@ export default function App({ user: propUser, onLogout: propLogout }) {
   };
 
   // Navigation / View State
-  const [activeView, setActiveView] = useState('products');
+  const [activeView, setActiveView] = useState(currentUser?.role === 'staff' ? 'staffs' : 'products');
 
   // Products & Pagination Data
   const [products, setProducts] = useState([]);
@@ -419,7 +419,7 @@ export default function App({ user: propUser, onLogout: propLogout }) {
           {activeView === 'coupons' && <CouponsView />}
           {activeView === 'reports' && <ReportsView />}
           {activeView === 'staffs' && (
-            <StaffsView onStaffUpdated={() => loadStaffs()} />
+            <StaffPortalView />
           )}
         </div>
       </main>

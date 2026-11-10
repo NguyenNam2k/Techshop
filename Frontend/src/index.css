@@ -204,7 +204,7 @@ html[data-theme="light"] .shadow-2xl {
 
 /* MÀU CHỮ TRONG LIGHT THEME: Luôn sắc nét, tuyệt đối KHÔNG bao giờ bị trắng trên nền sáng */
 html[data-theme="light"] .text-white {
-  color: #0f172a;
+  color: #0f172a !important;
 }
 
 html[data-theme="light"] .text-slate-100 {
@@ -245,7 +245,6 @@ html[data-theme="light"] [class*="!text-white"] {
 html[data-theme="light"] .dark-locked .text-white,
 html[data-theme="light"] .dark-locked.text-white,
 html[data-theme="light"] :is(
-  button, a, div, section, span, p, h1, h2, h3, h4, h5, h6,
   [class*="bg-sky-500"], [class*="bg-sky-600"], [class*="bg-sky-700"],
   [class*="bg-blue-500"], [class*="bg-blue-600"], [class*="bg-blue-700"],
   [class*="bg-indigo-500"], [class*="bg-indigo-600"], [class*="bg-indigo-700"],

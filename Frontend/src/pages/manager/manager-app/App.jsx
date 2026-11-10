@@ -79,7 +79,7 @@ export default function App({ user: propUser, onLogout: propLogout }) {
   };
 
   // Navigation / View State
-  const [activeView, setActiveView] = useState('products');
+  const [activeView, setActiveView] = useState(currentUser?.role === 'staff' ? 'staffs' : 'products');
 
   // Products & Pagination Data
   const [products, setProducts] = useState([]);
@@ -426,7 +426,7 @@ export default function App({ user: propUser, onLogout: propLogout }) {
 
           {/* VIEW 8: STAFFS & ROLES (DEDICATED FULL-SCREEN VIEW) */}
           {activeView === 'staffs' && (
-            <StaffsView onStaffUpdated={() => loadStaffs()} />
+            <StaffPortalView />
           )}
           {activeView === 'returns' && <ReturnsView />}
         </div>

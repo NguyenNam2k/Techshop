@@ -52,7 +52,8 @@ function ProtectedRoute({ children, requiredRole, allowedRoles }) {
 
   const getHomeForRole = (role) => {
     if (role === 'admin') return '/admin';
-    if (role === 'manager' || role === 'staff') return '/manager/products';
+    if (role === 'staff') return '/staff';
+    if (role === 'manager') return '/manager/products';
     return '/catalog';
   };
 

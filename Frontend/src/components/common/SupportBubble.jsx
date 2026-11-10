@@ -12,6 +12,13 @@ import {
   Sparkles,
   RotateCcw
 } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
+import {
+  createSupportTicket,
+  fetchSupportTicket,
+  sendSupportMessage,
+  connectSupportSocket
+} from '../../services/supportApi';
 
 const QUICK_TOPICS = [
   { label: '🛠️ Báo sự cố kỹ thuật & Bảo hành', key: 'tech_support' },
@@ -21,79 +28,135 @@ const QUICK_TOPICS = [
 ];
 
 export default function SupportBubble() {
+  const { user } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
-  const [messages, setMessages] = useState([
-    {
-      id: 1,
-      sender: 'bot',
-      time: '08:00',
-      text: 'Xin chào! Em là chuyên viên hỗ trợ của Techshop. Em có thể hỗ trợ tư vấn cấu hình, kiểm tra tương thích linh kiện hay tiếp nhận bảo hành gì cho anh/chị hôm nay ạ?'
-    }
-  ]);
+  const [messages, setMessages] = useState([]);
   const [inputVal, setInputVal] = useState('');
-  const [isTyping, setIsTyping] = useState(false);
+  const [ticketCode, setTicketCode] = useState('');
   const chatBottomRef = useRef(null);
   const inputRef = useRef(null);
+
+  const customerName = user?.full_name || user?.name || 'Khách hàng';
+
+  // Map tin nhắn từ backend -> bong bóng chat của khách
+  const toBubbleMessage = (msg) => ({
+    id: msg.id,
+    sender: msg.sender === 'customer' ? 'user' : 'bot',
+    time: msg.time,
+    text:
+      msg.sender === 'customer'
+        ? msg.text
+        : msg.sender_name
+          ? `👨‍💼 [${msg.sender_name}]: ${msg.text}`
+          : msg.text
+  });
 
   useEffect(() => {
     if (isOpen) {
       chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' });
       inputRef.current?.focus();
     }
-  }, [isOpen, messages, isTyping]);
+  }, [isOpen, messages]);
 
-  const handleSend = (customText) => {
-    const text = (customText || inputVal).trim();
-    if (!text) return;
-    setInputVal('');
+  // Khởi tạo ticket hỗ trợ cho khách hàng (lưu mã ticket vào localStorage của trình duyệt)
+  useEffect(() => {
+    let cancelled = false;
+    const storageKey = 'techshop_support_ticket_code';
 
-    const now = new Date();
-    const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-
-    setMessages((prev) => [
-      ...prev,
-      { id: Date.now(), sender: 'user', time: timeStr, text }
-    ]);
-
-    setIsTyping(true);
-
-    setTimeout(() => {
-      let reply = '';
-      const lower = text.toLowerCase();
-
-      if (lower.includes('sự cố') || lower.includes('lỗi') || lower.includes('hỏng') || lower.includes('kỹ thuật') || lower.includes('bảo hành')) {
-        const ticketId = `TK-${Math.floor(1000 + Math.random() * 9000)}`;
-        reply = `🎫 Em đã tạo phiếu hỗ trợ kỹ thuật #${ticketId} cho bạn:\n\n• Nội dung: "${text}"\n• Trạng thái: Đang chuyển tiếp kỹ sư phần cứng\n• Thời gian phản hồi: Kỹ sư Techshop sẽ gọi điện hỗ trợ trực tiếp trong vòng 15 phút!`;
-      } else if (lower.includes('pc') || lower.includes('cấu hình') || lower.includes('build')) {
-        reply = 'Techshop có hỗ trợ build PC theo mọi mức ngân sách! Bạn đang nhắm tới mức giá khoảng bao nhiêu (vd: 20tr, 35tr, 50tr+) và nhu cầu chính là chiến game 2K/4K hay Render/Đồ họa để bên mình gửi bảng linh kiện tối ưu nhất nhé!';
-      } else if (lower.includes('giao hàng') || lower.includes('hỏa tốc') || lower.includes('vận chuyển')) {
-        reply = 'Techshop hỗ trợ giao hỏa tốc 2H cho mọi đơn hàng trong nội thành Hà Nội & TP.HCM từ 8:00 đến 21:00 mỗi ngày. Đơn hàng ngoại tỉnh được chuyển phát nhanh qua GHN/GHTK trong 1-2 ngày!';
-      } else {
-        reply = 'Dạ chuyên viên kỹ thuật Techshop đã ghi nhận thông tin. Bên mình đang kiểm tra kho dữ liệu và hỗ trợ giải đáp cho bạn ngay đây ạ!';
+    const boot = async () => {
+      try {
+        const savedCode = localStorage.getItem(storageKey);
+        if (savedCode) {
+          const ticket = await fetchSupportTicket(savedCode);
+          if (cancelled) return;
+          setTicketCode(ticket.ticket_id);
+          setMessages((ticket.messages || []).map(toBubbleMessage));
+          return;
+        }
+      } catch (error) {
+        console.warn('SupportBubble: ticket đã lưu không còn tồn tại, tạo ticket mới.', error);
+        localStorage.removeItem(storageKey);
       }
 
+      try {
+        const ticket = await createSupportTicket({
+          customerId: user?.id || null,
+          customerName,
+          customerPhone: user?.phone || '',
+          customerEmail: user?.email || '',
+          subject: 'Tư vấn từ khung chat hỗ trợ'
+        });
+        if (cancelled) return;
+        localStorage.setItem(storageKey, ticket.ticket_id);
+        setTicketCode(ticket.ticket_id);
+        setMessages((ticket.messages || []).map(toBubbleMessage));
+      } catch (error) {
+        console.warn('SupportBubble: không tạo được ticket hỗ trợ.', error);
+      }
+    };
+
+    boot();
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id]);
+
+  // WebSocket realtime: nhận tin nhắn của Staff ngay khi họ gửi
+  useEffect(() => {
+    if (!ticketCode) return undefined;
+
+    const socket = connectSupportSocket({
+      ticketId: ticketCode,
+      role: 'customer',
+      onEvent: (event) => {
+        if (event.type !== 'message' || !event.message) return;
+        setMessages((prev) =>
+          prev.some((m) => m.id === event.message.id) ? prev : [...prev, toBubbleMessage(event.message)]
+        );
+      }
+    });
+
+    return () => {
+      if (socket) socket.close();
+    };
+  }, [ticketCode]);
+
+  const handleSend = async (customText) => {
+    const text = (customText || inputVal).trim();
+    if (!text || !ticketCode) return;
+    setInputVal('');
+
+    try {
+      const { message } = await sendSupportMessage(ticketCode, {
+        senderType: 'customer',
+        senderName: customerName,
+        text
+      });
+      setMessages((prev) =>
+        prev.some((m) => m.id === message.id) ? prev : [...prev, toBubbleMessage(message)]
+      );
+    } catch (error) {
+      console.warn('SupportBubble: gửi tin nhắn thất bại.', error);
       setMessages((prev) => [
         ...prev,
         {
-          id: Date.now() + 1,
+          id: `err-${Date.now()}`,
           sender: 'bot',
           time: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
-          text: reply
+          text: 'Không gửi được tin nhắn tới tổng đài. Anh/chị vui lòng thử lại sau ít phút ạ.'
         }
       ]);
-      setIsTyping(false);
-    }, 700);
+    }
   };
 
-  const handleResetChat = () => {
-    setMessages([
-      {
-        id: Date.now(),
-        sender: 'bot',
-        time: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
-        text: 'Cuộc trò chuyện đã được làm mới. Em có thể hỗ trợ gì thêm cho anh/chị ạ?'
-      }
-    ]);
+  const handleResetChat = async () => {
+    if (!ticketCode) return;
+    try {
+      const ticket = await fetchSupportTicket(ticketCode);
+      setMessages((ticket.messages || []).map(toBubbleMessage));
+    } catch (error) {
+      console.warn('SupportBubble: không tải lại được hội thoại.', error);
+    }
   };
 
   return (
@@ -168,18 +231,19 @@ export default function SupportBubble() {
               );
             })}
 
-            {isTyping && (
-              <div className="flex items-center gap-1.5 p-2.5 rounded-2xl bg-slate-900 border border-slate-800 text-slate-400 text-xs w-24">
-                <span className="w-1.5 h-1.5 bg-sky-400 rounded-full animate-bounce [animation-delay:-0.3s]" />
-                <span className="w-1.5 h-1.5 bg-sky-400 rounded-full animate-bounce [animation-delay:-0.15s]" />
-                <span className="w-1.5 h-1.5 bg-sky-400 rounded-full animate-bounce" />
-              </div>
-            )}
             <div ref={chatBottomRef} />
           </div>
 
           {/* Quick Topic Chips */}
-          <div className="px-3 py-2 border-t border-slate-800/80 bg-slate-900/80 flex items-center gap-1.5 overflow-x-auto no-scrollbar shrink-0">
+          <div
+            onWheel={(e) => {
+              const el = e.currentTarget;
+              if (e.deltaY !== 0 && el.scrollWidth > el.clientWidth) {
+                el.scrollLeft += e.deltaY;
+              }
+            }}
+            className="px-3 py-2 border-t border-slate-800/80 bg-slate-900/80 flex items-center gap-1.5 overflow-x-auto no-scrollbar shrink-0"
+          >
             {QUICK_TOPICS.map((topic) => (
               <button
                 key={topic.key}

@@ -171,9 +171,10 @@ const authService = {
 
     const payload = {
       id: user.id,
-      name: user.name,
+      name: user.name || user.full_name,
       email: user.email,
-      role: resolvedRole
+      role: resolvedRole,
+      staff_code: user.staff_code || null
     };
 
     const token = jwt.sign(
@@ -186,9 +187,12 @@ const authService = {
       token,
       user: {
         id: user.id,
-        name: user.name,
+        name: user.name || user.full_name,
+        full_name: user.name || user.full_name,
         email: user.email,
-        role: resolvedRole
+        role: resolvedRole,
+        staff_code: user.staff_code || null,
+        department: user.department || null
       }
     };
   },

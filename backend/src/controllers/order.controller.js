@@ -128,11 +128,26 @@ async function updateStatus(req, res) {
   }
 }
 
+async function confirmCustomerDecision(req, res) {
+  try {
+    const customerId = req.user?.role === 'customer' ? req.user.id : null;
+    const result = await orderService.confirmCustomerDecision(
+      customerId,
+      req.params.orderCode,
+      req.body?.decision
+    );
+    return res.json({ success: true, data: result });
+  } catch (error) {
+    return res.status(error.statusCode || 400).json({ success: false, message: error.message });
+  }
+}
+
 module.exports = {
   cancelUnpaidOrder,
   requestCancellation,
   requestReturn,
   updateStatus,
+  confirmCustomerDecision,
   createOrder,
   getOrderDetail,
   getOrdersList

@@ -83,7 +83,7 @@ export default function Sidebar({
       items: [
         {
           id: 'staffs',
-          label: 'Nhân sự & Phân quyền',
+          label: 'Staff Portal (Vận hành & Đơn hàng)',
           icon: UserCog,
           count: staffCount
         }

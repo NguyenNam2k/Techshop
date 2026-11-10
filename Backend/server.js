@@ -59,11 +59,14 @@ const loadBackendSrcRoute = (relPath) => {
 const orderRoutes = loadBackendSrcRoute('./src/routes/order.routes');
 const paymentRoutes = loadBackendSrcRoute('./src/routes/payment.routes');
 const returnRoutes = loadBackendSrcRoute('./src/routes/return.routes');
+const reviewRoutes = loadBackendSrcRoute('./src/routes/review.routes');
 const shippingRoutes = loadBackendSrcRoute('./src/routes/shipping.routes');
 const cartRoutes = loadBackendSrcRoute('./src/routes/cart.routes');
 const customerProfileRoutes = loadBackendSrcRoute('./src/routes/customer.routes');
+const supportRoutes = loadBackendSrcRoute('./src/routes/support.routes');
 const { testConnection } = require('./config/database');
 const { expirePendingVietqrOrders } = require('./src/services/order.service');
+const { attachSupportWebSocket } = require('./src/services/realtime.service');
 
 // 3. Phục vụ Manager App SPA nếu đã build dist (Duong's Manager Portal)
 const managerAppDist = path.join(__dirname, '../views/manager-app/dist');
@@ -107,9 +110,11 @@ app.use('/api/permissions', permissionRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/returns', returnRoutes);
+app.use('/api/reviews', reviewRoutes);
 app.use('/api/shipping', shippingRoutes);
 app.use('/api/cart', cartRoutes);
 app.use('/api/customer', customerProfileRoutes);
+app.use('/api/support', supportRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
@@ -144,7 +149,7 @@ async function startServer() {
     });
   }, 60 * 1000);
 
-  app.listen(PORT, () => {
+  const httpServer = app.listen(PORT, () => {
     console.log(`=================================================`);
     console.log(`🚀 Techshop Server đang chạy tại: http://localhost:${PORT}`);
     console.log(`📊 Manager Portal Dashboard:     ${FRONTEND_URL}/manager/products`);
@@ -152,6 +157,13 @@ async function startServer() {
     console.log(`🔑 Auth API Endpoint:            http://localhost:${PORT}/api/auth`);
     console.log(`=================================================`);
   });
+
+  // Realtime WebSocket cho Support Ticket & Chat (Customer <-> Staff)
+  try {
+    attachSupportWebSocket(httpServer);
+  } catch (error) {
+    console.error('[TechGear] Cannot start support WebSocket server:', error.message);
+  }
 }
 
 startServer();

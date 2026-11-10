@@ -162,7 +162,6 @@ export default function Header() {
       <div className="bg-gradient-to-r from-blue-700 via-indigo-600 to-purple-700 text-white text-[10px] sm:text-xs py-1.5 px-3 text-center font-medium truncate">
         ⚡ Siêu sale phụ kiện công nghệ - Giảm tới 30% cho khách hàng mới | Giao hỏa tốc 2H
       </div>
-
       {/* Main Nav */}
       <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 min-h-16 py-2 sm:py-0 flex flex-wrap sm:flex-nowrap items-center justify-between gap-2 sm:gap-4">
         {/* Brand Logo */}

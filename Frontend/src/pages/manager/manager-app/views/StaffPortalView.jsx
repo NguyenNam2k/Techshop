@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import {
   Cpu, Sun, Moon, LogOut, Search, Bell, CheckCircle2, Truck, FileText,
-  Package, RotateCcw, Star, CalendarCheck, ClipboardList, Printer,
+  Package, RotateCcw, Star, CalendarCheck, ClipboardList,
   MapPin, Phone, User, ShieldCheck, AlertTriangle, Clock, ChevronRight,
   X, Check, QrCode, CreditCard, Eye, RefreshCw, MoreVertical, Ban, Menu,
   ArrowRight, MessageSquare, Send, Sparkles, CheckCheck, Trash2, Edit3, CornerDownRight,
@@ -19,6 +19,12 @@ import {
   updateStaffTask,
   subscribeStaffEvents
 } from '../../../../services/staffPortalApi';
+import {
+  fetchSupportTickets,
+  sendSupportMessage,
+  patchSupportTicket,
+  connectSupportSocket
+} from '../../../../services/supportApi';
 
 const formatVND = (n) => `${Number(n || 0).toLocaleString('vi-VN')} ₫`;
 
@@ -387,45 +393,81 @@ export default function StaffPortalView({ embedded = false }) {
   const [staffTasks, setStaffTasks] = useState([]);
 
   // Support Tickets & Live Customer Chat (Use Case: Manage Support Ticket, Handle Ticket, Close Ticket, Chat with Customer)
-  const [supportTickets, setSupportTickets] = useState(() => {
-    try {
-      const saved = localStorage.getItem('techshop_support_tickets');
-      if (saved) return JSON.parse(saved);
-    } catch (e) {
-      console.warn('Failed to parse techshop_support_tickets', e);
-    }
-    return INITIAL_SUPPORT_TICKETS;
-  });
-  const [selectedTicketId, setSelectedTicketId] = useState('TK-4821');
+  const [supportTickets, setSupportTickets] = useState([]);
+  const [selectedTicketId, setSelectedTicketId] = useState('');
   const [chatInputText, setChatInputText] = useState('');
   const [ticketFilter, setTicketFilter] = useState('all'); // 'all' | 'open' | 'in_progress' | 'closed'
   const [ticketSearchQuery, setTicketSearchQuery] = useState('');
   const [isTicketDrawerOpen, setIsTicketDrawerOpen] = useState(true);
   const [internalNoteDraft, setInternalNoteDraft] = useState('');
   const chatFeedBottomRef = useRef(null);
+  const selectedTicketIdRef = useRef('');
 
-  // Sync to localStorage
+  // Giữ ticket đang mở trong ref để handler WebSocket luôn đọc được giá trị mới nhất
   useEffect(() => {
-    try {
-      localStorage.setItem('techshop_support_tickets', JSON.stringify(supportTickets));
-    } catch (e) {
-      console.warn('Failed to store techshop_support_tickets', e);
-    }
-  }, [supportTickets]);
+    selectedTicketIdRef.current = selectedTicketId;
+  }, [selectedTicketId]);
 
-  // Listen for storage events (e.g. from customer SupportBubble)
+  // Nạp danh sách ticket từ backend (fallback dữ liệu demo khi API chưa sẵn sàng)
   useEffect(() => {
-    const handleStorageChange = (e) => {
-      if (e.key === 'techshop_support_tickets' && e.newValue) {
-        try {
-          setSupportTickets(JSON.parse(e.newValue));
-        } catch (err) {
-          console.warn('Error reading updated storage tickets', err);
+    let cancelled = false;
+    fetchSupportTickets()
+      .then((tickets) => {
+        if (cancelled || !Array.isArray(tickets)) return;
+        setSupportTickets(tickets);
+        if (tickets.length) {
+          setSelectedTicketId((prev) =>
+            tickets.some((t) => t.ticket_id === prev) ? prev : tickets[0].ticket_id
+          );
+        }
+      })
+      .catch((err) => {
+        console.warn('Không tải được ticket từ API, dùng dữ liệu demo:', err);
+        if (!cancelled) setSupportTickets(INITIAL_SUPPORT_TICKETS);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // WebSocket realtime: Customer <-> Staff trao đổi tức thời
+  useEffect(() => {
+    const socket = connectSupportSocket({
+      role: 'staff',
+      onEvent: (event) => {
+        if (event.type === 'message' && event.ticket && event.message) {
+          const { ticket, message } = event;
+          setSupportTickets((prev) => {
+            if (!prev.some((tk) => tk.ticket_id === ticket.ticket_id)) return [ticket, ...prev];
+            return prev.map((tk) => {
+              if (tk.ticket_id !== ticket.ticket_id) return tk;
+              const messages = tk.messages.some((m) => m.id === message.id)
+                ? tk.messages
+                : [...tk.messages, message];
+              const isOpenTicket = selectedTicketIdRef.current === ticket.ticket_id;
+              return { ...ticket, messages, unread: isOpenTicket ? 0 : ticket.unread };
+            });
+          });
+          return;
+        }
+
+        if ((event.type === 'ticket_created' || event.type === 'ticket_updated') && event.ticket) {
+          const incoming = event.ticket;
+          setSupportTickets((prev) => {
+            if (!prev.some((tk) => tk.ticket_id === incoming.ticket_id)) return [incoming, ...prev];
+            return prev.map((tk) =>
+              tk.ticket_id === incoming.ticket_id
+                ? { ...incoming, messages: incoming.messages?.length ? incoming.messages : tk.messages }
+                : tk
+            );
+          });
         }
       }
+    });
+
+    return () => {
+      if (socket) socket.close();
     };
-    window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
 
   const selectedTicket = useMemo(() => {
@@ -464,99 +506,84 @@ export default function StaffPortalView({ embedded = false }) {
   const handleAssignTicket = (ticketId) => {
     const staffName = staffProfile.full_name || staffProfile.staff_code || 'STF001 - Lê Văn Tú';
     setSupportTickets((prev) =>
-      prev.map((tk) => {
-        if (tk.ticket_id !== ticketId) return tk;
-        return {
-          ...tk,
-          status: 'in_progress',
-          assigned_staff: staffName,
-          messages: [
-            ...tk.messages,
-            {
-              id: `sys-${Date.now()}`,
-              sender: 'system',
-              text: `${staffName} đã tiếp nhận phiên hỗ trợ này.`,
-              time: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
-              date: 'Hôm nay'
-            }
-          ]
-        };
-      })
+      prev.map((tk) =>
+        tk.ticket_id === ticketId ? { ...tk, status: 'in_progress', assigned_staff: staffName } : tk
+      )
     );
+    patchSupportTicket(ticketId, { status: 'in_progress', assignedStaff: staffName }).catch((err) =>
+      console.warn('Không đồng bộ được ticket:', err)
+    );
+    sendSupportMessage(ticketId, {
+      senderType: 'system',
+      senderName: staffName,
+      text: `${staffName} đã tiếp nhận phiên hỗ trợ này.`
+    }).catch((err) => console.warn('Không gửi được thông báo hệ thống:', err));
     triggerToast(`Đã tiếp nhận xử lý ticket #${ticketId}`);
   };
 
   const handleCloseTicket = (ticketId) => {
     const staffName = staffProfile.full_name || staffProfile.staff_code || 'STF001 - Lê Văn Tú';
     setSupportTickets((prev) =>
-      prev.map((tk) => {
-        if (tk.ticket_id !== ticketId) return tk;
-        return {
-          ...tk,
-          status: 'closed',
-          messages: [
-            ...tk.messages,
-            {
-              id: `sys-${Date.now()}`,
-              sender: 'system',
-              text: `Nhân viên ${staffName} đã đóng ticket #${ticketId} (Đã giải quyết xong).`,
-              time: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
-              date: 'Hôm nay'
-            }
-          ]
-        };
-      })
+      prev.map((tk) => (tk.ticket_id === ticketId ? { ...tk, status: 'closed' } : tk))
     );
+    patchSupportTicket(ticketId, { status: 'closed' }).catch((err) =>
+      console.warn('Không đồng bộ được ticket:', err)
+    );
+    sendSupportMessage(ticketId, {
+      senderType: 'system',
+      senderName: staffName,
+      text: `Nhân viên ${staffName} đã đóng ticket #${ticketId} (Đã giải quyết xong).`
+    }).catch((err) => console.warn('Không gửi được thông báo hệ thống:', err));
     triggerToast(`Đã đóng và lưu trữ ticket #${ticketId}`);
   };
 
   const handleReopenTicket = (ticketId) => {
+    const staffName = staffProfile.full_name || staffProfile.staff_code || 'STF001 - Lê Văn Tú';
     setSupportTickets((prev) =>
-      prev.map((tk) => {
-        if (tk.ticket_id !== ticketId) return tk;
-        return {
-          ...tk,
-          status: 'in_progress',
-          messages: [
-            ...tk.messages,
-            {
-              id: `sys-${Date.now()}`,
-              sender: 'system',
-              text: `Ticket #${ticketId} đã được mở lại để tiếp tục hỗ trợ.`,
-              time: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
-              date: 'Hôm nay'
-            }
-          ]
-        };
-      })
+      prev.map((tk) => (tk.ticket_id === ticketId ? { ...tk, status: 'in_progress' } : tk))
     );
+    patchSupportTicket(ticketId, { status: 'in_progress' }).catch((err) =>
+      console.warn('Không đồng bộ được ticket:', err)
+    );
+    sendSupportMessage(ticketId, {
+      senderType: 'system',
+      senderName: staffName,
+      text: `Ticket #${ticketId} đã được mở lại để tiếp tục hỗ trợ.`
+    }).catch((err) => console.warn('Không gửi được thông báo hệ thống:', err));
     triggerToast(`Đã mở lại ticket #${ticketId}`);
   };
 
   const handleEscalateTicket = (ticketId) => {
+    const staffName = staffProfile.full_name || staffProfile.staff_code || 'STF001 - Lê Văn Tú';
+    const current = supportTickets.find((tk) => tk.ticket_id === ticketId);
+    const noteLine =
+      '[CHUYỂN TIẾP KỸ THUẬT PHẦN CỨNG]: Yêu cầu kỹ sư phần cứng hỗ trợ kiểm tra thiết bị.';
+    const nextNotes = `${current?.internal_notes ? `${current.internal_notes}\n` : ''}${noteLine}`;
+
     setSupportTickets((prev) =>
-      prev.map((tk) => {
-        if (tk.ticket_id !== ticketId) return tk;
-        return {
-          ...tk,
-          priority: 'urgent',
-          priority_label: 'Khẩn cấp',
-          category: 'tech_support',
-          category_label: 'Hỗ trợ kỹ thuật & Lỗi linh kiện',
-          internal_notes: (tk.internal_notes ? tk.internal_notes + '\n' : '') + '[CHUYỂN TIẾP KỸ THUẬT PHẦN CỨNG]: Yêu cầu kỹ sư phần cứng hỗ trợ kiểm tra thiết bị.',
-          messages: [
-            ...tk.messages,
-            {
-              id: `sys-${Date.now()}`,
-              sender: 'system',
-              text: `Đã chuyển tiếp ticket #${ticketId} tới Phòng Kỹ Thuật Phần Cứng Techshop.`,
-              time: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
-              date: 'Hôm nay'
+      prev.map((tk) =>
+        tk.ticket_id === ticketId
+          ? {
+              ...tk,
+              priority: 'urgent',
+              priority_label: 'Khẩn cấp',
+              category: 'tech_support',
+              category_label: 'Hỗ trợ kỹ thuật & Lỗi linh kiện',
+              internal_notes: nextNotes
             }
-          ]
-        };
-      })
+          : tk
+      )
     );
+    patchSupportTicket(ticketId, {
+      priority: 'urgent',
+      category: 'tech_support',
+      internalNotes: nextNotes
+    }).catch((err) => console.warn('Không đồng bộ được ticket:', err));
+    sendSupportMessage(ticketId, {
+      senderType: 'system',
+      senderName: staffName,
+      text: `Đã chuyển tiếp ticket #${ticketId} tới Phòng Kỹ Thuật Phần Cứng Techshop.`
+    }).catch((err) => console.warn('Không gửi được thông báo hệ thống:', err));
     triggerToast(`Đã chuyển tiếp ticket #${ticketId} sang Phòng Kỹ Thuật!`);
   };
 
@@ -564,34 +591,35 @@ export default function StaffPortalView({ embedded = false }) {
     setSupportTickets((prev) =>
       prev.map((tk) => (tk.ticket_id === ticketId ? { ...tk, internal_notes: internalNoteDraft } : tk))
     );
+    patchSupportTicket(ticketId, { internalNotes: internalNoteDraft }).catch((err) =>
+      console.warn('Không lưu được ghi chú nội bộ:', err)
+    );
     triggerToast('Đã lưu ghi chú nội bộ thành công.');
   };
 
-  const handleSendChatMessage = (msgText) => {
+  const handleSendChatMessage = async (msgText) => {
     const text = (msgText || chatInputText).trim();
     if (!text || !selectedTicket) return;
     setChatInputText('');
 
     const staffName = staffProfile.full_name || staffProfile.staff_code || 'STF001 (Bạn)';
-    const newMsg = {
-      id: `msg-${Date.now()}`,
-      sender: 'staff',
-      sender_name: staffName,
-      text,
-      time: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
-      date: 'Hôm nay'
-    };
-
-    setSupportTickets((prev) =>
-      prev.map((tk) => {
-        if (tk.ticket_id !== selectedTicket.ticket_id) return tk;
-        return {
-          ...tk,
-          status: tk.status === 'open' ? 'in_progress' : tk.status,
-          messages: [...tk.messages, newMsg]
-        };
-      })
-    );
+    try {
+      const { message } = await sendSupportMessage(selectedTicket.ticket_id, {
+        senderType: 'staff',
+        senderName: staffName,
+        text
+      });
+      setSupportTickets((prev) =>
+        prev.map((tk) => {
+          if (tk.ticket_id !== selectedTicket.ticket_id) return tk;
+          if (tk.messages.some((m) => m.id === message.id)) return tk;
+          return { ...tk, messages: [...tk.messages, message] };
+        })
+      );
+    } catch (error) {
+      console.warn('Không gửi được tin nhắn:', error);
+      triggerToast(`Không gửi được tin nhắn: ${error.message}`);
+    }
   };
 
   const handleJumpToOrder = (orderCode) => {
@@ -609,7 +637,6 @@ export default function StaffPortalView({ embedded = false }) {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [toastMsg, setToastMsg] = useState('');
   const [liveNotifications, setLiveNotifications] = useState([]);
-  const [pickSlipModalOrder, setPickSlipModalOrder] = useState(null);
 
   // Staff Cancel / Reject Order Modal (`Cancel Order <<include>> Reject Reason`)
   const [cancelOrderModal, setCancelOrderModal] = useState(null);
@@ -871,15 +898,14 @@ export default function StaffPortalView({ embedded = false }) {
     );
   };
 
-  // 2. processing -> shipping (prints waybill & hands over to shipper)
-  const handlePrintAndShip = async (orderCode) => {
+  // 2. processing -> shipping (hands over to shipper)
+  const handleHandoverToShipper = async (orderCode) => {
     setOrders((prev) =>
       prev.map((o) =>
         o.order_code === orderCode
           ? {
               ...o,
               shipping_status: 'shipping',
-              pick_slip_printed: true,
               processed_by_staff_id: o.processed_by_staff_id || staffProfile.staff_code
             }
           : o
@@ -968,114 +994,12 @@ export default function StaffPortalView({ embedded = false }) {
     if (order.shipping_status === 'pending') {
       handleAcceptAndPack(order.order_code);
     } else if (order.shipping_status === 'processing') {
-      handlePrintAndShip(order.order_code);
+      handleHandoverToShipper(order.order_code);
     } else if (order.shipping_status === 'shipping') {
       handleConfirmDelivered(order.order_code);
     } else {
       triggerToast(`Đơn hàng ${order.order_code} đang ở trạng thái ${order.shipping_status}`);
     }
-  };
-
-  // Print Warehouse Pick Slip (`[In phiếu xuất kho]`)
-  const handlePrintWarehouseSlip = (order) => {
-    if (!order) return;
-    setOrders((prev) =>
-      prev.map((o) =>
-        o.order_code === order.order_code ? { ...o, pick_slip_printed: true } : o
-      )
-    );
-    setPickSlipModalOrder(order);
-    triggerToast(`Đã tạo phiếu xuất kho cho đơn ${order.order_code}`);
-  };
-
-  // Kích hoạt in Phiếu Xuất Kho chuẩn xác 1 trang A4 duy nhất (loại bỏ hiện tượng nhảy 8 trang)
-  const handlePrintPickSlip = () => {
-    const slipEl = document.getElementById('printable-pick-slip');
-    if (!slipEl || !pickSlipModalOrder) {
-      window.print();
-      return;
-    }
-
-    let iframe = document.getElementById('techgear-pick-slip-print-frame');
-    if (!iframe) {
-      iframe = document.createElement('iframe');
-      iframe.id = 'techgear-pick-slip-print-frame';
-      iframe.style.position = 'fixed';
-      iframe.style.right = '0';
-      iframe.style.bottom = '0';
-      iframe.style.width = '0';
-      iframe.style.height = '0';
-      iframe.style.border = '0';
-      iframe.style.opacity = '0';
-      iframe.style.pointerEvents = 'none';
-      document.body.appendChild(iframe);
-    }
-
-    const doc = iframe.contentWindow.document;
-    doc.open();
-
-    const styles = Array.from(document.querySelectorAll('style, link[rel="stylesheet"]'))
-      .map((el) => el.outerHTML)
-      .join('\n');
-
-    doc.write(`
-      <!DOCTYPE html>
-      <html lang="vi">
-        <head>
-          <meta charset="utf-8" />
-          <title>Phiếu Xuất Kho - ${pickSlipModalOrder.order_code}</title>
-          ${styles}
-          <style>
-            @page {
-              size: A4 portrait;
-              margin: 5mm 8mm;
-            }
-            * {
-              box-sizing: border-box;
-              -webkit-print-color-adjust: exact !important;
-              print-color-adjust: exact !important;
-            }
-            html, body {
-              margin: 0 !important;
-              padding: 0 !important;
-              background: #ffffff !important;
-              color: #000000 !important;
-              font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-              height: auto !important;
-              min-height: 0 !important;
-              overflow: visible !important;
-            }
-            #printable-pick-slip {
-              position: static !important;
-              width: 100% !important;
-              max-width: 100% !important;
-              margin: 0 !important;
-              padding: 4mm 6mm !important;
-              box-shadow: none !important;
-              border: none !important;
-              page-break-after: avoid !important;
-              break-after: avoid !important;
-              page-break-inside: avoid !important;
-              break-inside: avoid !important;
-            }
-            .no-print {
-              display: none !important;
-            }
-          </style>
-        </head>
-        <body>
-          <div id="printable-pick-slip" class="${slipEl.className}">
-            ${slipEl.innerHTML}
-          </div>
-        </body>
-      </html>
-    `);
-    doc.close();
-
-    setTimeout(() => {
-      iframe.contentWindow.focus();
-      iframe.contentWindow.print();
-    }, 250);
   };
 
   // Checkbox selection handlers
@@ -1113,7 +1037,6 @@ export default function StaffPortalView({ embedded = false }) {
           return {
             ...o,
             shipping_status: 'shipping',
-            pick_slip_printed: true
           };
         }
         return o;
@@ -2032,7 +1955,7 @@ export default function StaffPortalView({ embedded = false }) {
                                 {ord.shipping_status === 'processing' && (
                                   <button
                                     type="button"
-                                    onClick={() => handlePrintAndShip(ord.order_code)}
+                                    onClick={() => handleHandoverToShipper(ord.order_code)}
                                     className="px-2.5 py-1.5 rounded-lg text-[11px] font-bold bg-cyan-500 hover:bg-cyan-400 text-slate-950 transition cursor-pointer shadow-xs"
                                   >
                                     Xuất kho &amp; Giao Shipper
@@ -2102,21 +2025,6 @@ export default function StaffPortalView({ embedded = false }) {
                                       >
                                         <Eye className="w-3.5 h-3.5 text-cyan-500" />
                                         <span>Xem chi tiết</span>
-                                      </button>
-                                      <button
-                                        type="button"
-                                        onClick={() => {
-                                          handlePrintWarehouseSlip(ord);
-                                          setOpenActionDropdown(null);
-                                        }}
-                                        className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-semibold cursor-pointer ${
-                                          isDark
-                                            ? 'hover:bg-[#0b0f19] text-[#f8fafc]'
-                                            : 'hover:bg-[#f1f5f9] text-[#0f172a]'
-                                        }`}
-                                      >
-                                        <Printer className="w-3.5 h-3.5 text-cyan-500" />
-                                        <span>In phiếu xuất kho</span>
                                       </button>
                                       <button
                                         type="button"
@@ -2309,11 +2217,6 @@ export default function StaffPortalView({ embedded = false }) {
                       >
                         Chi tiết sản phẩm
                       </span>
-                      <span className={`text-[10px] font-mono ${t.textMuted}`}>
-                        {selectedOrder.pick_slip_printed
-                          ? 'Đã in phiếu xuất kho'
-                          : 'Chưa in phiếu kho'}
-                      </span>
                     </div>
 
                     {selectedOrder.order_items.map((item) => (
@@ -2381,21 +2284,8 @@ export default function StaffPortalView({ embedded = false }) {
                     </div>
                   </div>
 
-                  {/* Action Bar: [In phiếu xuất kho] | [Cập nhật trạng thái] */}
-                  <div className={`p-3.5 border-t ${t.borderColor} grid grid-cols-2 gap-2.5`}>
-                    <button
-                      type="button"
-                      onClick={() => handlePrintWarehouseSlip(selectedOrder)}
-                      className={`py-2.5 px-3 rounded-xl text-xs font-extrabold flex items-center justify-center gap-1.5 border transition cursor-pointer ${
-                        isDark
-                          ? 'bg-[#0b0f19] border-[#334155] text-[#f8fafc] hover:border-[#06b6d4]'
-                          : 'bg-[#f8fafc] border-[#e2e8f0] text-[#0f172a] hover:border-[#0891b2]'
-                      }`}
-                    >
-                      <Printer className="w-4 h-4" />
-                      <span>In phiếu xuất kho</span>
-                    </button>
-
+                  {/* Action Bar: [Cập nhật trạng thái] */}
+                  <div className={`p-3.5 border-t ${t.borderColor} flex items-center gap-2.5`}>
                     <div className="flex items-center gap-2 flex-1">
                       {(selectedOrder.shipping_status === 'pending' || selectedOrder.shipping_status === 'processing') && (
                         <button
@@ -2636,6 +2526,9 @@ export default function StaffPortalView({ embedded = false }) {
                           // mark read
                           setSupportTickets((prev) =>
                             prev.map((item) => (item.ticket_id === tk.ticket_id ? { ...item, unread: 0 } : item))
+                          );
+                          patchSupportTicket(tk.ticket_id, { unread: 0 }).catch((err) =>
+                            console.warn('Không đồng bộ trạng thái đã đọc:', err)
                           );
                         }}
                         className={`p-3 transition-all cursor-pointer relative ${
@@ -2881,7 +2774,15 @@ export default function StaffPortalView({ embedded = false }) {
                   </div>
 
                   {/* Canned Responses Suggestion Bar (CSKH Quick Reply Chips) */}
-                  <div className={`px-4 py-2 border-t ${t.borderColor} ${isDark ? 'bg-[#0f172a]/70' : 'bg-slate-50'} flex items-center gap-1.5 overflow-x-auto no-scrollbar shrink-0`}>
+                  <div
+                    onWheel={(e) => {
+                      const el = e.currentTarget;
+                      if (e.deltaY !== 0 && el.scrollWidth > el.clientWidth) {
+                        el.scrollLeft += e.deltaY;
+                      }
+                    }}
+                    className={`px-4 py-2 border-t ${t.borderColor} ${isDark ? 'bg-[#0f172a]/70' : 'bg-slate-50'} flex items-center gap-1.5 overflow-x-auto no-scrollbar shrink-0`}
+                  >
                     <span className={`text-[10px] font-black uppercase tracking-wider ${t.textMuted} shrink-0 mr-1 flex items-center gap-1`}>
                       <Sparkles className="w-3 h-3 text-cyan-400" />
                       Gợi ý:
@@ -3466,369 +3367,6 @@ export default function StaffPortalView({ embedded = false }) {
         </main>
       </div>
 
-      {/* ======================================================================
-          WAREHOUSE PICK SLIP / DISPATCH NOTE DOCUMENT MODAL
-         ====================================================================== */}
-      {pickSlipModalOrder && (
-        <div
-          id="printable-modal-overlay"
-          className="fixed inset-0 z-50 bg-black/75 backdrop-blur-xs overflow-y-auto p-3 sm:p-6 md:p-8 flex flex-col items-center justify-start animate-fade-in"
-          onClick={() => setPickSlipModalOrder(null)}
-        >
-          {/* Action Toolbar (Ẩn khi in ấn qua class .no-print) */}
-          <div
-            className="w-full max-w-4xl mb-4 p-3.5 rounded-2xl flex flex-wrap items-center justify-between gap-3 shadow-2xl bg-[#0f172a] border border-cyan-500/40 text-white no-print"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-cyan-500 to-violet-600 flex items-center justify-center text-white shadow-md">
-                <Printer className="w-5 h-5" />
-              </div>
-              <div>
-                <div className="text-xs font-extrabold flex items-center gap-2">
-                  <span>Phiếu Xuất Kho Kiêm Biên Bản Bàn Giao</span>
-                  <span className="font-mono text-[11px] px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
-                    {pickSlipModalOrder.order_code}
-                  </span>
-                </div>
-                
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={handlePrintPickSlip}
-                className="px-4 py-2 rounded-xl text-xs font-bold text-slate-950 bg-cyan-400 hover:bg-cyan-300 transition shadow-lg shadow-cyan-500/20 flex items-center gap-1.5 cursor-pointer"
-                title="Mở hộp thoại In / Lưu PDF của trình duyệt (Browser Print Preview)"
-              >
-                <Printer className="w-4 h-4" />
-                <span>In Phiếu Ngay (Print)</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setPickSlipModalOrder(null)}
-                className="px-3.5 py-2 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition cursor-pointer flex items-center gap-1"
-              >
-                <X className="w-4 h-4" />
-                <span>Đóng</span>
-              </button>
-            </div>
-          </div>
-
-          {/* Printable Document Sheet (A4 format: #printable-pick-slip) */}
-          <div
-            id="printable-pick-slip"
-            className="w-full max-w-4xl bg-white text-gray-900 rounded-xl shadow-2xl p-6 sm:p-10 md:p-12 space-y-6 border border-gray-300 font-sans leading-normal relative select-text"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Embedded Print CSS: Bản xem trước trên giao diện giữ nguyên màu sắc, khi in trình duyệt tự xét 1 trang A4 */}
-            <style dangerouslySetInnerHTML={{ __html: `
-              @media print {
-                @page {
-                  size: A4 portrait;
-                  margin: 6mm 10mm;
-                }
-                html, body {
-                  margin: 0 !important;
-                  padding: 0 !important;
-                  height: auto !important;
-                  min-height: 0 !important;
-                  overflow: visible !important;
-                  background: #ffffff !important;
-                  color: #000000 !important;
-                  -webkit-print-color-adjust: exact !important;
-                  print-color-adjust: exact !important;
-                }
-                /* Ẩn hoàn toàn toàn bộ ứng dụng nền để không bị phình ra 8 trang */
-                aside, header, main, nav, .no-print {
-                  display: none !important;
-                }
-                #printable-modal-overlay {
-                  position: static !important;
-                  display: block !important;
-                  background: transparent !important;
-                  padding: 0 !important;
-                  margin: 0 !important;
-                  width: 100% !important;
-                  height: auto !important;
-                  overflow: visible !important;
-                }
-                #printable-pick-slip {
-                  position: static !important;
-                  display: block !important;
-                  width: 100% !important;
-                  max-width: 100% !important;
-                  margin: 0 auto !important;
-                  padding: 2mm 4mm !important;
-                  box-shadow: none !important;
-                  border: none !important;
-                  page-break-after: avoid !important;
-                  break-after: avoid !important;
-                  page-break-inside: avoid !important;
-                  break-inside: avoid !important;
-                }
-              }
-            `}} />
-
-            {/* Header: Company Info & Scannable QR Code */}
-            <div className="flex flex-col sm:flex-row items-start justify-between gap-4 pb-4 border-b-2 border-gray-900">
-              {/* Left: Branding TECHGEAR VIỆT NAM (Tuyệt đối không dùng tên bleentechgear) */}
-              <div className="space-y-1 sm:max-w-md">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-lg bg-gray-900 text-white font-black text-sm flex items-center justify-center shadow-xs">
-                    TG
-                  </div>
-                  <div>
-                    <span className="font-black text-lg tracking-tight text-gray-900 block leading-tight">
-                      TECHGEAR VIỆT NAM
-                    </span>
-                    <span className="text-[10px] uppercase font-bold tracking-widest text-cyan-700 block">
-                      HỆ THỐNG PHÂN PHỐI &amp; BÁN LẺ THIẾT BỊ CÔNG NGHỆ CHÍNH HÃNG
-                    </span>
-                  </div>
-                </div>
-                <div className="text-[11px] text-gray-600 space-y-0.5 pt-1">
-                  <div><strong>Kho tổng:</strong> Tầng 2, Tòa nhà TechGear, Số 123 Đường Cầu Giấy, Hà Nội</div>
-                  <div><strong>Hotline CSKH / Khiếu nại đơn hàng:</strong> 1900 6868 | <strong>Email:</strong> kho@techgear.vn</div>
-                  <div><strong>Mã số thuế:</strong> 0109887766 · <strong>Website:</strong> www.techgear.vn</div>
-                </div>
-              </div>
-
-              {/* Right: QR Code for Logistics */}
-              <div className="flex flex-col items-start sm:items-end w-full sm:w-auto">
-                <div className="text-[11px] font-mono text-gray-600 mb-1.5">
-                  Mã chứng từ: <strong className="text-gray-900">PXK-{pickSlipModalOrder.order_code.slice(-9)}</strong>
-                </div>
-                <div className="bg-white p-2 rounded-lg border-2 border-gray-900 flex flex-col items-center shadow-xs">
-                  <img
-                    src={`https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(pickSlipModalOrder.order_code)}`}
-                    alt={`QR Code ${pickSlipModalOrder.order_code}`}
-                    className="w-24 h-24 object-contain"
-                    loading="eager"
-                  />
-                  <div className="mt-1 text-center">
-                    <span className="font-mono text-[10px] font-black text-gray-900 tracking-wider block">
-                      {pickSlipModalOrder.order_code}
-                    </span>
-                    <span className="text-[9px] font-semibold text-gray-600 tracking-tight block">
-                      Quét mã đối soát đơn hàng
-                    </span>
-                  </div>
-                </div>
-                <div className="text-[10px] text-gray-500 mt-1.5 font-mono">
-                  Ngày lập: {new Date().toLocaleDateString('vi-VN')} {new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
-                </div>
-              </div>
-            </div>
-
-            {/* Document Title Banner */}
-            <div className="text-center py-2 space-y-1">
-              <h2 className="text-xl sm:text-2xl font-black uppercase tracking-tight text-gray-900">
-                PHIẾU XUẤT KHO KIÊM BÀN GIAO HÀNG HÓA
-              </h2>
-              <p className="text-xs text-gray-500 font-mono">
-                (Warehouse Pick Slip &amp; Dispatch Note) · Mã đơn hàng: <strong className="text-gray-900">{pickSlipModalOrder.order_code}</strong>
-              </p>
-            </div>
-
-            {/* Order & Recipient Metadata Grid (Bản giao diện giữ colored đẹp mắt) */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 rounded-xl bg-gray-50 border border-gray-200 text-xs">
-              {/* Left Column: Recipient */}
-              <div className="space-y-1.5">
-                <div className="font-bold text-[11px] uppercase tracking-wider text-cyan-800 border-b border-gray-200 pb-1 flex items-center gap-1.5">
-                  <User className="w-3.5 h-3.5 text-cyan-700" />
-                  <span>Thông Tin Người Nhận</span>
-                </div>
-                <div><strong>Họ và tên:</strong> {pickSlipModalOrder.recipient_name || pickSlipModalOrder.customer_name || 'Khách hàng'}</div>
-                <div><strong>Số điện thoại:</strong> {pickSlipModalOrder.recipient_phone || pickSlipModalOrder.phone || '0900 000 000'}</div>
-                <div><strong>Địa chỉ giao nhận:</strong> {pickSlipModalOrder.shipping_address || 'Địa chỉ kho khách hàng TechGear'}</div>
-                {pickSlipModalOrder.order_notes && (
-                  <div className="text-gray-600 pt-0.5">
-                    <strong>Ghi chú đơn hàng:</strong> <span className="italic">{pickSlipModalOrder.order_notes}</span>
-                  </div>
-                )}
-              </div>
-
-              {/* Right Column: Order & Payment Status */}
-              <div className="space-y-1.5">
-                <div className="font-bold text-[11px] uppercase tracking-wider text-cyan-800 border-b border-gray-200 pb-1 flex items-center gap-1.5">
-                  <FileText className="w-3.5 h-3.5 text-cyan-700" />
-                  <span>Thông Tin Xuất Kho &amp; Thanh Toán</span>
-                </div>
-                <div><strong>Mã đơn hàng:</strong> <span className="font-mono font-bold">{pickSlipModalOrder.order_code}</span></div>
-                <div>
-                  <strong>Hình thức thanh toán:</strong>{' '}
-                  {pickSlipModalOrder.payment_method === 'cod'
-                    ? 'Thanh toán khi nhận hàng (COD)'
-                    : 'Chuyển khoản VietQR Paid (Đã thanh toán 100%)'}
-                </div>
-                <div className="flex items-center gap-2">
-                  <strong>Trạng thái:</strong>
-                  {pickSlipModalOrder.payment_status === 'paid' ? (
-                    <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
-                      ✓ ĐÃ THANH TOÁN (PAID)
-                    </span>
-                  ) : (
-                    <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-100 text-rose-800 border border-rose-300">
-                      ⚠ CHƯA THANH TOÁN (THU COD)
-                    </span>
-                  )}
-                </div>
-                <div>
-                  <strong>Nhân viên xuất kho:</strong>{' '}
-                  <span className="font-semibold text-gray-800">{staffProfile.full_name}</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Product Items Table */}
-            <div className="overflow-x-auto rounded-lg border border-gray-300">
-              <table className="w-full text-left text-xs border-collapse">
-                <thead>
-                  <tr className="bg-gray-900 text-white font-bold border-b border-gray-900">
-                    <th className="p-2.5 text-center w-12 border-r border-gray-700">STT</th>
-                    <th className="p-2.5 border-r border-gray-700">Tên Sản Phẩm / Phụ Kiện</th>
-                    <th className="p-2.5 text-center w-28 border-r border-gray-700">Mã SKU</th>
-                    <th className="p-2.5 text-center w-16 border-r border-gray-700">SL</th>
-                    <th className="p-2.5 text-right w-28 border-r border-gray-700">Đơn Giá</th>
-                    <th className="p-2.5 text-right w-32">Thành Tiền</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {((pickSlipModalOrder.order_items || pickSlipModalOrder.items || []).length > 0
-                    ? (pickSlipModalOrder.order_items || pickSlipModalOrder.items)
-                    : [
-                        {
-                          item_id: 1,
-                          product_name: 'Sản phẩm công nghệ TechGear',
-                          sku: 'SKU-TG01',
-                          quantity: 1,
-                          unit_price: pickSlipModalOrder.total_amount || pickSlipModalOrder.final_amount || 0
-                        }
-                      ]
-                  ).map((it, idx) => {
-                    const price = Number(it.unit_price || it.price || 0);
-                    const qty = Number(it.quantity || 1);
-                    return (
-                      <tr key={it.item_id || idx} className="hover:bg-gray-50/50">
-                        <td className="p-2.5 text-center font-mono border-r border-gray-200 text-gray-600">
-                          {idx + 1}
-                        </td>
-                        <td className="p-2.5 font-medium text-gray-900 border-r border-gray-200">
-                          {it.product_name || it.name}
-                          {it.variant_name && (
-                            <span className="block text-[10px] text-gray-500 font-normal">
-                              Phân loại: {it.variant_name}
-                            </span>
-                          )}
-                        </td>
-                        <td className="p-2.5 text-center font-mono text-[11px] border-r border-gray-200 text-gray-600">
-                          {it.sku || `SKU-${1000 + idx}`}
-                        </td>
-                        <td className="p-2.5 text-center font-bold border-r border-gray-200">
-                          {qty}
-                        </td>
-                        <td className="p-2.5 text-right font-mono border-r border-gray-200 text-gray-700">
-                          {formatVND(price)}
-                        </td>
-                        <td className="p-2.5 text-right font-mono font-bold text-gray-900">
-                          {formatVND(price * qty)}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Financial Summary Calculation Block */}
-            <div className="flex flex-col sm:flex-row justify-between items-start gap-4 pt-1">
-              <div className="text-[11px] text-gray-600 space-y-1 sm:max-w-xs">
-                <div><strong>Lưu ý giao nhận &amp; đóng gói:</strong></div>
-                <ul className="list-disc pl-4 space-y-0.5 text-gray-500">
-                  <li>Kiểm tra tem niêm phong và bọt khí chống sốc trước khi xuất kho.</li>
-                  <li>Khách hàng được đồng kiểm ngoại quan sản phẩm trước khi nhận.</li>
-                  <li>Giữ nguyên phiếu này trong trường hợp đổi trả bảo hành 1 đổi 1.</li>
-                </ul>
-              </div>
-
-              {/* Total Calculation Card */}
-              <div className="w-full sm:w-72 bg-gray-50 p-3.5 rounded-xl border border-gray-200 space-y-2 text-xs">
-                <div className="flex justify-between text-gray-600">
-                  <span>Tiền hàng (Subtotal):</span>
-                  <span className="font-mono font-bold">
-                    {formatVND(pickSlipModalOrder.total_amount || pickSlipModalOrder.final_amount)}
-                  </span>
-                </div>
-                <div className="flex justify-between text-gray-600">
-                  <span>Phí vận chuyển:</span>
-                  <span className="font-mono">
-                    {formatVND(pickSlipModalOrder.shipping_fee || 30000)}
-                  </span>
-                </div>
-                <div className="pt-2 border-t border-gray-300 flex justify-between items-center text-sm">
-                  <span className="font-black text-gray-900">TỔNG CỘNG THU (COD):</span>
-                  <span className="font-mono font-black text-base text-rose-600">
-                    {pickSlipModalOrder.payment_status === 'paid'
-                      ? '0 ₫'
-                      : formatVND(
-                          (pickSlipModalOrder.final_amount || pickSlipModalOrder.total_amount) +
-                            (pickSlipModalOrder.shipping_fee || 30000)
-                        )}
-                  </span>
-                </div>
-                {pickSlipModalOrder.payment_status === 'paid' && (
-                  <div className="text-[10px] text-emerald-700 font-bold text-right">
-                    ✓ Đơn hàng đã được thanh toán 100%. Không thu thêm tiền khách.
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Signatures Block (3 columns) */}
-            <div className="pt-4 grid grid-cols-3 gap-4 text-center text-xs">
-              <div className="space-y-12">
-                <div>
-                  <div className="font-bold text-gray-900 uppercase">NGƯỜI LẬP PHIẾU</div>
-                  <div className="text-[10px] text-gray-500">(Ký, ghi rõ họ tên)</div>
-                </div>
-                <div className="font-bold font-mono text-gray-800">
-                  {staffProfile.full_name}
-                </div>
-              </div>
-
-              <div className="space-y-12">
-                <div>
-                  <div className="font-bold text-gray-900 uppercase">THỦ KHO XUẤT</div>
-                  <div className="text-[10px] text-gray-500">(Ký, ghi rõ họ tên)</div>
-                </div>
-                <div className="text-gray-400 font-mono text-xs italic">
-                  (Đã kiểm soát &amp; đóng gói)
-                </div>
-              </div>
-
-              <div className="space-y-12">
-                <div>
-                  <div className="font-bold text-gray-900 uppercase">NGƯỜI NHẬN HÀNG</div>
-                  <div className="text-[10px] text-gray-500">(Ký, xác nhận nguyên vẹn)</div>
-                </div>
-                <div className="font-bold text-gray-800">
-                  {pickSlipModalOrder.recipient_name || pickSlipModalOrder.customer_name || 'Khách hàng'}
-                </div>
-              </div>
-            </div>
-
-            {/* Print Footer Watermark / Stamp */}
-            <div className="pt-4 border-t border-gray-300 flex justify-between items-center text-[10px] text-gray-400 font-mono">
-              <span>Hệ thống ERP TechGear · Bàn làm việc Vận hành &amp; Xuất kho STF</span>
-              <span>In lúc: {new Date().toLocaleTimeString('vi-VN')} · Ngày {new Date().toLocaleDateString('vi-VN')}</span>
-            </div>
-          </div>
-        </div>
-      )}
-
-          
       {/* ======================================================================
           REJECT ORDER MODAL (Cancel Order <<include>> Reject Reason)
          ====================================================================== */}

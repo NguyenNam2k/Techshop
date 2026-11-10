@@ -29,6 +29,10 @@ app.use('/api/orders', orderRoutes);
 app.use('/api/shipping', shippingRoutes);
 app.use('/api/customer', customerRoutes);
 app.use('/api/payments', require('./routes/payment.routes'));
+app.use('/api/returns', require('./routes/return.routes'));
+app.use('/api/staffs', require('./routes/staff.routes'));
+app.use('/api/reviews', require('./routes/review.routes'));
+app.use('/api/support', require('./routes/support.routes'));
 
 app.get('/api/health', async (req, res) => {
   try {
@@ -66,6 +70,11 @@ const server = app.listen(PORT, () => {
 });
 
 let isShuttingDown = false;
+try {
+  require('./services/realtime.service').attachSupportWebSocket(server);
+} catch (error) {
+  console.error('[TechGear Backend] Cannot start support WebSocket server:', error.message);
+}
 
 async function shutdown(signal) {
   if (isShuttingDown) return;

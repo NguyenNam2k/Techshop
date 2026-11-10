@@ -1,5 +1,6 @@
 const pool = require('../config/database');
 const orderService = require('../services/order.service');
+const { publishStaffEvent } = require('../services/realtime.service');
 
 const ORDER_CODE_REGEX = /ORD[\s-]*(\d{13})[\s-]*(\d{4})/i;
 
@@ -74,6 +75,7 @@ async function bankWebhook(req, res) {
     if (updateResult.affectedRows !== 1) {
       return res.status(200).json({ success: true, message: 'Order expired or already processed.' });
     }
+    publishStaffEvent('order.payment_confirmed', { orderCode, paymentStatus: 'paid', phase: 1 });
     return res.status(200).json({ success: true, message: `Order ${orderCode} marked as paid.` });
   } catch (error) {
     console.error('Error in bankWebhook:', error);
@@ -134,6 +136,7 @@ async function simulatePayment(req, res) {
     if (updateResult.affectedRows !== 1) {
       return res.status(409).json({ success: false, message: 'Đơn hàng đã hết thời gian thanh toán.' });
     }
+    publishStaffEvent('order.payment_confirmed', { orderCode, paymentStatus: 'paid', phase: 1 });
 
     return res.status(200).json({
       success: true,

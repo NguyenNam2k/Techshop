@@ -271,6 +271,14 @@ export const api = {
     return res.data;
   },
 
+  async confirmCustomerDecision(orderCode, decision) {
+    const res = await apiClient.post(
+      `/api/orders/${encodeURIComponent(orderCode)}/customer-decision`,
+      { decision }
+    );
+    return res.data;
+  },
+
   async updateOrderStatus(orderCode, shippingStatus) {
     const res = await apiClient.patch(`/api/orders/${encodeURIComponent(orderCode)}/status`, {
       shippingStatus

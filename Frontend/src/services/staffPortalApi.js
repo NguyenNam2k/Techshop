@@ -29,7 +29,6 @@ const mapOrder = (order, index) => {
     shipping_fee: Number(order.shipping_fee || order.shippingFee || 0),
     final_amount: amount,
     processed_by_staff_id: order.processed_by_staff_id || null,
-    pick_slip_printed: false,
     is_high_value: amount >= 10000000,
     customer_credibility: '',
     has_rtc_request: Boolean(order.cancel_requested_at || order.order_notes),

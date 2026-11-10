@@ -1,52 +1,36 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { flushSync } from 'react-dom';
 
 const ThemeContext = createContext();
 
-const readStoredTheme = () => {
-  try {
-    return localStorage.getItem('techshop_theme') === 'light' ? 'light' : 'dark';
-  } catch {
-    return 'dark';
-  }
-};
-
 export function ThemeProvider({ children }) {
-  const [theme, setTheme] = useState(readStoredTheme);
+  const [theme, setTheme] = useState(() => {
+    try {
+      const saved = localStorage.getItem('techshop_theme');
+      return saved === 'light' ? 'light' : 'dark';
+    } catch {
+      return 'dark';
+    }
+  });
 
   useEffect(() => {
     try {
       const root = document.documentElement;
       root.setAttribute('data-theme', theme);
-      if (theme === 'light') {
-        root.classList.remove('dark');
-        root.classList.add('light');
-      } else {
+      if (theme === 'dark') {
         root.classList.add('dark');
         root.classList.remove('light');
+      } else {
+        root.classList.add('light');
+        root.classList.remove('dark');
       }
       localStorage.setItem('techshop_theme', theme);
     } catch (e) {
-      console.error('Error applying theme:', e);
+      console.error(e);
     }
   }, [theme]);
 
   const toggleTheme = () => {
-    const updateTheme = () => {
-      flushSync(() => {
-        setTheme((prev) => (prev === 'light' ? 'dark' : 'light'));
-      });
-    };
-
-    if (
-      typeof document.startViewTransition === 'function' &&
-      !window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    ) {
-      document.startViewTransition(updateTheme);
-      return;
-    }
-
-    updateTheme();
+    setTheme(prev => (prev === 'light' ? 'dark' : 'light'));
   };
 
   return (
@@ -57,9 +41,13 @@ export function ThemeProvider({ children }) {
 }
 
 export function useTheme() {
-  const ctx = useContext(ThemeContext);
-  if (!ctx) {
-    return { theme: 'dark', setTheme: () => {}, toggleTheme: () => {} };
+  const context = useContext(ThemeContext);
+  if (!context) {
+    return {
+      theme: 'dark',
+      setTheme: () => {},
+      toggleTheme: () => {}
+    };
   }
-  return ctx;
+  return context;
 }

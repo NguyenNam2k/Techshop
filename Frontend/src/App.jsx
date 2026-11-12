@@ -22,6 +22,8 @@ import ProtectedRoute from './components/ProtectedRoute';
 // Admin pages
 import AdminLayout from './pages/admin/AdminLayout';
 import AdminDashboard from './pages/admin/AdminDashboard';
+import AdminOrders from './pages/admin/AdminOrders';
+import AdminRevenue from './pages/admin/AdminRevenue';
 import UserManagement from './pages/admin/UserManagement';
 import RoleManagement from './pages/admin/RoleManagement';
 import PermissionManagement from './pages/admin/PermissionManagement';
@@ -158,6 +160,8 @@ function AppContent() {
             }
           >
             <Route index element={<AdminDashboard />} />
+            <Route path="orders" element={<AdminOrders />} />
+            <Route path="revenue" element={<AdminRevenue />} />
             <Route path="users" element={<UserManagement />} />
             <Route path="roles" element={<RoleManagement />} />
             <Route path="permissions" element={<PermissionManagement />} />

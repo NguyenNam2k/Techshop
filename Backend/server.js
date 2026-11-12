@@ -47,6 +47,8 @@ const cartRoutes = require('./routes/customer/cartRoutes');
 const orderRoutes = require('./routes/customer/orderRoutes');
 const shippingRoutes = require('./routes/customer/shippingRoutes');
 const paymentRoutes = require('./routes/customer/paymentRoutes');
+const adminOrderRoutes = require('./routes/admin/orderRoutes');
+const adminRevenueRoutes = require('./routes/admin/revenueRoutes');
 const { testConnection } = require('./config/database');
 
 // 3. Phục vụ Manager App SPA nếu đã build dist (Duong's Manager Portal)
@@ -93,6 +95,8 @@ app.use('/api/cart', cartRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/shipping', shippingRoutes);
 app.use('/api/payments', paymentRoutes);
+app.use('/api/admin/orders', adminOrderRoutes);
+app.use('/api/admin/revenue', adminRevenueRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

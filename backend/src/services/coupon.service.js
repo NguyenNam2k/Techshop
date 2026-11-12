@@ -2,6 +2,33 @@ function couponFailure(message) {
   return { valid: false, message };
 }
 
+function toDateOnlyString(dateVal) {
+  if (!dateVal) return null;
+  if (typeof dateVal === 'string') return dateVal.slice(0, 10);
+  if (dateVal instanceof Date && !Number.isNaN(dateVal.getTime())) {
+    const year = dateVal.getFullYear();
+    const month = String(dateVal.getMonth() + 1).padStart(2, '0');
+    const day = String(dateVal.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+  return String(dateVal).slice(0, 10);
+}
+
+function getTodayDateString() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function formatViDate(dateStr) {
+  const only = toDateOnlyString(dateStr);
+  if (!only) return '';
+  const [y, m, d] = only.split('-');
+  return d && m && y ? `${d}/${m}/${y}` : only;
+}
+
 async function findCoupon(connection, code, { forUpdate = false } = {}) {
   const [rows] = await connection.query(
     `SELECT *
@@ -26,20 +53,35 @@ function getMaxDiscount(coupon) {
   return Number(raw);
 }
 
-function evaluateCoupon(coupon, orderTotal) {
-  const total = Number(orderTotal);
+function evaluateCouponAvailability(coupon) {
+  if (!coupon) {
+    return couponFailure('Mã giảm giá không tồn tại trên hệ thống.');
+  }
   if (!isCouponActive(coupon)) {
-    return couponFailure('Mã giảm giá không tồn tại hoặc không còn hiệu lực.');
+    return couponFailure('Mã giảm giá hiện đang tạm ngừng áp dụng.');
   }
-  if (coupon.start_date && new Date(coupon.start_date).getTime() > Date.now()) {
-    return couponFailure('Mã giảm giá chưa bắt đầu có hiệu lực.');
+
+  const today = getTodayDateString();
+  const startStr = toDateOnlyString(coupon.start_date);
+  const endStr = toDateOnlyString(coupon.end_date);
+
+  if (startStr && today < startStr) {
+    return couponFailure(`Mã giảm giá chỉ có hiệu lực từ ngày ${formatViDate(startStr)}.`);
   }
-  if (coupon.end_date && new Date(coupon.end_date).getTime() < Date.now()) {
-    return couponFailure('Mã giảm giá đã hết hạn sử dụng.');
+  if (endStr && today > endStr) {
+    return couponFailure(`Mã giảm giá đã hết hạn sử dụng (HSD: ${formatViDate(endStr)}).`);
   }
   if (Number(coupon.usage_limit) > 0 && Number(coupon.used_count) >= Number(coupon.usage_limit)) {
-    return couponFailure('Mã giảm giá đã đạt giới hạn lượt sử dụng.');
+    return couponFailure('Mã giảm giá đã hết lượt sử dụng.');
   }
+  return { valid: true };
+}
+
+function evaluateCoupon(coupon, orderTotal) {
+  const availability = evaluateCouponAvailability(coupon);
+  if (!availability.valid) return availability;
+
+  const total = Number(orderTotal);
   if (total < Number(coupon.min_order_value || 0)) {
     return couponFailure(
       `Mã giảm giá chỉ áp dụng cho đơn hàng từ ${new Intl.NumberFormat('vi-VN').format(Number(coupon.min_order_value))}₫ trở lên.`
@@ -53,7 +95,7 @@ function evaluateCoupon(coupon, orderTotal) {
     : Math.min(total, value);
 
   const maxDiscount = getMaxDiscount(coupon);
-  if (maxDiscount !== null) {
+  if (isPercent && maxDiscount !== null) {
     discountAmount = Math.min(discountAmount, maxDiscount);
   }
 
@@ -61,11 +103,26 @@ function evaluateCoupon(coupon, orderTotal) {
     valid: true,
     coupon: {
       ...coupon,
-      discount_type: isPercent ? 'percent' : 'fixed',
-      max_discount: maxDiscount
+      discount_type: isPercent ? 'percentage' : 'fixed',
+      discount_value: value,
+      min_order_value: Number(coupon.min_order_value || 0),
+      max_discount: maxDiscount,
+      max_discount_amount: maxDiscount
     },
     discountAmount: Math.max(0, Math.min(total, discountAmount))
   };
+}
+
+async function hasCustomerUsedCoupon(connection, customerId, couponId) {
+  if (!customerId || !couponId) return null;
+  const [rows] = await connection.query(
+    `SELECT used_at, used_order_code
+     FROM customer_vouchers
+     WHERE customer_id = ? AND coupon_id = ? AND used_at IS NOT NULL
+     LIMIT 1`,
+    [customerId, couponId]
+  );
+  return rows[0] || null;
 }
 
 async function validateCoupon(connection, code, orderTotal, options = {}) {
@@ -78,11 +135,24 @@ async function validateCoupon(connection, code, orderTotal, options = {}) {
   }
 
   const coupon = await findCoupon(connection, code, options);
+  if (options.customerId && coupon) {
+    const usedRecord = await hasCustomerUsedCoupon(connection, options.customerId, coupon.id);
+    if (usedRecord) {
+      return couponFailure(
+        usedRecord.used_order_code
+          ? `Bạn đã sử dụng mã giảm giá này cho đơn hàng ${usedRecord.used_order_code}.`
+          : 'Bạn đã sử dụng mã giảm giá này trước đó.'
+      );
+    }
+  }
   return evaluateCoupon(coupon, amount);
 }
 
 module.exports = {
   findCoupon,
+  evaluateCouponAvailability,
   evaluateCoupon,
-  validateCoupon
+  validateCoupon,
+  toDateOnlyString,
+  getTodayDateString
 };

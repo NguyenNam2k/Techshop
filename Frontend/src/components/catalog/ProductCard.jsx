@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { Heart } from 'lucide-react';
 import { getCategoryDisplayName } from '../../constants/categories';
 
 function formatVND(amount) {
@@ -6,7 +7,7 @@ function formatVND(amount) {
   return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
 }
 
-function ProductCard({ product }) {
+function ProductCard({ product, isWishlisted = false, onToggleWishlist }) {
   const {
     id,
     name,
@@ -85,12 +86,32 @@ function ProductCard({ product }) {
             </div>
           </div>
 
-          {/* Action button */}
-          <div
-            className="w-9 h-9 rounded-xl bg-blue-600/20 group-hover:bg-blue-600 text-blue-400 group-hover:text-white flex items-center justify-center transition-all shadow-sm group-hover:scale-105"
-            title="Xem chi tiết"
-          >
-            ➔
+          {/* Action buttons */}
+          <div className="flex items-center gap-1.5">
+            {onToggleWishlist && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  onToggleWishlist(product);
+                }}
+                title={isWishlisted ? 'Bỏ khỏi yêu thích' : 'Lưu vào yêu thích'}
+                className={`w-9 h-9 rounded-xl border flex items-center justify-center transition cursor-pointer ${
+                  isWishlisted
+                    ? 'bg-rose-500/20 border-rose-500/40 text-rose-400'
+                    : 'bg-slate-900/70 border-slate-700 text-slate-400 hover:text-rose-400 hover:border-rose-500/40'
+                }`}
+              >
+                <Heart className={`w-4 h-4 ${isWishlisted ? 'fill-rose-500 text-rose-500' : ''}`} />
+              </button>
+            )}
+            <div
+              className="w-9 h-9 rounded-xl bg-blue-600/20 group-hover:bg-blue-600 text-blue-400 group-hover:text-white flex items-center justify-center transition-all shadow-sm group-hover:scale-105"
+              title="Xem chi tiết"
+            >
+              ➔
+            </div>
           </div>
         </div>
       </div>

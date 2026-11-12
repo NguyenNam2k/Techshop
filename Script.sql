@@ -251,8 +251,12 @@ CREATE TABLE `orders` (
     `shipping_status` ENUM('pending', 'processing', 'shipping', 'delivered', 'cancelled') NOT NULL DEFAULT 'pending',
     `total_amount` DECIMAL(12, 2) NOT NULL DEFAULT 0.00,
     `shipping_fee` DECIMAL(12, 2) NOT NULL DEFAULT 0.00,
+    `coupon_code` VARCHAR(50) NULL DEFAULT NULL,
+    `discount_amount` DECIMAL(12, 2) NOT NULL DEFAULT 0.00,
     `final_amount` DECIMAL(12, 2) NOT NULL DEFAULT 0.00,
     `order_notes` TEXT NULL,
+    `cancel_reason` VARCHAR(500) NULL DEFAULT NULL,
+    `cancelled_at` DATETIME NULL DEFAULT NULL,
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     CONSTRAINT `fk_orders_customer` 
@@ -477,3 +481,41 @@ SELECT r.id, p.id
 FROM `roles` r, `permissions` p
 WHERE r.role_name = 'manager'
   AND p.permission_name IN ('users.view');
+
+-- ============================================================
+-- 24. Bảng WISHLISTS (Sản phẩm yêu thích của Khách hàng)
+-- ============================================================
+CREATE TABLE IF NOT EXISTS `wishlists` (
+    `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    `customer_id` INT UNSIGNED NOT NULL,
+    `product_id` INT UNSIGNED NOT NULL,
+    `variant_id` INT UNSIGNED NULL DEFAULT NULL,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY `uq_wishlist_customer_product` (`customer_id`, `product_id`),
+    INDEX `idx_wishlist_customer` (`customer_id`),
+    CONSTRAINT `fk_wishlist_customer` FOREIGN KEY (`customer_id`) REFERENCES `customers` (`id`)
+        ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT `fk_wishlist_product` FOREIGN KEY (`product_id`) REFERENCES `products` (`id`)
+        ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT `fk_wishlist_variant` FOREIGN KEY (`variant_id`) REFERENCES `product_variants` (`id`)
+        ON DELETE SET NULL ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ============================================================
+-- 25. Bảng CUSTOMER_VOUCHERS (Kho Voucher đã lưu của Khách hàng)
+-- ============================================================
+CREATE TABLE IF NOT EXISTS `customer_vouchers` (
+    `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    `customer_id` INT UNSIGNED NOT NULL,
+    `coupon_id` INT UNSIGNED NOT NULL,
+    `saved_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    `used_at` DATETIME NULL DEFAULT NULL,
+    `used_order_code` VARCHAR(50) NULL DEFAULT NULL,
+    UNIQUE KEY `uq_customer_coupon` (`customer_id`, `coupon_id`),
+    INDEX `idx_cv_customer` (`customer_id`),
+    CONSTRAINT `fk_cv_customer` FOREIGN KEY (`customer_id`) REFERENCES `customers` (`id`)
+        ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT `fk_cv_coupon` FOREIGN KEY (`coupon_id`) REFERENCES `coupons` (`id`)
+        ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

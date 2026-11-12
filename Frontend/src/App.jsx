@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'r
 import Header from './components/common/Header';
 import Footer from './components/common/Footer';
 import SupportBubble from './components/common/SupportBubble';
+import AiSearchPage from './pages/customer/AiSearchPage';
 
 // Customer pages
 import HomePage from './pages/customer/HomePage';
@@ -71,15 +72,19 @@ function AppContent() {
     location.pathname === '/login' ||
     location.pathname === '/register';
 
+  // Không hiển thị Header ở các trang standalone hoặc trang AI Search Hub
+  const hideHeader = isStandalone || location.pathname === '/ai-search';
+
   return (
     <div className="min-h-screen flex flex-col bg-slate-950 text-slate-100">
-      {!isStandalone && <Header />}
+      {!hideHeader && <Header />}
       <main className={isStandalone ? 'min-h-screen' : 'flex-grow'}>
         <Routes>
           {/* Public Storefront cho Khách & Customer */}
           <Route path="/" element={<HomePage />} />
           <Route path="/home" element={<HomePage />} />
           <Route path="/catalog" element={<CatalogPage />} />
+          <Route path="/ai-search" element={<AiSearchPage />} />
           <Route path="/products" element={<CatalogPage />} />
           <Route path="/products/:id" element={<ProductDetailPage />} />
           <Route path="/build-pc" element={<PCBuildPage />} />

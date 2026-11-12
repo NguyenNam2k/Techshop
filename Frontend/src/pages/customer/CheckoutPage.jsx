@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   MapPin,
   Phone,
@@ -51,8 +51,10 @@ const DEFAULT_WARD_ID = getWardsForProvince('79')[0]?.id || '25747';
 
 const CheckoutPage = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { cartItems = [], subtotal = 0, clearCart } = useCart();
   const { user, isLoading: authLoading } = useAuth();
+  const autoAppliedVoucherRef = useRef(false);
 
   // Chặn khách chưa đăng nhập truy cập trang thanh toán
   useEffect(() => {
@@ -120,7 +122,7 @@ const CheckoutPage = () => {
     [wards, formData.wardId]
   );
 
-  // Load active coupons from DB (/api/coupons)
+  // Load active coupons from DB (/api/coupons/active)
   useEffect(() => {
     api
       .getCoupons()
@@ -133,6 +135,51 @@ const CheckoutPage = () => {
       })
       .catch(() => {});
   }, []);
+
+  // Tự động áp dụng mã voucher nếu khách chọn "Dùng ngay" từ Kho Voucher
+  useEffect(() => {
+    if (autoAppliedVoucherRef.current || subtotal <= 0 || appliedCoupon) return;
+    let pending = '';
+    try {
+      pending = (
+        searchParams.get('voucher') ||
+        sessionStorage.getItem('techshop_pending_voucher') ||
+        ''
+      )
+        .trim()
+        .toUpperCase();
+    } catch {
+      pending = (searchParams.get('voucher') || '').trim().toUpperCase();
+    }
+    if (!pending) return;
+
+    autoAppliedVoucherRef.current = true;
+    setCouponInput(pending);
+    try {
+      sessionStorage.removeItem('techshop_pending_voucher');
+    } catch {
+      // ignore
+    }
+
+    setCouponLoading(true);
+    setCouponError('');
+    api
+      .validateCoupon(pending, subtotal)
+      .then((res) => {
+        if (res.valid && res.coupon) {
+          setAppliedCoupon(res.coupon);
+          setCouponInput(res.coupon.code);
+        } else {
+          setCouponError(res.message || 'Mã giảm giá không hợp lệ hoặc chưa đủ điều kiện.');
+        }
+      })
+      .catch((err) => {
+        setCouponError(err.message || 'Không thể kiểm tra mã giảm giá.');
+      })
+      .finally(() => {
+        setCouponLoading(false);
+      });
+  }, [searchParams, subtotal, appliedCoupon]);
 
   // Calculate shipping quote whenever provinceId or wardId changes
   useEffect(() => {
@@ -294,29 +341,8 @@ const CheckoutPage = () => {
       if (response.success && response.data) {
         setCreatedOrder(response.data);
         try {
-          const prevOrders = JSON.parse(localStorage.getItem('techshop_orders') || '[]');
-          const formatted = {
-            orderId: response.data.orderCode || `ORD-${Date.now().toString().slice(-4)}`,
-            date: new Date().toLocaleString('vi-VN', { dateStyle: 'short', timeStyle: 'short' }),
-            phase: 0,
-            statusLabel: 'Chờ xác nhận',
-            carrier: 'GIAO HÀNG NHANH (GHN)',
-            trackingCode: `GHN${Date.now().toString().slice(-9)}`,
-            paymentMethod:
-              formData.paymentMethod === 'vietqr_banking'
-                ? 'VietQR Banking Auto'
-                : 'COD (Thanh toán khi nhận)',
-            total: Number(response.data.totalAmount || finalTotal),
-            items: cartItems.map((item) => ({
-              id: item.productId || item.id,
-              name: item.name,
-              variant: item.variant,
-              quantity: item.quantity,
-              price: item.price,
-              image: item.image
-            }))
-          };
-          localStorage.setItem('techshop_orders', JSON.stringify([formatted, ...prevOrders]));
+          sessionStorage.removeItem('techshop_pending_voucher');
+          localStorage.removeItem('techshop_orders');
         } catch {
           // ignore storage error
         }

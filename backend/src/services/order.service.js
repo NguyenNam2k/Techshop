@@ -26,7 +26,8 @@ function httpError(message, statusCode = 400) {
 function isConfirmedOrder(order) {
   return (
     order.shipping_status === 'pending' &&
-    (order.payment_method === 'cod' || order.payment_status === 'paid')
+    order.payment_method === 'vietqr_banking' &&
+    order.payment_status === 'paid'
   );
 }
 
@@ -60,6 +61,8 @@ async function getOrdersTableMeta(connection) {
     hasGuestId: colMap.has('guest_id'),
     hasDiscountAmount: colMap.has('discount_amount'),
     hasCouponCode: colMap.has('coupon_code'),
+    hasCancelReason: colMap.has('cancel_reason'),
+    hasCancelledAt: colMap.has('cancelled_at'),
     hasDeliveryMethod: colMap.has('delivery_method'),
     hasDistanceKm: colMap.has('shipping_distance_km'),
     hasStoreName: colMap.has('delivery_store_name'),
@@ -227,12 +230,13 @@ async function createOrder({
 
     let appliedCoupon = null;
     let discountAmount = 0;
+    const resolvedOwnerCustomerId = owner?.column === 'customer_id' ? owner.id : null;
     if (String(couponCode || '').trim()) {
       appliedCoupon = await couponService.validateCoupon(
         connection,
         couponCode,
         totalAmount,
-        { forUpdate: true }
+        { forUpdate: true, customerId: resolvedOwnerCustomerId }
       );
       if (!appliedCoupon.valid) throw httpError(appliedCoupon.message, 400);
       discountAmount = appliedCoupon.discountAmount;
@@ -368,6 +372,15 @@ async function createOrder({
       );
       if (couponUpdate.affectedRows !== 1) {
         throw httpError('Mã giảm giá vừa hết lượt sử dụng.', 409);
+      }
+
+      if (resolvedOwnerCustomerId) {
+        await connection.query(
+          `INSERT INTO customer_vouchers (customer_id, coupon_id, used_at, used_order_code)
+           VALUES (?, ?, NOW(), ?)
+           ON DUPLICATE KEY UPDATE used_at = NOW(), used_order_code = VALUES(used_order_code)`,
+          [resolvedOwnerCustomerId, appliedCoupon.coupon.id, orderCode]
+        );
       }
     }
 
@@ -512,23 +525,29 @@ function phaseForOrder(order) {
 }
 
 function statusLabelForOrder(order) {
-  return isConfirmedOrder(order)
-    ? 'Đã xác nhận'
-    : (ORDER_STATUS_LABEL[order.shipping_status] || 'Đang cập nhật');
+  if (isConfirmedOrder(order)) return 'Đã xác nhận';
+  if (isAwaitingPayment(order)) return 'Chờ thanh toán VietQR';
+  return ORDER_STATUS_LABEL[order.shipping_status] || 'Đang cập nhật';
 }
 
 async function getOrderItems(connection, orderIds) {
   if (!orderIds.length) return [];
   const [items] = await connection.query(
-    `SELECT oi.*, pv.product_id,
-            COALESCE(pv.image_url, p.thumbnail_url,
+    `SELECT oi.*,
+            COALESCE(oi.variant_id, pv_sku.id) AS resolved_variant_id,
+            COALESCE(pv.product_id, pv_sku.product_id) AS product_id,
+            p.slug AS product_slug,
+            COALESCE(pv.image_url, pv_sku.image_url, p.thumbnail_url,
               (SELECT pi.image_url FROM product_images pi
                WHERE pi.product_id = p.id
                ORDER BY pi.is_primary DESC, pi.sort_order ASC, pi.id ASC LIMIT 1)) AS image_url,
+            COALESCE(pv.stock, pv_sku.stock, 0) AS current_stock,
+            COALESCE(p.status, 'active') AS product_status,
             COALESCE(p.warranty_months, 12) AS warranty_months
      FROM order_items oi
      LEFT JOIN product_variants pv ON pv.id = oi.variant_id
-     LEFT JOIN products p ON p.id = pv.product_id
+     LEFT JOIN product_variants pv_sku ON oi.variant_id IS NULL AND pv_sku.sku = oi.sku
+     LEFT JOIN products p ON p.id = COALESCE(pv.product_id, pv_sku.product_id)
      WHERE oi.order_id IN (?)
      ORDER BY oi.order_id, oi.id`,
     [orderIds]
@@ -537,12 +556,14 @@ async function getOrderItems(connection, orderIds) {
 }
 
 function mapOrderItem(item) {
+  const resolvedVariantId = item.variant_id ?? item.resolved_variant_id ?? null;
   return {
     ...item,
     id: Number(item.id),
     orderId: Number(item.order_id),
     productId: item.product_id == null ? null : Number(item.product_id),
-    variantId: item.variant_id == null ? null : Number(item.variant_id),
+    variantId: resolvedVariantId == null ? null : Number(resolvedVariantId),
+    slug: item.product_slug || null,
     name: item.product_name,
     variant: item.variant_name,
     sku: item.sku,
@@ -551,6 +572,8 @@ function mapOrderItem(item) {
     unit_price: Number(item.unit_price),
     quantity: Number(item.quantity),
     subtotal: Number(item.subtotal),
+    currentStock: Number(item.current_stock ?? 0),
+    productStatus: item.product_status || 'active',
     warrantyMonths: Number(item.warranty_months || 12)
   };
 }
@@ -566,7 +589,21 @@ function mapCustomerOrder(order, items) {
       ? order.updated_at.toISOString()
       : new Date(order.updated_at).toISOString();
 
+  const subtotal = Number(order.total_amount || 0);
+  const shippingFee = Number(order.shipping_fee || 0);
+  const finalAmount = Number(order.final_amount || 0);
+  const computedDiscount = Math.max(0, subtotal + shippingFee - finalAmount);
+  const discountAmount =
+    order.discount_amount != null && Number(order.discount_amount) > 0
+      ? Number(order.discount_amount)
+      : computedDiscount;
+
+  const hasCarrierTracking = ['processing', 'shipping', 'delivered'].includes(shippingStatus);
+  const cleanCodeDigits = String(order.order_code || '').replace(/[^0-9]/g, '');
+
   return {
+    id: Number(order.id),
+    customerId: Number(order.customer_id),
     orderId: order.order_code,
     orderCode: order.order_code,
     date: createdAt,
@@ -580,13 +617,16 @@ function mapCustomerOrder(order, items) {
     paymentMethod: PAYMENT_METHOD_LABEL[order.payment_method] || order.payment_method,
     paymentMethodCode: order.payment_method,
     awaitingPayment: isAwaitingPayment(order),
-    total: Number(order.final_amount),
-    subtotal: Number(order.total_amount),
-    discountAmount: Number(order.discount_amount || 0),
-    shippingFee: Number(order.shipping_fee || 0),
+    total: finalAmount,
+    finalAmount,
+    subtotal,
+    discountAmount,
+    couponCode: order.coupon_code || null,
+    shippingFee,
     deliveryMethod: order.delivery_method || 'express',
-    shippingDistanceKm: order.shipping_distance_km == null ? 5.4 : Number(order.shipping_distance_km),
-    deliveryStoreName: order.delivery_store_name || shippingService.STORES[0].name,
+    shippingDistanceKm: order.shipping_distance_km == null ? null : Number(order.shipping_distance_km),
+    deliveryStoreName: order.delivery_store_name || null,
+    orderNotes: order.order_notes || '',
     recipientName: order.recipient_name,
     recipientPhone: order.recipient_phone,
     shippingAddress: order.shipping_address,
@@ -595,45 +635,44 @@ function mapCustomerOrder(order, items) {
       phone: order.recipient_phone,
       address: order.shipping_address
     },
-    cancellationRequestedAt: order.cancel_requested_at
-      ? new Date(order.cancel_requested_at).toISOString()
+    cancelReason: order.cancel_reason || order.cancel_request_reason || '',
+    cancelledAt: order.cancelled_at ? new Date(order.cancelled_at).toISOString() : null,
+    canCancel: shippingStatus === 'pending',
+    carrier: hasCarrierTracking
+      ? order.carrier ||
+        (shippingStatus === 'delivered'
+          ? 'Giao Hàng Tiết Kiệm (GHTK)'
+          : 'GIAO HÀNG NHANH (GHN)')
       : null,
-    cancellationReason: order.cancel_request_reason || '',
-    canRequestCancellation:
-      ['pending', 'processing'].includes(shippingStatus) && !order.cancel_requested_at,
-    carrier:
-      order.carrier ||
-      (shippingStatus === 'delivered' || shippingStatus === 'completed'
-        ? 'Giao Hàng Tiết Kiệm (GHTK)'
-        : 'GIAO HÀNG NHANH (GHN)'),
-    trackingCode:
-      order.tracking_code ||
-      (order.order_code
-        ? `GHN${String(order.order_code).replace(/[^0-9]/g, '').slice(-9).padStart(9, '5')}`
-        : 'GHN582019374'),
+    trackingCode: hasCarrierTracking
+      ? order.tracking_code ||
+        (cleanCodeDigits ? `GHN${cleanCodeDigits.slice(-9).padStart(9, '5')}` : null)
+      : null,
     items: items.map(mapOrderItem)
   };
 }
 
 async function getAllOrders({ customerId, sessionToken, phone, limit = 50 } = {}) {
-  let whereConditions = [];
-  let queryParams = [];
+  const whereConditions = [];
+  const queryParams = [];
 
   if (customerId) {
     whereConditions.push('customer_id = ?');
     queryParams.push(Number(customerId));
   } else if (sessionToken) {
     const guestId = await cartService.findGuestIdBySession(pool, sessionToken);
-    if (guestId) {
-      whereConditions.push('guest_id = ?');
-      queryParams.push(guestId);
-    }
+    if (!guestId) return [];
+    whereConditions.push('guest_id = ?');
+    queryParams.push(guestId);
   } else if (phone) {
     whereConditions.push('recipient_phone = ?');
-    queryParams.push(phone);
+    queryParams.push(String(phone).trim());
   }
 
-  const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : '';
+  // Never execute an unfiltered query across all customers' orders.
+  if (whereConditions.length === 0) return [];
+
+  const whereClause = `WHERE ${whereConditions.join(' AND ')}`;
   const parsedLimit = Math.min(Math.max(Number(limit) || 20, 1), 100);
 
   const [orders] = await pool.query(
@@ -666,44 +705,121 @@ async function getCustomerOrders(customerId) {
   return orders.map(order => mapCustomerOrder(order, itemsByOrderId.get(Number(order.id)) || []));
 }
 
-async function requestOrderCancellation(customerId, orderCode, reason) {
+async function cancelCustomerOrder(customerId, orderCode, reason = '') {
   const cleanCode = String(orderCode || '').trim();
-  const cleanReason = String(reason || '').trim();
+  const cleanReason = String(reason || '').trim() || 'Khách hàng chủ động hủy đơn hàng';
   if (!cleanCode) throw httpError('Mã đơn hàng không hợp lệ.');
-  if (cleanReason.length < 5 || cleanReason.length > 500) {
-    throw httpError('Lý do hủy đơn phải từ 5 đến 500 ký tự.');
+  if (!customerId) throw httpError('Bạn cần đăng nhập để hủy đơn hàng.', 401);
+  if (cleanReason.length > 500) {
+    throw httpError('Lý do hủy đơn tối đa 500 ký tự.');
   }
 
   const connection = await pool.getConnection();
   try {
     await connection.beginTransaction();
     const [rows] = await connection.query(
-      `SELECT id, shipping_status, cancel_requested_at, cancel_request_reason
-       FROM orders WHERE order_code = ? LIMIT 1 FOR UPDATE`,
-      [cleanCode]
+      `SELECT id, customer_id, order_code, shipping_status, payment_status, coupon_code
+       FROM orders
+       WHERE order_code = ? AND customer_id = ?
+       LIMIT 1 FOR UPDATE`,
+      [cleanCode, Number(customerId)]
     );
-    if (!rows.length) throw httpError('Không tìm thấy đơn hàng.', 404);
-    const order = rows[0];
-    if (order.cancel_requested_at) {
-      await connection.commit();
-      return {
-        orderCode: cleanCode,
-        requestedAt: order.cancel_requested_at,
-        reason: order.cancel_request_reason,
-        alreadyRequested: true
-      };
-    }
-    if (!['pending', 'processing'].includes(order.shipping_status)) {
-      throw httpError('Đơn hàng này không thể hủy ở trạng thái hiện tại.', 409);
+    if (!rows.length) {
+      throw httpError('Không tìm thấy đơn hàng thuộc tài khoản của bạn.', 404);
     }
 
-    await connection.query(
-      `UPDATE orders SET cancel_request_reason = ?, cancel_requested_at = NOW()
-       WHERE id = ?`,
-      [cleanReason, order.id]
+    const order = rows[0];
+    if (order.shipping_status === 'cancelled') {
+      throw httpError('Đơn hàng này đã được hủy trước đó.', 409);
+    }
+    if (order.shipping_status !== 'pending') {
+      throw httpError(
+        'Đơn hàng đang được xử lý hoặc vận chuyển, không thể tự hủy trực tuyến. Vui lòng liên hệ CSKH.',
+        409
+      );
+    }
+
+    // Restock variant quantities & write inventory audit trail
+    const [items] = await connection.query(
+      'SELECT variant_id, quantity FROM order_items WHERE order_id = ?',
+      [order.id]
     );
+    for (const item of items) {
+      if (!item.variant_id) continue;
+      const qty = Number(item.quantity) || 0;
+      if (qty <= 0) continue;
+
+      const [variantRows] = await connection.query(
+        'SELECT stock FROM product_variants WHERE id = ? FOR UPDATE',
+        [item.variant_id]
+      );
+      if (!variantRows.length) continue;
+
+      const newStock = Number(variantRows[0].stock || 0) + qty;
+      await connection.query(
+        `UPDATE product_variants
+         SET stock = ?,
+             status = CASE
+               WHEN ? <= 0 THEN 'out_of_stock'
+               WHEN ? <= 5 THEN 'low_stock'
+               ELSE 'available'
+             END,
+             updated_at = NOW()
+         WHERE id = ?`,
+        [newStock, newStock, newStock, item.variant_id]
+      );
+
+      await connection.query(
+        `INSERT INTO inventory_logs (
+          variant_id, order_id, change_type, quantity_changed, stock_after, note, created_at
+        ) VALUES (?, ?, 'order_cancel_restock', ?, ?, ?, NOW())`,
+        [
+          item.variant_id,
+          order.id,
+          qty,
+          newStock,
+          `Hoàn kho khi khách hủy đơn ${cleanCode}`
+        ]
+      );
+    }
+
+    // Restore coupon usage if an applied coupon exists
+    if (order.coupon_code) {
+      const [couponRows] = await connection.query(
+        'SELECT id FROM coupons WHERE UPPER(code) = ? LIMIT 1 FOR UPDATE',
+        [String(order.coupon_code).trim().toUpperCase()]
+      );
+      if (couponRows.length) {
+        const couponId = couponRows[0].id;
+        await connection.query(
+          'UPDATE coupons SET used_count = GREATEST(0, COALESCE(used_count, 0) - 1) WHERE id = ?',
+          [couponId]
+        );
+        await connection.query(
+          `UPDATE customer_vouchers
+           SET used_at = NULL, used_order_code = NULL
+           WHERE customer_id = ? AND coupon_id = ? AND used_order_code = ?`,
+          [Number(customerId), couponId, cleanCode]
+        );
+      }
+    }
+
+    const nextPaymentStatus = order.payment_status === 'paid' ? 'refunded' : order.payment_status;
+    await connection.query(
+      `UPDATE orders
+       SET shipping_status = 'cancelled',
+           payment_status = ?,
+           cancel_reason = ?,
+           cancelled_at = NOW(),
+           updated_at = NOW()
+       WHERE id = ?`,
+      [nextPaymentStatus, cleanReason, order.id]
+    );
+
     await connection.commit();
-    return { orderCode: cleanCode, reason: cleanReason, alreadyRequested: false };
+
+    const updatedOrders = await getAllOrders({ customerId: Number(customerId), limit: 50 });
+    return updatedOrders.find((o) => o.orderCode === cleanCode) || null;
   } catch (error) {
     await connection.rollback();
     throw error;
@@ -717,7 +833,7 @@ module.exports = {
   getOrderByCode,
   getCustomerOrders,
   getAllOrders,
-  requestOrderCancellation,
+  cancelCustomerOrder,
   phaseForOrder,
   statusLabelForOrder,
   generateVietQRUrl

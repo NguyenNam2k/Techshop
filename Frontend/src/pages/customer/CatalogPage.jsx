@@ -2,6 +2,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { Home, ChevronRight, Filter, X } from 'lucide-react';
 import axiosInstance from '../../api/axiosInstance';
+import { api } from '../../services/api';
+import { useAuth } from '../../context/AuthContext';
 import FilterSidebar from '../../components/catalog/FilterSidebar';
 import ProductGrid from '../../components/catalog/ProductGrid';
 import Pagination from '../../components/admin/Pagination';
@@ -17,6 +19,8 @@ function formatPricePill(min, max) {
 
 function CatalogPage() {
   const [searchParams, setSearchParams] = useSearchParams();
+  const { user } = useAuth();
+  const [wishlistIds, setWishlistIds] = useState(() => new Set());
 
   // URL query params
   const currentCategory = searchParams.get('category') || '';
@@ -27,11 +31,11 @@ function CatalogPage() {
   const currentSort = searchParams.get('sort') || 'newest';
   const currentSearch = searchParams.get('q') || searchParams.get('search') || '';
   const currentPage = parseInt(searchParams.get('page'), 10) || 1;
-  const currentLimit = parseInt(searchParams.get('limit'), 10) || 12;
+  const currentLimit = parseInt(searchParams.get('limit'), 10) || 8;
 
   // State
   const [products, setProducts] = useState([]);
-  const [pagination, setPagination] = useState({ page: 1, limit: 12, total: 0, totalPages: 1 });
+  const [pagination, setPagination] = useState({ page: 1, limit: 8, total: 0, totalPages: 1 });
   const [metadata, setMetadata] = useState({ categories: [], brands: [], priceRange: { min: 0, max: 100000000 } });
   const [loading, setLoading] = useState(true);
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
@@ -95,6 +99,40 @@ function CatalogPage() {
   useEffect(() => {
     fetchProducts();
   }, [fetchProducts]);
+
+  // Đồng bộ trạng thái sản phẩm yêu thích của khách hàng từ MySQL
+  useEffect(() => {
+    let active = true;
+    if (user?.role !== 'customer') {
+      setWishlistIds(new Set());
+      return undefined;
+    }
+    api
+      .getWishlist()
+      .then((list) => {
+        if (!active || !Array.isArray(list)) return;
+        setWishlistIds(new Set(list.map((w) => Number(w.productId))));
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, [user]);
+
+  const handleToggleWishlist = async (product) => {
+    if (!user || user.role !== 'customer') return;
+    try {
+      const res = await api.toggleWishlistItem({ productId: Number(product.id) });
+      setWishlistIds((prev) => {
+        const next = new Set(prev);
+        if (res?.wishlisted) next.add(Number(product.id));
+        else next.delete(Number(product.id));
+        return next;
+      });
+    } catch {
+      // ignore transient error
+    }
+  };
 
   // Cập nhật URL Query Params (hỗ trợ 1 key hoặc batch nhiều key cùng lúc)
   const updateQueryParam = (keyOrUpdates, value) => {
@@ -371,6 +409,8 @@ function CatalogPage() {
               products={products}
               loading={loading}
               onResetFilters={handleResetFilters}
+              wishlistIds={wishlistIds}
+              onToggleWishlist={user?.role === 'customer' ? handleToggleWishlist : null}
             />
 
             {/* Phân trang */}

@@ -222,7 +222,57 @@ async function initDatabaseSchema() {
       `);
     }
 
-    console.log('✅ Database schema verified (coupons, tasks, schedules, orders ready).');
+    // 10. Ensure customer wishlists table exists
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS \`wishlists\` (
+        \`id\` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        \`customer_id\` INT UNSIGNED NOT NULL,
+        \`product_id\` INT UNSIGNED NOT NULL,
+        \`variant_id\` INT UNSIGNED NULL DEFAULT NULL,
+        \`created_at\` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        \`updated_at\` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        UNIQUE KEY \`uq_wishlist_customer_product\` (\`customer_id\`, \`product_id\`),
+        INDEX \`idx_wishlist_customer\` (\`customer_id\`),
+        CONSTRAINT \`fk_wishlist_customer\` FOREIGN KEY (\`customer_id\`) REFERENCES \`customers\` (\`id\`) ON DELETE CASCADE ON UPDATE CASCADE,
+        CONSTRAINT \`fk_wishlist_product\` FOREIGN KEY (\`product_id\`) REFERENCES \`products\` (\`id\`) ON DELETE CASCADE ON UPDATE CASCADE,
+        CONSTRAINT \`fk_wishlist_variant\` FOREIGN KEY (\`variant_id\`) REFERENCES \`product_variants\` (\`id\`) ON DELETE SET NULL ON UPDATE CASCADE
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+    `);
+
+    // 11. Ensure customer_vouchers table exists
+    await connection.query(`
+      CREATE TABLE IF NOT EXISTS \`customer_vouchers\` (
+        \`id\` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        \`customer_id\` INT UNSIGNED NOT NULL,
+        \`coupon_id\` INT UNSIGNED NOT NULL,
+        \`saved_at\` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        \`used_at\` DATETIME NULL DEFAULT NULL,
+        \`used_order_code\` VARCHAR(50) NULL DEFAULT NULL,
+        UNIQUE KEY \`uq_customer_coupon\` (\`customer_id\`, \`coupon_id\`),
+        INDEX \`idx_cv_customer\` (\`customer_id\`),
+        CONSTRAINT \`fk_cv_customer\` FOREIGN KEY (\`customer_id\`) REFERENCES \`customers\` (\`id\`) ON DELETE CASCADE ON UPDATE CASCADE,
+        CONSTRAINT \`fk_cv_coupon\` FOREIGN KEY (\`coupon_id\`) REFERENCES \`coupons\` (\`id\`) ON DELETE CASCADE ON UPDATE CASCADE
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+    `);
+
+    // 12. Ensure additive customer order tracking & discount columns exist
+    const orderColumnAlterations = [
+      'ALTER TABLE `orders` ADD COLUMN `coupon_code` VARCHAR(50) NULL DEFAULT NULL AFTER `shipping_fee`',
+      'ALTER TABLE `orders` ADD COLUMN `discount_amount` DECIMAL(12,2) NOT NULL DEFAULT 0.00 AFTER `coupon_code`',
+      'ALTER TABLE `orders` ADD COLUMN `cancel_reason` VARCHAR(500) NULL DEFAULT NULL AFTER `order_notes`',
+      'ALTER TABLE `orders` ADD COLUMN `cancelled_at` DATETIME NULL DEFAULT NULL AFTER `cancel_reason`'
+    ];
+    for (const stmt of orderColumnAlterations) {
+      try {
+        await connection.query(stmt);
+      } catch (alterErr) {
+        if (alterErr.code !== 'ER_DUP_FIELDNAME') {
+          console.warn('Order column alteration notice:', alterErr.message);
+        }
+      }
+    }
+
+    console.log('✅ Database schema verified (coupons, wishlists, customer_vouchers, orders ready).');
   } catch (error) {
     console.warn('⚠️ Notice during initDatabaseSchema:', error.message);
   } finally {

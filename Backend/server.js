@@ -41,6 +41,11 @@ const reportRoutes = require('./routes/manager/reportRoutes');
 const logRoutes = require('./routes/admin/logRoutes');
 const roleRoutes = require('./routes/admin/roleRoutes');
 const permissionRoutes = require('./routes/admin/permissionRoutes');
+const cartRoutes = require('./src/routes/cart.routes');
+const orderRoutes = require('./src/routes/order.routes');
+const shippingRoutes = require('./src/routes/shipping.routes');
+const paymentRoutes = require('./src/routes/payment.routes');
+const customerRoutes = require('./src/routes/customer.routes');
 const { testConnection } = require('./config/database');
 
 // 3. Manager & Admin Web Routes (Redirect to React Frontend SPA)
@@ -62,6 +67,11 @@ app.use('/api/reports', reportRoutes);
 app.use('/api/logs', logRoutes);
 app.use('/api/roles', roleRoutes);
 app.use('/api/permissions', permissionRoutes);
+app.use('/api/cart', cartRoutes);
+app.use('/api/orders', orderRoutes);
+app.use('/api/shipping', shippingRoutes);
+app.use('/api/payments', paymentRoutes);
+app.use('/api/customer', customerRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

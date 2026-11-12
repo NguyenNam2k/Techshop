@@ -1,6 +1,11 @@
+const fs = require('fs');
 const path = require('path');
 const mysql = require('mysql2/promise');
-require('dotenv').config({ path: path.join(__dirname, '../..', '.env') });
+
+const backendEnv = path.join(__dirname, '../..', '.env');
+const rootEnv = path.join(__dirname, '../../..', '.env');
+const envPath = fs.existsSync(backendEnv) ? backendEnv : rootEnv;
+require('dotenv').config({ path: envPath });
 
 const pool = mysql.createPool({
   host: process.env.DB_HOST || 'localhost',
@@ -10,7 +15,8 @@ const pool = mysql.createPool({
   database: process.env.DB_NAME || 'techshop_db',
   waitForConnections: true,
   connectionLimit: 10,
-  queueLimit: 0
+  queueLimit: 0,
+  timezone: '+07:00'
 });
 
 module.exports = pool;

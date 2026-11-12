@@ -1,6 +1,6 @@
 import ProductCard from './ProductCard';
 
-function ProductGrid({ products, loading, onResetFilters }) {
+function ProductGrid({ products, loading, onResetFilters, wishlistIds, onToggleWishlist }) {
   // Skeleton Loading State
   if (loading) {
     return (
@@ -53,7 +53,12 @@ function ProductGrid({ products, loading, onResetFilters }) {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-5">
       {products.map((product) => (
-        <ProductCard key={product.id} product={product} />
+        <ProductCard
+          key={product.id}
+          product={product}
+          isWishlisted={Boolean(wishlistIds?.has(Number(product.id)))}
+          onToggleWishlist={onToggleWishlist}
+        />
       ))}
     </div>
   );

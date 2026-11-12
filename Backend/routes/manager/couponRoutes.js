@@ -1,13 +1,19 @@
 const express = require('express');
 const router = express.Router();
 const CouponController = require('../../controllers/manager/couponController');
+const customerCouponController = require('../../src/controllers/coupon.controller');
+const { optionalAuth } = require('../../middleware/authMiddleware');
 
 /**
- * Coupon Management API Routes
+ * Coupon Management & Customer Storefront API Routes
  * Base path: /api/coupons
  */
 
-// GET /api/coupons - Danh sách mã giảm giá
+// Customer Storefront endpoints (placed before /:id to avoid route collision)
+router.get('/active', optionalAuth, customerCouponController.getActiveCoupons);
+router.post('/validate', optionalAuth, customerCouponController.validateCoupon);
+
+// GET /api/coupons - Danh sách mã giảm giá (Manager)
 router.get('/', CouponController.getCoupons);
 
 // GET /api/coupons/:id - Xem chi tiết mã

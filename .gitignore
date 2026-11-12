@@ -181,3 +181,10 @@ tmp/
 .Trashes
 ehthumbs.db
 Thumbs.db
+
+# Python & AI Service
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.venv/

@@ -55,7 +55,31 @@ const requireRole = (roles = []) => {
   };
 };
 
+/**
+ * Optional JWT parser: sets req.user if a valid Bearer token is provided,
+ * otherwise proceeds with req.user = null without rejecting the request.
+ */
+const optionalAuth = (req, res, next) => {
+  const authHeader = req.headers['authorization'];
+  if (!authHeader) {
+    req.user = null;
+    return next();
+  }
+  const token = authHeader.split(' ')[1];
+  if (!token) {
+    req.user = null;
+    return next();
+  }
+  try {
+    req.user = jwt.verify(token, process.env.JWT_SECRET || 'techshop_super_secret_jwt_key_2026');
+  } catch {
+    req.user = null;
+  }
+  return next();
+};
+
 module.exports = {
   verifyToken,
-  requireRole
+  requireRole,
+  optionalAuth
 };

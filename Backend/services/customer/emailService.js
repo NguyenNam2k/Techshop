@@ -43,6 +43,33 @@ function formatVND(amount) {
  * Tạo nội dung HTML Email Xác Nhận Thanh Toán Đơn Hàng TechShop
  */
 function buildPaymentSuccessHtml({ order, items, targetEmail }) {
+  const isPaid = String(order.payment_status || '').toLowerCase() === 'paid';
+  const isCod = String(order.payment_method || '').toLowerCase() === 'cod';
+
+  // Huy hiệu trạng thái trên Header
+  const badgeHtml = isPaid
+    ? `<div style="display: inline-block; margin-top: 16px; background-color: #10b981; color: #ffffff; font-size: 12px; font-weight: 700; text-transform: uppercase; padding: 6px 16px; border-radius: 20px; letter-spacing: 0.5px;">
+        ✓ ĐÃ THANH TOÁN THÀNH CÔNG
+      </div>`
+    : `<div style="display: inline-block; margin-top: 16px; background-color: #f59e0b; color: #ffffff; font-size: 12px; font-weight: 700; text-transform: uppercase; padding: 6px 16px; border-radius: 20px; letter-spacing: 0.5px;">
+        ⏳ ĐẶT HÀNG THÀNH CÔNG · CHƯA THANH TOÁN (COD)
+      </div>`;
+
+  // Lời nhắn chào mừng
+  const messageHtml = isPaid
+    ? `TechShop xin chân thành cảm ơn Quý khách! Đơn hàng của Quý khách đã được xác nhận thanh toán thành công và hiện đang được chuyển sang bộ phận kho để đóng gói chuẩn bị giao tới Quý khách.`
+    : `TechShop xin chân thành cảm ơn Quý khách! Đơn hàng của Quý khách đã được đặt thành công theo hình thức <strong>Thanh toán tiền mặt khi nhận hàng (COD)</strong>. Quý khách vui lòng chuẩn bị số tiền tương ứng để thanh toán trực tiếp cho nhân viên giao hàng khi nhận sản phẩm.`;
+
+  // Nhãn thời gian & Phương thức & Trạng thái thanh toán
+  const timeLabel = isPaid ? 'Thời gian thanh toán:' : 'Thời gian đặt hàng:';
+  const paymentMethodLabel = isCod
+    ? 'Thanh toán khi nhận hàng (COD)'
+    : (order.payment_method === 'vietqr_banking' ? 'Chuyển khoản QR Napas 24/7' : String(order.payment_method || 'COD'));
+  const paymentStatusHtml = isPaid
+    ? `<span style="color: #059669; font-weight: bold;">ĐÃ THANH TOÁN (PAID)</span>`
+    : `<span style="color: #d97706; font-weight: bold;">CHƯA THANH TOÁN (Thu tiền khi nhận hàng)</span>`;
+  const totalLabel = isPaid ? 'TỔNG ĐÃ THANH TOÁN:' : 'TỔNG CẦN THANH TOÁN (COD):';
+
   const itemsHtml = (items || []).map((item, index) => {
     return `
       <tr style="border-bottom: 1px solid #e2e8f0;">
@@ -63,7 +90,7 @@ function buildPaymentSuccessHtml({ order, items, targetEmail }) {
   <html>
   <head>
     <meta charset="utf-8">
-    <title>Xác nhận thanh toán đơn hàng #${order.order_code}</title>
+    <title>${isPaid ? 'Xác nhận thanh toán đơn hàng' : 'Xác nhận đặt hàng COD'} #${order.order_code}</title>
   </head>
   <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f1f5f9; margin: 0; padding: 24px 12px;">
     <div style="max-width: 640px; margin: 0 auto; background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.06); border: 1px solid #e2e8f0;">
@@ -72,9 +99,7 @@ function buildPaymentSuccessHtml({ order, items, targetEmail }) {
       <div style="background: linear-gradient(135deg, #0284c7 0%, #2563eb 100%); padding: 32px 24px; text-align: center; color: #ffffff;">
         <h1 style="margin: 0; font-size: 24px; font-weight: 800; letter-spacing: -0.5px;">TECHSHOP VIỆT NAM</h1>
         <p style="margin: 6px 0 0; font-size: 14px; color: #e0f2fe;">Hệ thống bán lẻ thiết bị công nghệ & Gaming Gears chính hãng</p>
-        <div style="display: inline-block; margin-top: 16px; background-color: #10b981; color: #ffffff; font-size: 12px; font-weight: 700; text-transform: uppercase; padding: 6px 16px; rounded: 9999px; border-radius: 20px; letter-spacing: 0.5px;">
-          ✓ ĐÃ THANH TOÁN THÀNH CÔNG
-        </div>
+        ${badgeHtml}
       </div>
 
       <!-- Lời chào & Tóm tắt -->
@@ -83,7 +108,7 @@ function buildPaymentSuccessHtml({ order, items, targetEmail }) {
           Xin chào <strong>${order.recipient_name || 'Quý khách'}</strong>,
         </p>
         <p style="font-size: 14px; color: #475569; line-height: 1.6;">
-          TechShop xin chân thành cảm ơn Quý khách! Đơn hàng của Quý khách đã được xác nhận thanh toán thành công và hiện đang được chuyển sang bộ phận kho để đóng gói chuẩn bị giao tới Quý khách.
+          ${messageHtml}
         </p>
 
         <!-- Khung tóm tắt đơn hàng -->
@@ -94,18 +119,18 @@ function buildPaymentSuccessHtml({ order, items, targetEmail }) {
               <td style="padding: 4px 0; text-align: right; font-weight: bold; color: #0284c7; font-family: monospace;">${order.order_code}</td>
             </tr>
             <tr>
-              <td style="padding: 4px 0; color: #64748b;">Thời gian thanh toán:</td>
+              <td style="padding: 4px 0; color: #64748b;">${timeLabel}</td>
               <td style="padding: 4px 0; text-align: right; color: #1e293b;">${new Date().toLocaleString('vi-VN', { timeZone: 'Asia/Ho_Chi_Minh' })}</td>
             </tr>
             <tr>
               <td style="padding: 4px 0; color: #64748b;">Phương thức thanh toán:</td>
               <td style="padding: 4px 0; text-align: right; color: #1e293b; font-weight: 600;">
-                ${order.payment_method === 'vietqr_banking' ? 'Chuyển khoản QR Napas 24/7' : 'Thanh toán khi nhận hàng (COD)'}
+                ${paymentMethodLabel}
               </td>
             </tr>
             <tr>
               <td style="padding: 4px 0; color: #64748b;">Trạng thái thanh toán:</td>
-              <td style="padding: 4px 0; text-align: right; color: #059669; font-weight: bold;">ĐÃ THANH TOÁN (PAID)</td>
+              <td style="padding: 4px 0; text-align: right;">${paymentStatusHtml}</td>
             </tr>
           </table>
         </div>
@@ -146,8 +171,8 @@ function buildPaymentSuccessHtml({ order, items, targetEmail }) {
               </td>
             </tr>
             <tr style="border-top: 1px solid #cbd5e1;">
-              <td style="padding: 10px 0 4px; font-size: 15px; font-weight: bold; color: #0f172a;">TỔNG THANH TOÁN:</td>
-              <td style="padding: 10px 0 4px; text-align: right; font-size: 18px; font-weight: 800; color: #0284c7;">${formatVND(order.final_amount)}</td>
+              <td style="padding: 10px 0 4px; font-size: 14px; font-weight: bold; color: #0f172a;">${totalLabel}</td>
+              <td style="padding: 10px 0 4px; text-align: right; font-size: 18px; font-weight: 800; color: ${isPaid ? '#0284c7' : '#d97706'};">${formatVND(order.final_amount)}</td>
             </tr>
           </table>
         </div>
@@ -251,6 +276,7 @@ async function sendPaymentSuccessEmail(orderCode) {
     console.log(`✅ [EMAIL SERVICE] Đã gửi email xác nhận thanh toán đơn #${cleanCode} tới ${targetEmail}. MessageId: ${info.messageId}`);
     return { success: true, messageId: info.messageId, to: targetEmail };
   } catch (error) {
+    transporter = null;
     console.error(`❌ [EMAIL SERVICE] Lỗi khi gửi email xác nhận thanh toán đơn #${orderCode}:`, error);
     return { success: false, error: error.message };
   }
@@ -286,7 +312,7 @@ async function sendOrderConfirmationEmail(orderCode) {
       [order.id]
     );
 
-    const emailSubject = `[TechShop] Xác nhận đặt hàng thành công #${order.order_code}`;
+    const emailSubject = `[TechShop] Xác nhận đặt hàng thành công #${order.order_code} (Thanh toán khi nhận hàng - COD)`;
     const emailHtml = buildPaymentSuccessHtml({ order, items, targetEmail });
 
     const mailer = getTransporter();
@@ -318,6 +344,7 @@ async function sendOrderConfirmationEmail(orderCode) {
     console.log(`✅ [EMAIL SERVICE] Đã gửi email xác nhận đặt hàng COD đơn #${cleanCode} tới ${targetEmail}. MessageId: ${info.messageId}`);
     return { success: true, messageId: info.messageId, to: targetEmail };
   } catch (error) {
+    transporter = null;
     console.error(`❌ [EMAIL SERVICE] Lỗi khi gửi email xác nhận đặt hàng đơn #${orderCode}:`, error);
     return { success: false, error: error.message };
   }

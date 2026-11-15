@@ -28,6 +28,14 @@ const apiClient = axios.create({
 
 apiClient.interceptors.request.use((config) => {
   config.headers['x-session-token'] = getSessionToken();
+  try {
+    const token = localStorage.getItem('techshop_token');
+    if (token) {
+      config.headers['Authorization'] = `Bearer ${token}`;
+    }
+  } catch {
+    // ignore storage errors
+  }
   return config;
 });
 
@@ -214,9 +222,9 @@ export const api = {
     return res.data.data;
   },
 
-  // Coupons
+  // Coupons (Customer storefront active coupons)
   async getCoupons() {
-    const res = await apiClient.get('/api/coupons');
+    const res = await apiClient.get('/api/coupons/active');
     if (!res.data?.success) {
       throw new Error(res.data?.message || 'Không thể tải mã giảm giá');
     }
@@ -309,13 +317,33 @@ export const api = {
     return res.data.data || [];
   },
 
+  async cancelOrder(orderCode, reason = '') {
+    const res = await apiClient.post(`/api/orders/${encodeURIComponent(orderCode)}/cancel`, { reason });
+    if (!res.data?.success) {
+      throw new Error(res.data?.message || 'Không thể hủy đơn hàng');
+    }
+    return res.data;
+  },
+
   // Customer Profile & Security
-  async getProfile(id) {
-    const res = await apiClient.get('/api/customer/profile', { params: id ? { id } : {} });
+  async getProfile() {
+    const res = await apiClient.get('/api/customer/profile');
     if (!res.data?.success) {
       throw new Error(res.data?.message || 'Không thể tải thông tin hồ sơ');
     }
     return res.data.data;
+  },
+
+  async uploadAvatar(file) {
+    const formData = new FormData();
+    formData.append('avatar', file);
+    const res = await apiClient.post('/api/customer/profile/avatar', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
+    if (!res.data?.success) {
+      throw new Error(res.data?.message || 'Không thể tải lên ảnh đại diện');
+    }
+    return res.data;
   },
 
   async updateProfile(data) {
@@ -346,6 +374,30 @@ export const api = {
     return res.data;
   },
 
+  async getWishlist() {
+    const res = await apiClient.get('/api/customer/wishlist');
+    if (!res.data?.success) throw new Error(res.data?.message || 'Không thể tải danh sách yêu thích');
+    return res.data.data || [];
+  },
+
+  async addToWishlist(payload) {
+    const res = await apiClient.post('/api/customer/wishlist', payload);
+    if (!res.data?.success) throw new Error(res.data?.message || 'Không thể thêm vào yêu thích');
+    return res.data;
+  },
+
+  async toggleWishlistItem(payload) {
+    const res = await apiClient.post('/api/customer/wishlist/toggle', payload);
+    if (!res.data?.success) throw new Error(res.data?.message || 'Không thể cập nhật yêu thích');
+    return res.data;
+  },
+
+  async removeWishlistItem(productId) {
+    const res = await apiClient.delete(`/api/customer/wishlist/${encodeURIComponent(productId)}`);
+    if (!res.data?.success) throw new Error(res.data?.message || 'Không thể xóa sản phẩm yêu thích');
+    return res.data;
+  },
+
   async updateWishlist(wishlist) {
     const res = await apiClient.put('/api/customer/wishlist', { wishlist });
     if (!res.data?.success) throw new Error(res.data?.message || 'Lỗi lưu danh sách yêu thích');
@@ -358,9 +410,21 @@ export const api = {
     return res.data;
   },
 
+  async getVouchers() {
+    const res = await apiClient.get('/api/customer/vouchers');
+    if (!res.data?.success) throw new Error(res.data?.message || 'Không thể tải kho voucher');
+    return res.data.data || { saved: [], discover: [] };
+  },
+
   async saveVoucher(code) {
     const res = await apiClient.post('/api/customer/vouchers', { code });
     if (!res.data?.success) throw new Error(res.data?.message || 'Lỗi lưu voucher');
+    return res.data;
+  },
+
+  async removeSavedVoucher(couponId) {
+    const res = await apiClient.delete(`/api/customer/vouchers/${encodeURIComponent(couponId)}`);
+    if (!res.data?.success) throw new Error(res.data?.message || 'Không thể gỡ voucher');
     return res.data;
   },
 

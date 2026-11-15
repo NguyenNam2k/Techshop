@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   ShoppingBag,
   Trash2,
@@ -25,8 +25,27 @@ const formatVND = (n) =>
 
 export default function CartPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { user } = useAuth();
   const [showAuthModal, setShowAuthModal] = useState(false);
+
+  const urlVoucher = searchParams.get('voucher');
+  const pendingVoucher = (() => {
+    const clean = (urlVoucher || sessionStorage.getItem('techshop_pending_voucher') || '')
+      .trim()
+      .toUpperCase();
+    return clean;
+  })();
+
+  useEffect(() => {
+    if (urlVoucher) {
+      try {
+        sessionStorage.setItem('techshop_pending_voucher', urlVoucher.trim().toUpperCase());
+      } catch {
+        // ignore storage errors
+      }
+    }
+  }, [urlVoucher]);
   const {
     cartItems = [],
     loading = false,
@@ -313,9 +332,15 @@ export default function CartPage() {
                   </div>
                   <div className="flex justify-between text-slate-400">
                     <span>Mã giảm giá</span>
-                    <span className="text-sky-400 text-xs font-semibold">
-                      Chọn ở bước thanh toán
-                    </span>
+                    {pendingVoucher ? (
+                      <span className="text-emerald-400 text-xs font-bold font-mono">
+                        Đã chọn: {pendingVoucher}
+                      </span>
+                    ) : (
+                      <span className="text-sky-400 text-xs font-semibold">
+                        Chọn ở bước thanh toán
+                      </span>
+                    )}
                   </div>
                 </div>
 
@@ -338,7 +363,11 @@ export default function CartPage() {
                       setShowAuthModal(true);
                       return;
                     }
-                    navigate('/checkout');
+                    navigate(
+                      pendingVoucher
+                        ? `/checkout?voucher=${encodeURIComponent(pendingVoucher)}`
+                        : '/checkout'
+                    );
                   }}
                   className="w-full py-3.5 px-6 rounded-xl bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-400 hover:to-blue-500 text-white font-extrabold text-sm shadow-lg shadow-sky-500/25 flex items-center justify-center gap-2 transition active:scale-[0.99] cursor-pointer"
                 >

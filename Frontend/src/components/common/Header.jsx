@@ -29,6 +29,7 @@ import { useTheme } from '../../context/ThemeContext';
 import { api } from '../../services/api';
 import ReverseImageSearchDropdown from './ReverseImageSearchDropdown';
 
+
 const formatVND = (n) =>
   new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(n || 0);
 
@@ -50,6 +51,7 @@ export default function Header() {
   const [activeIndex, setActiveIndex] = useState(-1);
   const searchContainerRef = useRef(null);
   const searchInputRef = useRef(null);
+  const [isAiHubOpen, setIsAiHubOpen] = useState(false);
 
   const activeUser = user || {
     name: 'Đặng Minh Thuận',
@@ -219,22 +221,15 @@ export default function Header() {
                   </button>
                 )}
 
-                {/* Nút Tìm kiếm bằng hình ảnh (Reverse Image Search AI ✨) */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsImageSearchOpen((prev) => !prev);
-                    setIsSearchOpen(false);
-                  }}
-                  title="Tìm kiếm bằng hình ảnh (AI Visual Search) ✨"
-                  className={`p-1.5 rounded-lg active:scale-95 transition cursor-pointer flex items-center justify-center ${
-                    isImageSearchOpen
-                      ? 'bg-amber-400 text-slate-950 shadow-md shadow-amber-400/30'
-                      : 'text-amber-400 hover:text-amber-300 hover:bg-amber-400/15'
-                  }`}
+                {/* Nút Chuyển Trang Sang AI Search Hub ✨ */}
+                <Link
+                  to="/ai-search"
+                  onClick={() => setIsSearchOpen(false)}
+                  title="Mở Trung tâm Tìm kiếm AI (AI Search Hub) ✨"
+                  className="p-1.5 rounded-lg active:scale-95 transition cursor-pointer flex items-center justify-center text-amber-400 hover:text-amber-300 hover:bg-amber-400/15"
                 >
                   <Sparkles className="w-4 h-4 transition-transform hover:scale-110" />
-                </button>
+                </Link>
 
                 {/* Nút Tìm kiếm 🔍 */}
                 <button
@@ -293,11 +288,10 @@ export default function Header() {
                           type="button"
                           onMouseEnter={() => setActiveIndex(idx)}
                           onClick={() => handleSelectProduct(item)}
-                          className={`w-full flex items-center gap-3 p-2 rounded-xl text-left transition cursor-pointer ${
-                            isHighlighted
-                              ? 'bg-sky-500/15 border border-sky-500/30 text-white'
-                              : 'hover:bg-slate-800/80 border border-transparent text-slate-200'
-                          }`}
+                          className={`w-full flex items-center gap-3 p-2 rounded-xl text-left transition cursor-pointer ${isHighlighted
+                            ? 'bg-sky-500/15 border border-sky-500/30 text-white'
+                            : 'hover:bg-slate-800/80 border border-transparent text-slate-200'
+                            }`}
                         >
                           <img
                             src={
@@ -374,11 +368,10 @@ export default function Header() {
           <div className="relative group">
             <Link
               to="/cart"
-              className={`relative flex items-center gap-1.5 px-3.5 py-2 rounded-xl border text-xs font-bold transition shadow-sm ${
-                location.pathname === '/cart'
-                  ? 'bg-sky-500/15 border-sky-500/50 text-sky-400'
-                  : 'bg-slate-900 hover:bg-slate-800 border-slate-800 text-slate-200 hover:text-slate-100'
-              }`}
+              className={`relative flex items-center gap-1.5 px-3.5 py-2 rounded-xl border text-xs font-bold transition shadow-sm ${location.pathname === '/cart'
+                ? 'bg-sky-500/15 border-sky-500/50 text-sky-400'
+                : 'bg-slate-900 hover:bg-slate-800 border-slate-800 text-slate-200 hover:text-slate-100'
+                }`}
             >
               <ShoppingCart className="w-4 h-4 text-sky-400" />
               <span className="hidden sm:inline">Giỏ hàng</span>
@@ -482,7 +475,24 @@ export default function Header() {
                 className="flex items-center gap-2 p-1 pr-2.5 rounded-full bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-sky-500/60 transition cursor-pointer shadow-sm"
               >
                 <div className="relative">
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-sky-500 to-blue-600 flex items-center justify-center text-white font-black text-xs border border-sky-400/30">
+                  {user.avatar || user.avatar_url ? (
+                    <img
+                      src={user.avatar || user.avatar_url}
+                      alt={user.name || 'Avatar'}
+                      className="w-8 h-8 rounded-full object-cover border border-sky-400/30"
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none';
+                        if (e.currentTarget.nextElementSibling) {
+                          e.currentTarget.nextElementSibling.style.display = 'flex';
+                        }
+                      }}
+                    />
+                  ) : null}
+                  <div
+                    className={`w-8 h-8 rounded-full bg-gradient-to-tr from-sky-500 to-blue-600 items-center justify-center text-white font-black text-xs border border-sky-400/30 ${
+                      user.avatar || user.avatar_url ? 'hidden' : 'flex'
+                    }`}
+                  >
                     {(user.name || user.email || 'U')[0].toUpperCase()}
                   </div>
                   <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border-2 border-slate-900 bg-emerald-400" />
@@ -498,7 +508,24 @@ export default function Header() {
                 <div className="bg-slate-900 rounded-2xl shadow-2xl border border-slate-800 overflow-hidden">
                   {/* User Info Header */}
                   <div className="p-4 bg-slate-950/80 border-b border-slate-800 flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-sky-500 to-indigo-600 flex items-center justify-center text-white font-extrabold text-sm shrink-0 shadow-md">
+                    {user.avatar || user.avatar_url ? (
+                      <img
+                        src={user.avatar || user.avatar_url}
+                        alt={user.name || 'Avatar'}
+                        className="w-10 h-10 rounded-full object-cover border border-sky-400/30 shrink-0 shadow-md"
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                          if (e.currentTarget.nextElementSibling) {
+                            e.currentTarget.nextElementSibling.style.display = 'flex';
+                          }
+                        }}
+                      />
+                    ) : null}
+                    <div
+                      className={`w-10 h-10 rounded-full bg-gradient-to-tr from-sky-500 to-indigo-600 items-center justify-center text-white font-extrabold text-sm shrink-0 shadow-md ${
+                        user.avatar || user.avatar_url ? 'hidden' : 'flex'
+                      }`}
+                    >
                       {(user.name || user.email || 'U')[0].toUpperCase()}
                     </div>
                     <div className="min-w-0">
@@ -595,11 +622,10 @@ export default function Header() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center gap-1 sm:gap-2 overflow-x-auto no-scrollbar py-2 text-xs font-bold">
           <Link
             to="/"
-            className={`px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 whitespace-nowrap ${
-              location.pathname === '/' || location.pathname === '/home'
-                ? 'bg-sky-500/15 text-sky-400 border border-sky-500/30'
-                : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
-            }`}
+            className={`px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 whitespace-nowrap ${location.pathname === '/' || location.pathname === '/home'
+              ? 'bg-sky-500/15 text-sky-400 border border-sky-500/30'
+              : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
+              }`}
           >
             <span>🏠</span>
             <span>Trang Chủ</span>
@@ -607,23 +633,33 @@ export default function Header() {
 
           <Link
             to="/catalog"
-            className={`px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 whitespace-nowrap ${
-              location.pathname === '/catalog' || location.pathname === '/products'
-                ? 'bg-sky-500/15 text-sky-400 border border-sky-500/30'
-                : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
-            }`}
+            className={`px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 whitespace-nowrap ${location.pathname === '/catalog' || location.pathname === '/products'
+              ? 'bg-sky-500/15 text-sky-400 border border-sky-500/30'
+              : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
+              }`}
           >
             <span>🛍️</span>
             <span>Tất Cả Sản Phẩm (Catalog)</span>
           </Link>
 
+          {/* Nút Điều Hướng Trực Tiếp Sang AI Search Hub */}
+          <Link
+            to="/ai-search"
+            className={`px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 whitespace-nowrap ${location.pathname === '/ai-search'
+                ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 shadow-sm'
+                : 'text-cyan-400 hover:text-cyan-300 hover:bg-cyan-500/10'
+              }`}
+          >
+            <span>✨</span>
+            <span className="font-bold">AI Search Hub</span>
+          </Link>
+
           <Link
             to="/build-pc"
-            className={`px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 whitespace-nowrap ${
-              location.pathname === '/build-pc'
-                ? 'bg-sky-500/15 text-sky-400 border border-sky-500/30'
-                : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
-            }`}
+            className={`px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 whitespace-nowrap ${location.pathname === '/build-pc'
+              ? 'bg-sky-500/15 text-sky-400 border border-sky-500/30'
+              : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
+              }`}
           >
             <Wrench className="w-3.5 h-3.5 text-sky-400" />
             <span>Xây Dựng Cấu Hình PC</span>
@@ -632,11 +668,10 @@ export default function Header() {
           {['admin', 'manager'].includes(String(user?.role || '').toLowerCase()) && (
             <Link
               to="/manager/products"
-              className={`px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 whitespace-nowrap ${
-                location.pathname.startsWith('/manager')
-                  ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/40'
-                  : 'text-indigo-400 hover:text-indigo-300 hover:bg-indigo-500/10'
-              }`}
+              className={`px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 whitespace-nowrap ${location.pathname.startsWith('/manager')
+                ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/40'
+                : 'text-indigo-400 hover:text-indigo-300 hover:bg-indigo-500/10'
+                }`}
             >
               <span>📦</span>
               <span>Quản Lý Cửa Hàng (Manager)</span>
@@ -646,11 +681,10 @@ export default function Header() {
           {String(user?.role || '').toLowerCase() === 'admin' && (
             <Link
               to="/admin"
-              className={`px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 whitespace-nowrap ${
-                location.pathname.startsWith('/admin')
-                  ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
-                  : 'text-amber-400 hover:text-amber-300 hover:bg-amber-500/10'
-              }`}
+              className={`px-3 py-1.5 rounded-xl transition flex items-center gap-1.5 whitespace-nowrap ${location.pathname.startsWith('/admin')
+                ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
+                : 'text-amber-400 hover:text-amber-300 hover:bg-amber-500/10'
+                }`}
             >
               <span>👑</span>
               <span>Quản Trị Admin</span>

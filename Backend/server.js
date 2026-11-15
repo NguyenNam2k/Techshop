@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
+require('dotenv').config({ path: path.join(__dirname, '../.env') });
 require('dotenv').config();
 require('dotenv').config({ path: path.join(__dirname, '.env') });
 
@@ -44,29 +45,19 @@ const reportRoutes = require('./routes/manager/reportRoutes');
 const logRoutes = require('./routes/admin/logRoutes');
 const roleRoutes = require('./routes/admin/roleRoutes');
 const permissionRoutes = require('./routes/admin/permissionRoutes');
-// Helper load routes từ thư mục src (hỗ trợ cả Windows và Linux khi phân tách Backend / backend)
-const loadBackendSrcRoute = (relPath) => {
-  try {
-    return require(relPath);
-  } catch (err) {
-    if (err.code === 'MODULE_NOT_FOUND') {
-      return require(path.join(__dirname, '../backend', relPath.replace(/^\.\//, '')));
-    }
-    throw err;
-  }
-};
-
-const orderRoutes = loadBackendSrcRoute('./src/routes/order.routes');
-const paymentRoutes = loadBackendSrcRoute('./src/routes/payment.routes');
-const returnRoutes = loadBackendSrcRoute('./src/routes/return.routes');
-const reviewRoutes = loadBackendSrcRoute('./src/routes/review.routes');
-const shippingRoutes = loadBackendSrcRoute('./src/routes/shipping.routes');
-const cartRoutes = loadBackendSrcRoute('./src/routes/cart.routes');
-const customerProfileRoutes = loadBackendSrcRoute('./src/routes/customer.routes');
-const supportRoutes = loadBackendSrcRoute('./src/routes/support.routes');
+const customerRoutes = require('./routes/customer/customerRoutes');
+const cartRoutes = require('./routes/customer/cartRoutes');
+const orderRoutes = require('./routes/customer/orderRoutes');
+const shippingRoutes = require('./routes/customer/shippingRoutes');
+const paymentRoutes = require('./routes/customer/paymentRoutes');
+const returnRoutes = require('./routes/customer/return.routes');
+const reviewRoutes = require('./routes/customer/review.routes');
+const supportRoutes = require('./routes/customer/support.routes');
+const adminOrderRoutes = require('./routes/admin/orderRoutes');
+const adminRevenueRoutes = require('./routes/admin/revenueRoutes');
 const { testConnection } = require('./config/database');
-const { expirePendingVietqrOrders } = loadBackendSrcRoute('./src/services/order.service');
-const { attachSupportWebSocket } = loadBackendSrcRoute('./src/services/realtime.service');
+const { expirePendingVietqrOrders } = require('./services/customer/orderService');
+const { attachSupportWebSocket } = require('./services/customer/realtime.service');
 
 // 3. Phục vụ Manager App SPA nếu đã build dist (Duong's Manager Portal)
 const managerAppDist = path.join(__dirname, '../views/manager-app/dist');
@@ -81,7 +72,7 @@ if (fs.existsSync(managerAppDist)) {
     }
   };
   app.use('/manager', express.static(managerAppDist, staticDistOptions));
-  app.get(['/manager', '/manager/*'], (req, res, next) => {
+  app.get(['/manager', '/manager/{*splat}'], (req, res, next) => {
     if (req.path.startsWith('/manager/api')) return next();
     res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
     res.sendFile(path.join(managerAppDist, 'index.html'));
@@ -107,14 +98,16 @@ app.use('/api/reports', reportRoutes);
 app.use('/api/logs', logRoutes);
 app.use('/api/roles', roleRoutes);
 app.use('/api/permissions', permissionRoutes);
+app.use('/api/customer', customerRoutes);
+app.use('/api/cart', cartRoutes);
 app.use('/api/orders', orderRoutes);
+app.use('/api/shipping', shippingRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/returns', returnRoutes);
 app.use('/api/reviews', reviewRoutes);
-app.use('/api/shipping', shippingRoutes);
-app.use('/api/cart', cartRoutes);
-app.use('/api/customer', customerProfileRoutes);
 app.use('/api/support', supportRoutes);
+app.use('/api/admin/orders', adminOrderRoutes);
+app.use('/api/admin/revenue', adminRevenueRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
@@ -129,7 +122,7 @@ app.get('/api/health', (req, res) => {
 app.get('/dashboard', (req, res) => res.redirect('/'));
 
 // Route mặc định điều hướng tới Giao diện Khách hàng (SPA React Catalog)
-app.get('*', (req, res) => {
+app.get('/{*splat}', (req, res) => {
   if (req.path.startsWith('/api')) {
     return res.status(404).json({ success: false, message: 'Resource not found' });
   }

@@ -1,8 +1,9 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   MapPin,
   Phone,
+  Mail,
   User,
   CreditCard,
   Truck,
@@ -50,8 +51,10 @@ const DEFAULT_WARD_ID = getWardsForProvince('79')[0]?.id || '25747';
 
 const CheckoutPage = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { cartItems = [], subtotal = 0, clearCart } = useCart();
   const { user, isLoading: authLoading } = useAuth();
+  const autoAppliedVoucherRef = useRef(false);
 
   // Chặn khách chưa đăng nhập truy cập trang thanh toán
   useEffect(() => {
@@ -63,6 +66,7 @@ const CheckoutPage = () => {
   const [formData, setFormData] = useState({
     recipientName: user?.name || user?.username || '',
     recipientPhone: user?.phone || '',
+    recipientEmail: user?.email || '',
     provinceId: DEFAULT_PROVINCE_ID,
     wardId: DEFAULT_WARD_ID,
     streetAddress: user?.address || 'Số 123 Nguyễn Huệ',
@@ -76,6 +80,7 @@ const CheckoutPage = () => {
         ...prev,
         recipientName: prev.recipientName || user.name || user.username || '',
         recipientPhone: prev.recipientPhone || user.phone || '',
+        recipientEmail: prev.recipientEmail || user.email || '',
         streetAddress: prev.streetAddress || user.address || ''
       }));
     }
@@ -120,7 +125,7 @@ const CheckoutPage = () => {
     [wards, formData.wardId]
   );
 
-  // Load active coupons from DB (/api/coupons)
+  // Load active coupons from DB (/api/coupons/active)
   useEffect(() => {
     api
       .getCoupons()
@@ -133,6 +138,51 @@ const CheckoutPage = () => {
       })
       .catch(() => {});
   }, []);
+
+  // Tự động áp dụng mã voucher nếu khách chọn "Dùng ngay" từ Kho Voucher
+  useEffect(() => {
+    if (autoAppliedVoucherRef.current || subtotal <= 0 || appliedCoupon) return;
+    let pending = '';
+    try {
+      pending = (
+        searchParams.get('voucher') ||
+        sessionStorage.getItem('techshop_pending_voucher') ||
+        ''
+      )
+        .trim()
+        .toUpperCase();
+    } catch {
+      pending = (searchParams.get('voucher') || '').trim().toUpperCase();
+    }
+    if (!pending) return;
+
+    autoAppliedVoucherRef.current = true;
+    setCouponInput(pending);
+    try {
+      sessionStorage.removeItem('techshop_pending_voucher');
+    } catch {
+      // ignore
+    }
+
+    setCouponLoading(true);
+    setCouponError('');
+    api
+      .validateCoupon(pending, subtotal)
+      .then((res) => {
+        if (res.valid && res.coupon) {
+          setAppliedCoupon(res.coupon);
+          setCouponInput(res.coupon.code);
+        } else {
+          setCouponError(res.message || 'Mã giảm giá không hợp lệ hoặc chưa đủ điều kiện.');
+        }
+      })
+      .catch((err) => {
+        setCouponError(err.message || 'Không thể kiểm tra mã giảm giá.');
+      })
+      .finally(() => {
+        setCouponLoading(false);
+      });
+  }, [searchParams, subtotal, appliedCoupon]);
 
   // Calculate shipping quote whenever provinceId or wardId changes
   useEffect(() => {
@@ -279,6 +329,7 @@ const CheckoutPage = () => {
       const response = await api.createOrder({
         recipientName: formData.recipientName.trim(),
         recipientPhone: formData.recipientPhone.trim(),
+        recipientEmail: (formData.recipientEmail || user?.email || '').trim(),
         provinceId: formData.provinceId,
         wardId: formData.wardId,
         shippingAddress: composeFullAddress(),
@@ -293,33 +344,15 @@ const CheckoutPage = () => {
 
       if (response.success && response.data) {
         if (formData.paymentMethod === 'vietqr_banking' && response.data.vietQR) {
-          // Với VietQR: chỉ mở modal thanh toán, CHƯA xóa giỏ hàng và CHƯA lưu vào "Đơn hàng của tôi"
-          // để nếu khách đóng modal thì vẫn quay về y nguyên Checkout page.
+          // Với VietQR: chỉ mở modal thanh toán, CHƯA xóa giỏ hàng
           setCreatedOrder(response.data);
           setIsVietqrModalOpen(true);
         } else {
           // Với COD: Lưu đơn hàng và xóa giỏ hàng ngay lập tức
+          setCreatedOrder(response.data);
           try {
-            const prevOrders = JSON.parse(localStorage.getItem('techshop_orders') || '[]');
-            const formatted = {
-              orderId: response.data.orderCode || `ORD-${Date.now().toString().slice(-4)}`,
-              date: new Date().toLocaleString('vi-VN', { dateStyle: 'short', timeStyle: 'short' }),
-              phase: 0,
-              statusLabel: 'Chờ xác nhận',
-              carrier: 'GIAO HÀNG NHANH (GHN)',
-              trackingCode: `GHN${Date.now().toString().slice(-9)}`,
-              paymentMethod: 'COD (Thanh toán khi nhận)',
-              total: Number(response.data.totalAmount || finalTotal),
-              items: cartItems.map((item) => ({
-                id: item.productId || item.id,
-                name: item.name,
-                variant: item.variant,
-                quantity: item.quantity,
-                price: item.price,
-                image: item.image
-              }))
-            };
-            localStorage.setItem('techshop_orders', JSON.stringify([formatted, ...prevOrders]));
+            sessionStorage.removeItem('techshop_pending_voucher');
+            localStorage.removeItem('techshop_orders');
           } catch {
             // ignore storage error
           }
@@ -700,6 +733,25 @@ const CheckoutPage = () => {
                         className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-950 border border-slate-700 focus:border-sky-500 text-sm text-slate-100 placeholder:text-slate-400 outline-none transition"
                       />
                     </div>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-300 uppercase mb-1.5 flex items-center justify-between">
+                    <span>Email nhận hóa đơn &amp; xác nhận thanh toán *</span>
+                    <span className="text-[10px] text-sky-400 font-normal">Tự động gửi email khi thanh toán</span>
+                  </label>
+                  <div className="relative">
+                    <Mail className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                    <input
+                      type="email"
+                      name="recipientEmail"
+                      value={formData.recipientEmail}
+                      onChange={handleInputChange}
+                      required
+                      placeholder="Ví dụ: customer@gmail.com"
+                      className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-950 border border-slate-700 focus:border-sky-500 text-sm text-white outline-none transition"
+                    />
                   </div>
                 </div>
 

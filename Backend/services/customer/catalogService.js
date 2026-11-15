@@ -6,7 +6,7 @@ const catalogService = {
    */
   getCatalog: async (queryParams) => {
     const page = Math.max(1, parseInt(queryParams.page, 10) || 1);
-    const limit = Math.min(100, Math.max(1, parseInt(queryParams.limit, 10) || 12));
+    const limit = Math.min(100, Math.max(1, parseInt(queryParams.limit, 10) || 8));
     const sort = queryParams.sort || 'newest';
 
     const filterOptions = {

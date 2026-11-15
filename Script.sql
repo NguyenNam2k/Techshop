@@ -311,8 +311,12 @@ CREATE TABLE `orders` (
     `customer_decision` ENUM('received', 'return_requested') NULL DEFAULT NULL,
     `total_amount` DECIMAL(12, 2) NOT NULL DEFAULT 0.00,
     `shipping_fee` DECIMAL(12, 2) NOT NULL DEFAULT 0.00,
+    `coupon_code` VARCHAR(50) NULL DEFAULT NULL,
+    `discount_amount` DECIMAL(12, 2) NOT NULL DEFAULT 0.00,
     `final_amount` DECIMAL(12, 2) NOT NULL DEFAULT 0.00,
     `order_notes` TEXT NULL,
+    `cancel_reason` VARCHAR(500) NULL DEFAULT NULL,
+    `cancelled_at` DATETIME NULL DEFAULT NULL,
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     CONSTRAINT `fk_orders_customer` 
@@ -617,13 +621,13 @@ WHERE r.role_name = 'staff'
     'reviews.view', 'reviews.reply'
   );
 
--- 7. N?p t?i kho?n Staff m?u cho h? th?ng v?n h?nh
--- M?t kh?u m?c ??nh: staff123 (Bcrypt: $2a$10$DIw2FjIlK2cMlFhEBMFR5OLKXUzf2Lvd28eC8zyYuVO445Mhqale2)
+-- 7. Nạp tài khoản Staff mẫu cho hệ thống vận hành
+-- Mật khẩu mặc định: staff123 (Bcrypt: $2a$10$DIw2FjIlK2cMlFhEBMFR5OLKXUzf2Lvd28eC8zyYuVO445Mhqale2)
 INSERT INTO `staffs` (`id`, `username`, `staff_code`, `full_name`, `email`, `password_hash`, `department`, `phone`, `status`, `created_at`, `updated_at`)
 VALUES
-(1, 'staff1', 'STF001', 'L? V?n T? (Sales Lead)', 'staff1@techshop.vn', '$2a$10$DIw2FjIlK2cMlFhEBMFR5OLKXUzf2Lvd28eC8zyYuVO445Mhqale2', 'Sales', '0966123456', 'active', NOW(), NOW()),
-(2, 'staff2', 'STF002', 'Ph?m H?i D??ng (Warehouse Officer)', 'staff2@techshop.vn', '$2a$10$DIw2FjIlK2cMlFhEBMFR5OLKXUzf2Lvd28eC8zyYuVO445Mhqale2', 'Warehouse', '0966654321', 'active', NOW(), NOW()),
-(3, 'staff3', 'STF-102', 'Nguy?n V?n Nam (Fulfillment & Operations)', 'staff3@techshop.vn', '$2a$10$DIw2FjIlK2cMlFhEBMFR5OLKXUzf2Lvd28eC8zyYuVO445Mhqale2', 'Warehouse', '0966789012', 'active', NOW(), NOW())
+(1, 'staff1', 'STF001', 'Lê Văn Tú (Sales Lead)', 'staff1@techshop.vn', '$2a$10$DIw2FjIlK2cMlFhEBMFR5OLKXUzf2Lvd28eC8zyYuVO445Mhqale2', 'Sales', '0966123456', 'active', NOW(), NOW()),
+(2, 'staff2', 'STF002', 'Phạm Hải Dương (Warehouse Officer)', 'staff2@techshop.vn', '$2a$10$DIw2FjIlK2cMlFhEBMFR5OLKXUzf2Lvd28eC8zyYuVO445Mhqale2', 'Warehouse', '0966654321', 'active', NOW(), NOW()),
+(3, 'staff3', 'STF-102', 'Nguyễn Văn Nam (Fulfillment & Operations)', 'staff3@techshop.vn', '$2a$10$DIw2FjIlK2cMlFhEBMFR5OLKXUzf2Lvd28eC8zyYuVO445Mhqale2', 'Warehouse', '0966789012', 'active', NOW(), NOW())
 ON DUPLICATE KEY UPDATE
   `username` = VALUES(`username`),
   `staff_code` = VALUES(`staff_code`),
@@ -675,12 +679,45 @@ ON DUPLICATE KEY UPDATE
   `due_date` = VALUES(`due_date`),
   `updated_at` = NOW();
 
-SET FOREIGN_KEY_CHECKS = 1;
+-- ============================================================
+-- 24. Bảng WISHLISTS (Sản phẩm yêu thích của Khách hàng)
+-- ============================================================
+CREATE TABLE IF NOT EXISTS `wishlists` (
+    `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    `customer_id` INT UNSIGNED NOT NULL,
+    `product_id` INT UNSIGNED NOT NULL,
+    `variant_id` INT UNSIGNED NULL DEFAULT NULL,
+    `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY `uq_wishlist_customer_product` (`customer_id`, `product_id`),
+    INDEX `idx_wishlist_customer` (`customer_id`),
+    CONSTRAINT `fk_wishlist_customer` FOREIGN KEY (`customer_id`) REFERENCES `customers` (`id`)
+        ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT `fk_wishlist_product` FOREIGN KEY (`product_id`) REFERENCES `products` (`id`)
+        ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT `fk_wishlist_variant` FOREIGN KEY (`variant_id`) REFERENCES `product_variants` (`id`)
+        ON DELETE SET NULL ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- ==============================================================================
--- HOÀN TẤT KHỞI TẠO CẤU TRÚC DATABASE TECHSHOP_DB (23 BẢNG + RBAC SEED)
--- Để nạp dữ liệu danh mục & reviews đầy đủ, chạy: seed_full_catalog.sql
--- ==============================================================================
+-- ============================================================
+-- 25. Bảng CUSTOMER_VOUCHERS (Kho Voucher đã lưu của Khách hàng)
+-- ============================================================
+CREATE TABLE IF NOT EXISTS `customer_vouchers` (
+    `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    `customer_id` INT UNSIGNED NOT NULL,
+    `coupon_id` INT UNSIGNED NOT NULL,
+    `saved_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    `used_at` DATETIME NULL DEFAULT NULL,
+    `used_order_code` VARCHAR(50) NULL DEFAULT NULL,
+    UNIQUE KEY `uq_customer_coupon` (`customer_id`, `coupon_id`),
+    INDEX `idx_cv_customer` (`customer_id`),
+    CONSTRAINT `fk_cv_customer` FOREIGN KEY (`customer_id`) REFERENCES `customers` (`id`)
+        ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT `fk_cv_coupon` FOREIGN KEY (`coupon_id`) REFERENCES `coupons` (`id`)
+        ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+SET FOREIGN_KEY_CHECKS = 1;
 
 -- ==============================================================================
 -- SUPPORT TICKET & CUSTOMER CHAT (Realtime WebSocket: Customer <-> Staff)

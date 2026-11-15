@@ -3,8 +3,8 @@ const db = require('../../config/db');
 const AdminRepository = {
   findByAccount: async (account) => {
     const [rows] = await db.query(
-      'SELECT id, username, email, password_hash, full_name as name, status FROM admins WHERE username = ?',
-      [account]
+      'SELECT id, username, email, password_hash, full_name as name, status FROM admins WHERE username = ? OR email = ?',
+      [account, account]
     );
     return rows[0] || null;
   },

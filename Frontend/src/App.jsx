@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'r
 import Header from './components/common/Header';
 import Footer from './components/common/Footer';
 import SupportBubble from './components/common/SupportBubble';
+import AiSearchPage from './pages/customer/AiSearchPage';
 
 // Customer pages
 import HomePage from './pages/customer/HomePage';
@@ -22,6 +23,8 @@ import ProtectedRoute from './components/ProtectedRoute';
 // Admin pages
 import AdminLayout from './pages/admin/AdminLayout';
 import AdminDashboard from './pages/admin/AdminDashboard';
+import AdminOrders from './pages/admin/AdminOrders';
+import AdminRevenue from './pages/admin/AdminRevenue';
 import UserManagement from './pages/admin/UserManagement';
 import RoleManagement from './pages/admin/RoleManagement';
 import PermissionManagement from './pages/admin/PermissionManagement';
@@ -80,15 +83,19 @@ function AppContent() {
     location.pathname === '/login' ||
     location.pathname === '/register';
 
+  // Không hiển thị Header ở các trang standalone hoặc trang AI Search Hub
+  const hideHeader = isStandalone || location.pathname === '/ai-search';
+
   return (
     <div className="min-h-screen flex flex-col bg-slate-950 text-slate-100">
-      {!isStandalone && <Header />}
+      {!hideHeader && <Header />}
       <main className={isStandalone ? 'min-h-screen' : 'flex-grow'}>
         <Routes>
           {/* Public Storefront cho Khách & Customer */}
           <Route path="/" element={<HomePage />} />
           <Route path="/home" element={<HomePage />} />
           <Route path="/catalog" element={<CatalogPage />} />
+          <Route path="/ai-search" element={<AiSearchPage />} />
           <Route path="/products" element={<CatalogPage />} />
           <Route path="/products/:id" element={<ProductDetailPage />} />
           <Route path="/build-pc" element={<PCBuildPage />} />
@@ -185,6 +192,8 @@ function AppContent() {
             }
           >
             <Route index element={<AdminDashboard />} />
+            <Route path="orders" element={<AdminOrders />} />
+            <Route path="revenue" element={<AdminRevenue />} />
             <Route path="users" element={<UserManagement />} />
             <Route path="roles" element={<RoleManagement />} />
             <Route path="permissions" element={<PermissionManagement />} />

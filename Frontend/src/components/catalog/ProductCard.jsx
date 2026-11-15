@@ -1,4 +1,6 @@
 import { Link } from 'react-router-dom';
+import { Heart } from 'lucide-react';
+import ProductImage from '../common/ProductImage';
 import { getCategoryDisplayName } from '../../constants/categories';
 
 function formatVND(amount) {
@@ -6,7 +8,7 @@ function formatVND(amount) {
   return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
 }
 
-function ProductCard({ product }) {
+function ProductCard({ product, isWishlisted = false, onToggleWishlist }) {
   const {
     id,
     name,
@@ -40,12 +42,11 @@ function ProductCard({ product }) {
         {inventory?.status_label}
       </span>
 
-      {/* Image Thumbnail */}
+      {/* Image Thumbnail - dùng ProductImage component (Tu) với responsive classes (main) */}
       <div className="w-full h-36 sm:h-44 md:h-48 bg-slate-900/60 overflow-hidden flex items-center justify-center p-2.5 sm:p-3 relative">
-        <img
-          src={thumbnail_url || 'https://via.placeholder.com/400x300?text=TechShop'}
+        <ProductImage
+          product={product}
           alt={name}
-          loading="lazy"
           className="w-full h-full object-contain group-hover:scale-110 transition-transform duration-500 ease-out"
         />
       </div>
@@ -85,12 +86,32 @@ function ProductCard({ product }) {
             </div>
           </div>
 
-          {/* Action button */}
-          <div
-            className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-sky-500/15 group-hover:bg-sky-500 text-sky-400 group-hover:text-slate-950 flex items-center justify-center transition-all shadow-sm group-hover:scale-110 active:scale-90 cursor-pointer"
-            title="Xem chi tiết"
-          >
-            ➔
+          {/* Action buttons - giữ wishlist button từ Tu */}
+          <div className="flex items-center gap-1.5">
+            {onToggleWishlist && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  onToggleWishlist(product);
+                }}
+                title={isWishlisted ? 'Bỏ khỏi yêu thích' : 'Lưu vào yêu thích'}
+                className={`w-9 h-9 rounded-xl border flex items-center justify-center transition cursor-pointer ${
+                  isWishlisted
+                    ? 'bg-rose-500/20 border-rose-500/40 text-rose-400'
+                    : 'bg-slate-900/70 border-slate-700 text-slate-400 hover:text-rose-400 hover:border-rose-500/40'
+                }`}
+              >
+                <Heart className={`w-4 h-4 ${isWishlisted ? 'fill-rose-500 text-rose-500' : ''}`} />
+              </button>
+            )}
+            <div
+              className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-blue-600/20 group-hover:bg-blue-600 text-blue-400 group-hover:text-white flex items-center justify-center transition-all shadow-sm group-hover:scale-105"
+              title="Xem chi tiết"
+            >
+              ➔
+            </div>
           </div>
         </div>
       </div>

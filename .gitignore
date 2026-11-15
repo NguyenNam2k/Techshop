@@ -81,8 +81,6 @@ out
 # Nuxt.js build / generate output
 .nuxt
 dist
-!views/manager-app/dist/
-!views/manager-app/dist/**
 .output
 
 # Gatsby files
@@ -183,3 +181,10 @@ tmp/
 .Trashes
 ehthumbs.db
 Thumbs.db
+
+# Python & AI Service
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.venv/

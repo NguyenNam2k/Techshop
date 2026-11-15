@@ -35,6 +35,7 @@ import {
 } from 'lucide-react';
 import { api } from '../../services/api';
 import { useCart } from '../../context/CartContext';
+import ProductImage from '../../components/common/ProductImage';
 import BrandLogosSection from '../../components/home/BrandLogosSection';
 
 const formatVND = (n) =>
@@ -257,14 +258,8 @@ function ProductCard({ product, onAddToCart, onNavigate }) {
     >
       <div className="space-y-3">
         <div className="relative h-36 sm:h-44 rounded-xl bg-slate-900 border border-slate-800/80 overflow-hidden flex items-center justify-center p-2.5 sm:p-3">
-          <img
-            src={
-              product.thumbnail_url ||
-              product.image_url ||
-              product.images?.[0]?.image_url ||
-              'https://images.unsplash.com/photo-1587202372775-e229f172b9d7?w=400'
-            }
-            alt={product.name}
+          <ProductImage
+            product={product}
             className="max-h-full max-w-full object-contain group-hover:scale-110 transition-transform duration-500 ease-out"
           />
           {discountPercent > 0 && (
@@ -413,8 +408,8 @@ export default function HomePage() {
         const list = Array.isArray(prodsRes.data)
           ? prodsRes.data
           : Array.isArray(prodsRes)
-          ? prodsRes
-          : [];
+            ? prodsRes
+            : [];
         setAllProducts(list);
       } catch (err) {
         console.error('Lỗi khi tải dữ liệu trang chủ:', err);
@@ -641,13 +636,12 @@ export default function HomePage() {
                     setHoveredCategory(null);
                     navigate(`/catalog?category=${cat.slug}`);
                   }}
-                  className={`w-full flex items-center justify-between py-2 px-2.5 rounded-xl transition cursor-pointer text-left group ${
-                    isSelected
+                  className={`w-full flex items-center justify-between py-2 px-2.5 rounded-xl transition cursor-pointer text-left group ${isSelected
                       ? 'bg-sky-500/15 text-sky-400 border border-sky-500/30 font-bold'
                       : isHovered
-                      ? 'bg-slate-800 text-sky-400 font-semibold'
-                      : 'text-slate-200 hover:text-slate-100 hover:bg-slate-800/80'
-                  }`}
+                        ? 'bg-slate-800 text-sky-400 font-semibold'
+                        : 'text-slate-200 hover:text-slate-100 hover:bg-slate-800/80'
+                    }`}
                 >
                   <div className="flex items-center gap-2.5 truncate">
                     <Icon className={`w-4 h-4 ${cat.color} shrink-0 group-hover:scale-110 group-hover:rotate-3 transition-transform duration-200`} />
@@ -656,11 +650,10 @@ export default function HomePage() {
                     </span>
                   </div>
                   <ChevronRight
-                    className={`w-3.5 h-3.5 shrink-0 transition-all ${
-                      isHovered
+                    className={`w-3.5 h-3.5 shrink-0 transition-all ${isHovered
                         ? 'text-sky-400 translate-x-1'
                         : 'text-slate-500 group-hover:text-sky-400 group-hover:translate-x-0.5'
-                    }`}
+                      }`}
                   />
                 </button>
               );
@@ -810,12 +803,8 @@ export default function HomePage() {
                       }}
                       className="p-2.5 rounded-xl bg-slate-950 border border-slate-800/80 hover:border-sky-500/50 hover:bg-slate-900 transition cursor-pointer group/mini flex items-center gap-2.5"
                     >
-                      <img
-                        src={
-                          prod.thumbnail_url ||
-                          'https://images.unsplash.com/photo-1587202372775-e229f172b9d7?w=200'
-                        }
-                        alt={prod.name}
+                      <ProductImage
+                        product={prod}
                         className="w-12 h-12 object-contain rounded-lg bg-slate-900 p-1 border border-slate-800 shrink-0 group-hover/mini:scale-105 transition-transform"
                       />
                       <div className="min-w-0">
@@ -1121,11 +1110,10 @@ export default function HomePage() {
                 key={tab.id}
                 type="button"
                 onClick={() => setActivePcTab(tab.id)}
-                className={`px-3 py-1.5 text-xs font-bold rounded-xl transition cursor-pointer border ${
-                  activePcTab === tab.id
+                className={`px-3 py-1.5 text-xs font-bold rounded-xl transition cursor-pointer border ${activePcTab === tab.id
                     ? 'bg-sky-500/20 text-sky-400 border-sky-500/40'
                     : 'bg-slate-950 text-slate-400 border-slate-800 hover:text-slate-200'
-                }`}
+                  }`}
               >
                 {tab.label}
               </button>
@@ -1226,11 +1214,10 @@ export default function HomePage() {
                 key={b.id}
                 type="button"
                 onClick={() => setSelectedLaptopBrand(b.id)}
-                className={`px-3 py-1.5 text-xs font-bold rounded-xl transition cursor-pointer border ${
-                  selectedLaptopBrand === b.id
+                className={`px-3 py-1.5 text-xs font-bold rounded-xl transition cursor-pointer border ${selectedLaptopBrand === b.id
                     ? 'bg-purple-500/20 text-purple-400 border-purple-500/40'
                     : 'bg-slate-950 text-slate-400 border-slate-800 hover:text-slate-200'
-                }`}
+                  }`}
               >
                 {b.label}
               </button>
@@ -1289,11 +1276,10 @@ export default function HomePage() {
                 key={tab.id}
                 type="button"
                 onClick={() => setActivePartTab(tab.id)}
-                className={`px-3 py-1.5 text-xs font-bold rounded-xl transition cursor-pointer border ${
-                  activePartTab === tab.id
+                className={`px-3 py-1.5 text-xs font-bold rounded-xl transition cursor-pointer border ${activePartTab === tab.id
                     ? 'bg-sky-500/20 text-sky-400 border-sky-500/40'
                     : 'bg-slate-950 text-slate-400 border-slate-800 hover:text-slate-200'
-                }`}
+                  }`}
               >
                 {tab.label}
               </button>
@@ -1382,11 +1368,10 @@ export default function HomePage() {
                 key={tab.id}
                 type="button"
                 onClick={() => setActiveGearTab(tab.id)}
-                className={`px-3 py-1.5 text-xs font-bold rounded-xl transition cursor-pointer border ${
-                  activeGearTab === tab.id
+                className={`px-3 py-1.5 text-xs font-bold rounded-xl transition cursor-pointer border ${activeGearTab === tab.id
                     ? 'bg-indigo-500/20 text-indigo-400 border-indigo-500/40'
                     : 'bg-slate-950 text-slate-400 border-slate-800 hover:text-slate-200'
-                }`}
+                  }`}
               >
                 {tab.label}
               </button>

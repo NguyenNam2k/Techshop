@@ -110,7 +110,7 @@ class StaffController {
     });
     res.write(`event: connected\ndata: ${JSON.stringify({ connectedAt: new Date().toISOString() })}\n\n`);
     try {
-      const { addStaffClient } = require('../../../backend/src/services/realtime.service');
+      const { addStaffClient } = require('../../services/customer/realtime.service');
       if (typeof addStaffClient === 'function') {
         addStaffClient(res);
         return;

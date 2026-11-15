@@ -798,6 +798,51 @@ async function getCustomerOrders(customerId) {
   return orders.map(order => mapCustomerOrder(order, itemsByOrderId.get(Number(order.id)) || []));
 }
 
+async function requestOrderCancellation(customerId, orderCode, reason = '') {
+  const cleanCode = String(orderCode || '').trim();
+  const cleanReason = String(reason || '').trim() || 'Khách hàng yêu cầu hủy đơn';
+  if (!cleanCode) throw httpError('Mã đơn hàng không hợp lệ.');
+  if (cleanReason.length > 500) {
+    throw httpError('Lý do hủy đơn tối đa 500 ký tự.');
+  }
+
+  const connection = await pool.getConnection();
+  try {
+    await connection.beginTransaction();
+    const [rows] = await connection.query(
+      `SELECT id, shipping_status, cancel_requested_at, cancel_request_reason
+       FROM orders WHERE order_code = ? LIMIT 1 FOR UPDATE`,
+      [cleanCode]
+    );
+    if (!rows.length) throw httpError('Không tìm thấy đơn hàng.', 404);
+    const order = rows[0];
+    if (order.cancel_requested_at) {
+      await connection.commit();
+      return {
+        orderCode: cleanCode,
+        requestedAt: order.cancel_requested_at,
+        reason: order.cancel_request_reason,
+        alreadyRequested: true
+      };
+    }
+    if (!['pending', 'processing'].includes(order.shipping_status)) {
+      throw httpError('Đơn hàng này không thể hủy ở trạng thái hiện tại.', 409);
+    }
+
+    await connection.query(
+      `UPDATE orders SET cancel_request_reason = ?, cancel_requested_at = NOW() WHERE id = ?`,
+      [cleanReason, order.id]
+    );
+    await connection.commit();
+    return { orderCode: cleanCode, reason: cleanReason, alreadyRequested: false };
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
+  }
+}
+
 async function cancelCustomerOrder(customerId, orderCode, reason = '') {
   const cleanCode = String(orderCode || '').trim();
   const cleanReason = String(reason || '').trim() || 'Khách hàng chủ động hủy đơn hàng';

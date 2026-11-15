@@ -1,9 +1,12 @@
 const path = require('path');
 
-const ADMIN_UNITS_PATH = path.resolve(
-  __dirname,
-  '../../../frontend/src/data/vietnam-administrative-units.json'
-);
+const fs = require('fs');
+
+const ADMIN_UNITS_PATH = fs.existsSync(
+  path.resolve(__dirname, '../../../Frontend/src/data/vietnam-administrative-units.json')
+)
+  ? path.resolve(__dirname, '../../../Frontend/src/data/vietnam-administrative-units.json')
+  : path.resolve(__dirname, '../../../frontend/src/data/vietnam-administrative-units.json');
 
 let adminUnitsCache = null;
 

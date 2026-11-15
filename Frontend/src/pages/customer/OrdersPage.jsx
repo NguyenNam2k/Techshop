@@ -47,7 +47,8 @@ import {
   Search,
   XCircle,
   RotateCcw,
-  Tag
+  Tag,
+  X
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useCart } from '../../context/CartContext';
@@ -73,7 +74,8 @@ const ORDER_PHASES = [
   { title: 'Đã xác nhận', desc: 'Đơn hàng & thanh toán đã được xác nhận' },
   { title: 'Đang chuẩn bị hàng', desc: 'Kiểm tra, đóng gói và dán tem bảo hành' },
   { title: 'Đã bàn giao vận chuyển', desc: 'Kiện hàng đã được giao cho đơn vị vận chuyển' },
-  { title: 'Giao hàng thành công', desc: 'Khách hàng đã nhận hàng' }
+  { title: 'Giao hàng thành công', desc: 'Khách hàng đã nhận hàng' },
+  { title: 'Khách hàng xác nhận', desc: 'Đã nhận hàng hoặc yêu cầu trả hàng' }
 ];
 
 const PHASE_BADGES = {
@@ -81,92 +83,9 @@ const PHASE_BADGES = {
   1: 'bg-sky-500/15 border-sky-500/30 text-sky-400',
   2: 'bg-indigo-500/15 border-indigo-500/30 text-indigo-400',
   3: 'bg-blue-500/15 border-blue-500/30 text-blue-400',
-  4: 'bg-emerald-500/15 border-emerald-500/30 text-emerald-400'
+  4: 'bg-emerald-500/15 border-emerald-500/30 text-emerald-400',
+  5: 'bg-violet-500/15 border-violet-500/30 text-violet-400'
 };
-
-const SEED_ORDERS = [
-  {
-    orderId: 'ORD-8917',
-    date: '28/09/2026 09:42',
-    phase: 3,
-    statusLabel: 'Đã bàn giao vận chuyển',
-    carrier: 'GIAO HÀNG NHANH (GHN)',
-    trackingCode: 'GHN582019374',
-    paymentMethod: 'VietQR Banking Auto',
-    total: 12470000,
-    recipientName: 'Đặng Minh Thuận',
-    recipientPhone: '0908 123 456',
-    shippingAddress: 'Số 12, Ngõ 45 Cầu Giấy, Hà Nội',
-    items: [
-      {
-        id: 15,
-        name: 'Chuột Gaming Không Dây Logitech G Pro X Superlight 2 DEX White',
-        variant: 'Trắng Tuyết (White)',
-        quantity: 1,
-        price: 3490000,
-        image:
-          'https://images.unsplash.com/photo-1615663245857-ac93bb7c39e7?w=300&auto=format&fit=crop&q=80'
-      },
-      {
-        id: 14,
-        name: 'Bàn Phím Cơ Custom Keychron Q1 Pro QMK/VIA Full Nhôm CNC',
-        variant: 'Bạc Trắng (Silver)',
-        quantity: 2,
-        price: 4490000,
-        image:
-          'https://images.unsplash.com/photo-1587829741301-dc798b83add3?w=300&auto=format&fit=crop&q=80'
-      }
-    ]
-  },
-  {
-    orderId: 'ORD-8871',
-    date: '21/09/2026 20:15',
-    phase: 1,
-    statusLabel: 'Đã xác nhận',
-    carrier: 'Hỏa Tốc 2H Nội Thành',
-    trackingCode: 'HT2H-8871-TECH',
-    paymentMethod: 'COD (Thanh toán khi nhận)',
-    total: 14990000,
-    recipientName: 'Đặng Minh Thuận',
-    recipientPhone: '0908 123 456',
-    shippingAddress: 'Số 12, Ngõ 45 Cầu Giấy, Hà Nội',
-    items: [
-      {
-        id: 17,
-        name: 'Màn Hình Gaming ASUS ROG Swift OLED 240Hz 0.03ms',
-        variant: '27 Inch 2K OLED',
-        quantity: 1,
-        price: 14990000,
-        image:
-          'https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?w=300&auto=format&fit=crop&q=80'
-      }
-    ]
-  },
-  {
-    orderId: 'ORD-8702',
-    date: '02/09/2026 11:03',
-    phase: 4,
-    statusLabel: 'Giao hàng thành công',
-    carrier: 'Giao Hàng Tiết Kiệm (GHTK)',
-    trackingCode: 'S21.HN.A7.418290',
-    paymentMethod: 'VietQR Banking Auto',
-    total: 36680000,
-    recipientName: 'Đặng Minh Thuận',
-    recipientPhone: '0908 123 456',
-    shippingAddress: 'Số 12, Ngõ 45 Cầu Giấy, Hà Nội',
-    items: [
-      {
-        id: 1,
-        name: 'VGA ASUS ROG Strix GeForce RTX 4090 OC 24GB GDDR6X',
-        variant: 'Bản Ép Xung OC',
-        quantity: 1,
-        price: 36680000,
-        image:
-          'https://images.unsplash.com/photo-1587202372775-e229f172b9d7?w=300&auto=format&fit=crop&q=80'
-      }
-    ]
-  }
-];
 
 const SEED_WISHLIST = [
   {
@@ -289,12 +208,11 @@ const SEED_PC_BUILDS = [
 function loadSavedOrders() {
   try {
     const raw = localStorage.getItem('techshop_orders');
-    if (!raw) return SEED_ORDERS;
+    if (!raw) return [];
     const parsed = JSON.parse(raw);
-    if (!Array.isArray(parsed) || parsed.length === 0) return SEED_ORDERS;
-    return [...parsed, ...SEED_ORDERS];
+    return Array.isArray(parsed) ? parsed : [];
   } catch {
-    return SEED_ORDERS;
+    return [];
   }
 }
 
@@ -333,7 +251,7 @@ function Head({ title, desc, action }) {
   return (
     <div className="flex flex-wrap items-end justify-between gap-3 mb-6">
       <div>
-        <h2 className="text-xl sm:text-2xl font-extrabold text-white tracking-tight">{title}</h2>
+        <h2 className="text-xl sm:text-2xl font-extrabold text-slate-100 tracking-tight">{title}</h2>
         {desc && <p className="text-xs text-slate-400 mt-1">{desc}</p>}
       </div>
       {action}
@@ -479,7 +397,7 @@ function VouchersPanel({ onUseCoupon }) {
                         : `Giảm ${formatVND(c.discount_value)}`}
                     </span>
                   </div>
-                  <div className="text-xs text-white font-medium line-clamp-1">{c.description}</div>
+                  <div className="text-xs text-slate-100 font-medium line-clamp-1">{c.description}</div>
                   <div className="text-[11px] text-slate-400">
                     Đơn tối thiểu: {formatVND(c.min_order_value || 0)}
                   </div>
@@ -2839,6 +2757,7 @@ function ChatPanel() {
   );
 }
 
+
 /* ---------- MAIN ORDERS / DASHBOARD PAGE ---------- */
 
 export default function OrdersPage() {
@@ -2879,6 +2798,9 @@ export default function OrdersPage() {
   const [cancelSubmitting, setCancelSubmitting] = useState(false);
   const [cancelError, setCancelError] = useState('');
   const [reorderingCode, setReorderingCode] = useState('');
+  const [returnModalOrder, setReturnModalOrder] = useState(null);
+  const [returnReason, setReturnReason] = useState('');
+  const [returnSubmitting, setReturnSubmitting] = useState(false);
   const awaitingRef = React.useRef(new Set());
 
   const setActiveTab = (tab) => {
@@ -3104,6 +3026,50 @@ export default function OrdersPage() {
     filteredOrders[0] ||
     orders[0];
 
+  const handleCancelRequest = async (order) => {
+    const reason = window.prompt('Nhập lý do muốn hủy đơn (tối thiểu 5 ký tự):', 'Không còn nhu cầu mua');
+    if (!reason) return;
+    try {
+      await api.requestOrderCancellation(order.orderCode || order.orderId, reason);
+      await fetchOrders({ silent: true });
+    } catch (error) {
+      window.alert(error.response?.data?.message || error.message || 'Không thể gửi yêu cầu hủy đơn.');
+    }
+  };
+
+  const handleReturnRequest = async (order) => {
+    setReturnModalOrder(order);
+    setReturnReason('');
+  };
+
+  const submitReturnRequest = async () => {
+    if (!returnModalOrder || returnReason.trim().length < 5) return;
+    try {
+      setReturnSubmitting(true);
+      const code = returnModalOrder.orderCode || returnModalOrder.orderId;
+      await api.requestReturn(code, returnReason.trim());
+      await fetchOrders({ silent: true });
+      setReturnModalOrder(null);
+      setPaidNotice(`Đã gửi yêu cầu trả hàng cho đơn ${code}. Đơn vị CSKH sẽ tiếp nhận và xử lý cho bạn.`);
+      setTimeout(() => setPaidNotice(''), 6000);
+    } catch (error) {
+      setPaidNotice(error.response?.data?.message || error.message || 'Không thể gửi yêu cầu trả hàng.');
+    } finally {
+      setReturnSubmitting(false);
+    }
+  };
+
+  const handleConfirmReceived = async () => {
+    if (!selectedOrder) return;
+    try {
+      await api.confirmCustomerDecision(selectedOrder.orderCode || selectedOrder.orderId, 'received');
+      await fetchOrders({ silent: true });
+      setPaidNotice(`Đã ghi nhận bạn nhận hàng cho đơn ${selectedOrder.orderCode || selectedOrder.orderId}.`);
+    } catch (error) {
+      setPaidNotice(error.response?.data?.message || error.message || 'Không thể xác nhận nhận hàng.');
+    }
+  };
+
   const handleCopy = (code) => {
     navigator.clipboard?.writeText(code);
     setCopiedCode(code);
@@ -3153,7 +3119,7 @@ export default function OrdersPage() {
                   }}
                 />
                 <div className="min-w-0">
-                  <div className="text-sm font-bold text-white truncate">
+                  <div className="text-sm font-bold text-slate-100 truncate">
                     {user?.name || 'Khách hàng'}
                   </div>
                   <div className="text-xs font-semibold text-sky-400 mt-0.5 truncate capitalize">
@@ -3176,10 +3142,11 @@ export default function OrdersPage() {
                           key={item.id}
                           type="button"
                           onClick={() => setActiveTab(item.id)}
-                          className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition cursor-pointer ${isActive
-                            ? 'bg-sky-600 text-white shadow-md shadow-sky-600/20'
-                            : 'text-slate-300 hover:text-white hover:bg-slate-800/80'
-                            }`}
+                          className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition cursor-pointer ${
+                            isActive
+                              ? 'bg-sky-600 text-white shadow-md shadow-sky-600/20'
+                              : 'text-slate-200 hover:text-slate-100 hover:bg-slate-800/80'
+                          }`}
                         >
                           <Icon className="w-4 h-4 shrink-0" />
                           <span>{item.label}</span>
@@ -3221,7 +3188,7 @@ export default function OrdersPage() {
 
                 <div className="flex items-center justify-between gap-3">
                   <div>
-                    <h1 className="text-xl sm:text-2xl font-extrabold text-white">
+                    <h1 className="text-xl sm:text-2xl font-extrabold text-slate-100">
                       Đơn Hàng Của Tôi
                     </h1>
                     <p className="text-xs text-slate-400 mt-1">
@@ -3237,7 +3204,7 @@ export default function OrdersPage() {
                       onClick={fetchOrders}
                       disabled={loadingOrders}
                       title="Làm mới danh sách đơn hàng"
-                      className="p-2 rounded-xl bg-slate-900 border border-slate-800 hover:border-slate-700 text-slate-300 hover:text-white transition cursor-pointer"
+                      className="p-2 rounded-xl bg-slate-900 border border-slate-800 hover:border-slate-700 text-slate-200 hover:text-slate-100 transition cursor-pointer"
                     >
                       <RefreshCw
                         className={`w-3.5 h-3.5 ${loadingOrders ? 'animate-spin text-sky-400' : ''}`}
@@ -3299,7 +3266,7 @@ export default function OrdersPage() {
                 ) : filteredOrders.length === 0 ? (
                   <div className="rounded-2xl border border-slate-800 bg-slate-900 p-12 text-center space-y-4 shadow-xl">
                     <Package className="w-12 h-12 text-slate-600 mx-auto" />
-                    <h3 className="text-base font-bold text-white">
+                    <h3 className="text-base font-bold text-slate-100">
                       {orders.length === 0
                         ? 'Bạn chưa có đơn hàng nào'
                         : 'Không tìm thấy đơn hàng phù hợp'}
@@ -3372,7 +3339,7 @@ export default function OrdersPage() {
 
                                 <div className="min-w-0">
                                   <div className="flex items-center gap-2 flex-wrap">
-                                    <span className="font-mono text-sm font-bold text-white">
+                                    <span className="font-mono text-sm font-bold text-slate-100">
                                       {order.orderId}
                                     </span>
                                     <span
@@ -3466,7 +3433,7 @@ export default function OrdersPage() {
                                             <div className="flex items-center gap-2">
                                               <span
                                                 className={`text-xs font-bold ${
-                                                  done || isCurrent ? 'text-white' : 'text-slate-500'
+                                                  done || isCurrent ? 'text-slate-100' : 'text-slate-500'
                                                 }`}
                                               >
                                                 {step.title}
@@ -3612,7 +3579,7 @@ export default function OrdersPage() {
                                   {item.name}
                                 </Link>
                               ) : (
-                                <div className="text-xs font-bold text-white line-clamp-2 leading-tight">
+                                <div className="text-xs font-bold text-slate-100 line-clamp-2 leading-tight">
                                   {item.name}
                                 </div>
                               )}
@@ -3637,7 +3604,7 @@ export default function OrdersPage() {
                           <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
                             Thông tin nhận hàng
                           </span>
-                          <div className="text-white font-semibold flex items-center justify-between">
+                          <div className="text-slate-100 font-semibold flex items-center justify-between">
                             <span>
                               {selectedOrder.recipientName || selectedOrder.customer?.fullName}
                             </span>
@@ -3696,14 +3663,65 @@ export default function OrdersPage() {
                                 <CheckCircle2 className="w-3.5 h-3.5" /> Đã thanh toán
                               </span>
                             ) : selectedOrder.paymentStatus === 'refunded' ? (
-                              <span className="text-sky-400 font-semibold">Đã hoàn tiền</span>
+                              <span className="text-cyan-400 font-semibold flex items-center gap-1">
+                                <CheckCircle2 className="w-3.5 h-3.5" /> Đã hoàn tiền (Refunded)
+                              </span>
                             ) : (
                               <span className="text-amber-400 font-semibold">Chưa thanh toán</span>
                             )}
                           </div>
                         )}
+
+                        {selectedOrder?.shippingStatus === 'cancelled' && (
+                          <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs space-y-1">
+                            <div className="font-bold flex items-center gap-1.5 text-rose-400">
+                              <AlertCircle className="w-3.5 h-3.5" /> Đơn hàng đã bị hủy
+                            </div>
+                            {selectedOrder.cancellationReason && (
+                              <div className="text-[11px] text-slate-300">
+                                <span className="text-slate-400">Lý do:</span> {selectedOrder.cancellationReason}
+                              </div>
+                            )}
+                            {selectedOrder.paymentStatus === 'refunded' && (
+                              <div className="text-[11px] text-cyan-400 font-medium pt-0.5">
+                                ✓ Đã ghi nhận hoàn tiền về tài khoản ngân hàng của bạn.
+                              </div>
+                            )}
+                          </div>
+                        )}
+                        <div className="flex flex-wrap gap-2 pt-2">
+                              {selectedOrder?.canRequestCancellation && !selectedOrder?.cancellationRequestedAt && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleCancelRequest(selectedOrder)}
+                                  className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-[11px] font-bold text-amber-300"
+                                >
+                                  Yêu cầu hủy đơn
+                                </button>
+                              )}
+                              {selectedOrder?.shippingStatus === 'delivered' &&
+                                !selectedOrder?.customerDecision &&
+                                selectedOrder?.paymentStatus !== 'refunded' && (
+                                <>
+                                  <button
+                                    type="button"
+                                    onClick={handleConfirmReceived}
+                                    className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-[11px] font-bold text-emerald-300"
+                                  >
+                                    Đã nhận hàng
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleReturnRequest(selectedOrder)}
+                                    className="rounded-lg border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-[11px] font-bold text-rose-300"
+                                  >
+                                    Trả hàng / Refund
+                                  </button>
+                                </>
+                              )}
+                            </div>
                         <div className="flex items-center justify-between pt-2 border-t border-slate-800/80">
-                          <span className="text-sm font-bold text-white">Tổng cộng:</span>
+                          <span className="text-sm font-bold text-slate-100">Tổng cộng:</span>
                           <span className="text-base font-extrabold font-mono text-sky-400">
                             {formatVND(selectedOrder?.total)}
                           </span>
@@ -3801,6 +3819,88 @@ export default function OrdersPage() {
               </button>
             </div>
           </form>
+        </div>
+      )}
+
+      {returnModalOrder && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/75 p-4 backdrop-blur-sm animate-fade-in">
+          <div className="w-full max-w-md rounded-2xl border border-slate-700 bg-slate-900 p-5 shadow-2xl">
+            <div className="flex items-center justify-between gap-3 border-b border-slate-800 pb-3">
+              <div className="flex items-center gap-2 text-rose-400">
+                <AlertCircle className="h-5 w-5" />
+                <h2 className="text-base font-extrabold text-slate-100">Yêu cầu trả hàng / Hoàn tiền</h2>
+              </div>
+              <button
+                type="button"
+                onClick={() => setReturnModalOrder(null)}
+                className="text-slate-400 hover:text-slate-100 p-1 rounded-lg hover:bg-slate-800 transition cursor-pointer"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            
+            <p className="mt-3 text-xs text-slate-400">
+              Đơn hàng: <strong className="font-mono text-sky-400 font-bold">{returnModalOrder.orderCode || returnModalOrder.orderId}</strong>
+            </p>
+            <p className="mt-1 text-xs text-slate-400">
+              Vui lòng chọn hoặc nêu rõ lý do để nhân viên CSKH / Kho tiếp nhận thẩm định:
+            </p>
+
+            {/* Quick preset reason chips */}
+            <div className="mt-2.5 flex flex-wrap gap-1.5">
+              {[
+                'Sản phẩm bị lỗi kỹ thuật / không lên nguồn',
+                'Giao sai phiên bản hoặc mã linh kiện',
+                'Thiếu phụ kiện / cáp nguồn đi kèm',
+                'Không tương thích kích thước case/mainboard'
+              ].map((preset) => (
+                <button
+                  key={preset}
+                  type="button"
+                  onClick={() => setReturnReason(preset)}
+                  className={`text-[11px] px-2.5 py-1 rounded-lg border transition cursor-pointer ${
+                    returnReason === preset
+                      ? 'bg-rose-500/20 text-rose-300 border-rose-500/40 font-semibold'
+                      : 'bg-slate-800/80 text-slate-300 border-slate-700/60 hover:bg-slate-800'
+                  }`}
+                >
+                  {preset}
+                </button>
+              ))}
+            </div>
+
+            <textarea
+              value={returnReason}
+              onChange={(event) => setReturnReason(event.target.value)}
+              placeholder="Nhập chi tiết tình trạng sản phẩm (tối thiểu 5 ký tự)..."
+              className="mt-3 min-h-24 w-full rounded-xl border border-slate-700 bg-slate-950 p-3 text-xs text-slate-100 outline-none placeholder:text-slate-500 focus:border-rose-500"
+            />
+            
+            <div className="mt-4 flex items-center justify-end gap-2 border-t border-slate-800 pt-3">
+              <button
+                type="button"
+                onClick={() => setReturnModalOrder(null)}
+                className="rounded-xl border border-slate-700 px-4 py-2 text-xs font-bold text-slate-300 hover:bg-slate-800 transition cursor-pointer"
+              >
+                Hủy bỏ
+              </button>
+              <button
+                type="button"
+                disabled={returnSubmitting || returnReason.trim().length < 5}
+                onClick={submitReturnRequest}
+                className="rounded-xl bg-rose-600 hover:bg-rose-500 px-4 py-2 text-xs font-bold text-white transition disabled:opacity-40 cursor-pointer shadow-lg shadow-rose-600/20 flex items-center gap-1.5"
+              >
+                {returnSubmitting ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <span>Đang gửi...</span>
+                  </>
+                ) : (
+                  <span>Gửi yêu cầu đổi trả</span>
+                )}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

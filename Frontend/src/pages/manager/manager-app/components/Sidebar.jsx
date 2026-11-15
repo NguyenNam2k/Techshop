@@ -8,6 +8,7 @@ import {
   ClipboardList,
   TicketPercent,
   BarChart3,
+  RefreshCw,
   UserCog,
   LogOut,
   Sun,
@@ -75,6 +76,11 @@ export default function Sidebar({
           id: 'reports',
           label: 'Báo cáo tháng (Monthly)',
           icon: BarChart3
+        },
+        {
+          id: 'returns',
+          label: 'Return / Refund',
+          icon: RefreshCw
         }
       ]
     },
@@ -83,7 +89,7 @@ export default function Sidebar({
       items: [
         {
           id: 'staffs',
-          label: 'Nhân sự & Phân quyền',
+          label: 'Staff Portal (Vận hành & Đơn hàng)',
           icon: UserCog,
           count: staffCount
         }

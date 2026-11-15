@@ -3,6 +3,7 @@ const cartService = require('./cartService');
 const couponService = require('./couponService');
 const shippingService = require('./shippingService');
 const emailService = require('./emailService');
+const { publishStaffEvent } = require('./realtime.service');
 
 const rawAccountNo = String(process.env.VIETQR_ACCOUNT_NO || '').trim();
 const rawAccountName = String(process.env.VIETQR_ACCOUNT_NAME || '').trim();
@@ -17,6 +18,7 @@ const VIETQR_CONFIG = {
       : 'CONG TY TNHH TECHSHOP VIET NAM',
   template: process.env.VIETQR_TEMPLATE || 'compact2'
 };
+const VIETQR_PAYMENT_TIMEOUT_MINUTES = 15;
 
 function httpError(message, statusCode = 400) {
   const error = new Error(message);
@@ -68,6 +70,7 @@ async function getOrdersTableMeta(connection) {
     hasDistanceKm: colMap.has('shipping_distance_km'),
     hasStoreName: colMap.has('delivery_store_name'),
     hasRecipientEmail: colMap.has('recipient_email'),
+    hasPaymentExpiresAt: colMap.has('payment_expires_at'),
     customerIdNullable: colMap.get('customer_id')?.Null === 'YES'
   };
   return ordersColumnsCache;
@@ -254,6 +257,10 @@ async function createOrder({
     const orderCode = `ORD-${Date.now()}-${Math.floor(1000 + Math.random() * 9000)}`;
     const initialPaymentStatus = 'unpaid';
     const initialOrderStatus = 'pending';
+    const paymentExpiresAt =
+      paymentMethod === 'vietqr_banking'
+        ? new Date(Date.now() + VIETQR_PAYMENT_TIMEOUT_MINUTES * 60 * 1000)
+        : null;
 
     const tableMeta = await getOrdersTableMeta(connection);
     let resolvedCustomerId = owner?.column === 'customer_id' ? owner.id : null;
@@ -318,6 +325,10 @@ async function createOrder({
     if (tableMeta.hasRecipientEmail) {
       insertCols.push('recipient_email');
       insertVals.push(cleanEmail || null);
+    }
+    if (tableMeta.hasPaymentExpiresAt) {
+      insertCols.push('payment_expires_at');
+      insertVals.push(paymentExpiresAt);
     }
 
     const placeholders = insertCols.map(() => '?').join(', ');
@@ -401,6 +412,14 @@ async function createOrder({
 
     await connection.commit();
     transactionStarted = false;
+    publishStaffEvent('order.created', {
+      orderCode,
+      phase: 1,
+      shippingStatus: initialOrderStatus,
+      paymentStatus: initialPaymentStatus,
+      recipientName: cleanName,
+      finalAmount
+    });
 
     // Gửi email xác nhận đặt hàng ngay nếu là đơn COD
     if (paymentMethod === 'cod') {
@@ -424,7 +443,8 @@ async function createOrder({
       awaitingPayment: isAwaitingPayment({
         shipping_status: initialOrderStatus,
         payment_method: paymentMethod,
-        payment_status: initialPaymentStatus
+        payment_status: initialPaymentStatus,
+        payment_expires_at: paymentExpiresAt
       }),
       phase: phaseForOrder({
         shipping_status: initialOrderStatus,
@@ -449,7 +469,8 @@ async function createOrder({
         paymentMethod === 'vietqr_banking'
           ? generateVietQRUrl({ amount: finalAmount, orderCode })
           : null,
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString(),
+      paymentExpiresAt: paymentExpiresAt?.toISOString() || null
     };
   } catch (error) {
     if (transactionStarted) await connection.rollback();
@@ -460,6 +481,7 @@ async function createOrder({
 }
 
 async function getOrderByCode(orderCode) {
+  await expireUnpaidOrderIfNeeded(orderCode);
   const connection = await pool.getConnection();
   try {
     const [orderRows] = await connection.query(
@@ -487,6 +509,9 @@ async function getOrderByCode(orderCode) {
       paymentMethod,
       paymentMethodCode: order.payment_method,
       paymentStatus: order.payment_status,
+      paymentExpiresAt: order.payment_expires_at
+        ? new Date(order.payment_expires_at).toISOString()
+        : null,
       awaitingPayment: isAwaitingPayment(order),
       orderStatus: order.shipping_status,
       shippingStatus: order.shipping_status,
@@ -536,11 +561,53 @@ function isAwaitingPayment(order) {
   return (
     order.payment_method === 'vietqr_banking' &&
     order.payment_status !== 'paid' &&
-    order.shipping_status === 'pending'
+    order.shipping_status === 'pending' &&
+    order.payment_expires_at && new Date(order.payment_expires_at).getTime() > Date.now()
   );
 }
 
+async function expireUnpaidOrderIfNeeded(orderCode) {
+  const cleanCode = String(orderCode || '').trim();
+  if (!cleanCode) return false;
+  const [rows] = await pool.query(
+    `SELECT payment_status, shipping_status, payment_expires_at
+     FROM orders
+     WHERE order_code = ? AND payment_method = 'vietqr_banking'
+     LIMIT 1`,
+    [cleanCode]
+  );
+  const order = rows[0];
+  if (
+    !order ||
+    order.payment_status === 'paid' ||
+    order.shipping_status !== 'pending' ||
+    !order.payment_expires_at ||
+    new Date(order.payment_expires_at).getTime() > Date.now()
+  ) {
+    return false;
+  }
+  const result = await cancelUnpaidOrder(cleanCode);
+  return result.success === true;
+}
+
+async function expirePendingVietqrOrders() {
+  const [rows] = await pool.query(
+    `SELECT order_code
+     FROM orders
+     WHERE payment_method = 'vietqr_banking'
+       AND payment_status = 'unpaid'
+       AND shipping_status = 'pending'
+       AND payment_expires_at IS NOT NULL
+       AND payment_expires_at <= NOW()`
+  );
+  for (const row of rows) {
+    await expireUnpaidOrderIfNeeded(row.order_code);
+  }
+  return rows.length;
+}
+
 function phaseForOrder(order) {
+  if (order.customer_decision === 'received' || order.customer_decision === 'return_requested') return 5;
   return isConfirmedOrder(order) ? 1 : (ORDER_PHASE[order.shipping_status] ?? 0);
 }
 
@@ -633,7 +700,11 @@ function mapCustomerOrder(order, items) {
     shippingStatus,
     orderStatus: shippingStatus,
     statusLabel: statusLabelForOrder(order),
+    customerDecision: order.customer_decision || null,
     paymentStatus: order.payment_status,
+    paymentExpiresAt: order.payment_expires_at
+      ? new Date(order.payment_expires_at).toISOString()
+      : null,
     paymentMethod: PAYMENT_METHOD_LABEL[order.payment_method] || order.payment_method,
     paymentMethodCode: order.payment_method,
     awaitingPayment: isAwaitingPayment(order),
@@ -740,7 +811,7 @@ async function cancelCustomerOrder(customerId, orderCode, reason = '') {
   try {
     await connection.beginTransaction();
     const [rows] = await connection.query(
-      `SELECT id, customer_id, order_code, shipping_status, payment_status, coupon_code
+      `SELECT id, customer_id, order_code, recipient_name, shipping_status, payment_status, coupon_code
        FROM orders
        WHERE order_code = ? AND customer_id = ?
        LIMIT 1 FOR UPDATE`,
@@ -765,6 +836,7 @@ async function cancelCustomerOrder(customerId, orderCode, reason = '') {
     const [items] = await connection.query(
       'SELECT variant_id, quantity FROM order_items WHERE order_id = ?',
       [order.id]
+    );
     );
     for (const item of items) {
       if (!item.variant_id) continue;
@@ -840,8 +912,268 @@ async function cancelCustomerOrder(customerId, orderCode, reason = '') {
 
     await connection.commit();
 
+    try {
+      publishStaffEvent('order.cancelled', {
+        orderCode: cleanCode,
+        reason: cleanReason,
+        customerName: order.recipient_name,
+        previousStatus: order.shipping_status
+      });
+    } catch (e) {
+      // ignore
+    }
+
     const updatedOrders = await getAllOrders({ customerId: Number(customerId), limit: 50 });
     return updatedOrders.find((o) => o.orderCode === cleanCode) || null;
+
+async function updateOrderStatus(orderCode, shippingStatus) {
+  const allowedStatuses = ['pending', 'processing', 'shipping', 'delivered', 'cancelled'];
+  if (!allowedStatuses.includes(shippingStatus)) {
+    throw httpError('Trạng thái giao hàng không hợp lệ.');
+  }
+  const cleanCode = String(orderCode || '').trim();
+  const [rows] = await pool.query(
+    'SELECT shipping_status, payment_method, payment_status FROM orders WHERE order_code = ? LIMIT 1',
+    [cleanCode]
+  );
+  const order = rows[0];
+  if (!order) throw httpError('Không tìm thấy đơn hàng.', 404);
+  const validTransition =
+    shippingStatus === 'cancelled'
+      ? ['pending', 'processing'].includes(order.shipping_status)
+      : (order.shipping_status === 'pending' &&
+          shippingStatus === 'processing' &&
+          (order.payment_method === 'cod' || order.payment_status === 'paid')) ||
+        (order.shipping_status === 'processing' && shippingStatus === 'shipping') ||
+        (order.shipping_status === 'shipping' && shippingStatus === 'delivered');
+  if (!validTransition) {
+    throw httpError('Không thể chuyển trạng thái đơn hàng theo thứ tự hiện tại.', 409);
+  }
+  const [result] = await pool.query(
+    `UPDATE orders SET shipping_status = ?,
+       payment_status = CASE WHEN ? = 'delivered' AND payment_method = 'cod' THEN 'paid' ELSE payment_status END,
+       updated_at = NOW() WHERE order_code = ?`,
+    [shippingStatus, shippingStatus, cleanCode]
+  );
+  if (result.affectedRows !== 1) throw httpError('Không tìm thấy đơn hàng.', 404);
+  publishStaffEvent('order.status_changed', { orderCode: cleanCode, shippingStatus });
+  return { orderCode: cleanCode, shippingStatus };
+}
+
+async function confirmCustomerDecision(customerId, orderCode, decision) {
+  if (!['received', 'return_requested'].includes(decision)) {
+    throw httpError('Lựa chọn nhận hàng không hợp lệ.');
+  }
+  const cleanCode = String(orderCode || '').trim();
+  const connection = await pool.getConnection();
+  try {
+    await connection.beginTransaction();
+    const [rows] = await connection.query(
+      'SELECT id, customer_id, shipping_status, customer_decision FROM orders WHERE order_code = ? LIMIT 1 FOR UPDATE',
+      [cleanCode]
+    );
+    const order = rows[0];
+    if (!order) throw httpError('Không tìm thấy đơn hàng.', 404);
+    if (customerId && Number(order.customer_id) !== Number(customerId)) {
+      throw httpError('Bạn không có quyền thao tác đơn hàng này.', 403);
+    }
+    if (order.shipping_status !== 'delivered') {
+      throw httpError('Chỉ được chọn kết quả sau khi đơn đã giao thành công.', 409);
+    }
+    if (order.customer_decision) {
+      throw httpError('Đơn hàng đã được xác nhận trước đó.', 409);
+    }
+    await connection.query(
+      'UPDATE orders SET customer_decision = ?, updated_at = NOW() WHERE id = ?',
+      [decision, order.id]
+    );
+    if (decision === 'return_requested') {
+      await connection.query(
+        `INSERT INTO return_requests (order_id, customer_id, reason, refund_method)
+         VALUES (?, ?, 'Khách hàng yêu cầu trả hàng sau khi nhận hàng.', 'manual_bank')`,
+        [order.id, order.customer_id]
+      );
+    }
+    await connection.commit();
+    publishStaffEvent('order.customer_decision', { orderCode: cleanCode, decision, phase: 5 });
+    return { orderCode: cleanCode, decision, phase: 5 };
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
+  }
+}
+
+async function requestReturn(customerId, orderCode, reason) {
+  const cleanCode = String(orderCode || '').trim();
+  const cleanReason = String(reason || '').trim();
+  if (cleanReason.length < 5 || cleanReason.length > 500) {
+    throw httpError('Lý do trả hàng phải từ 5 đến 500 ký tự.');
+  }
+  const connection = await pool.getConnection();
+  try {
+    await connection.beginTransaction();
+    const [orders] = await connection.query(
+      `SELECT id, customer_id, shipping_status, payment_method, updated_at
+       FROM orders WHERE order_code = ? LIMIT 1 FOR UPDATE`,
+      [cleanCode]
+    );
+    const order = orders[0];
+    if (!order) throw httpError('Không tìm thấy đơn hàng.', 404);
+    if (customerId && Number(order.customer_id) !== Number(customerId)) {
+      throw httpError('Bạn không có quyền thao tác đơn hàng này.', 403);
+    }
+    if (order.shipping_status !== 'delivered') {
+      throw httpError('Chỉ được yêu cầu trả hàng sau khi đã giao thành công.', 409);
+    }
+    if (new Date(order.updated_at).getTime() < Date.now() - 7 * 24 * 60 * 60 * 1000) {
+      throw httpError('Đã quá thời hạn yêu cầu trả hàng 7 ngày.', 409);
+    }
+    const [recent] = await connection.query(
+      `SELECT id FROM return_requests
+       WHERE order_id = ? AND status IN ('pending', 'approved', 'refunded') LIMIT 1`,
+      [order.id]
+    );
+    if (recent.length) throw httpError('Đơn hàng đã có yêu cầu trả/hoàn tiền.', 409);
+    await connection.query(
+      `INSERT INTO return_requests (order_id, customer_id, reason, refund_method)
+       VALUES (?, ?, ?, ?)`,
+      [order.id, order.customer_id, cleanReason, order.payment_method === 'cod' ? 'manual_bank' : 'original_method']
+    );
+    await connection.query(
+      `UPDATE orders SET customer_decision = 'return_requested', updated_at = NOW() WHERE id = ?`,
+      [order.id]
+    );
+    await connection.commit();
+    publishStaffEvent('order.customer_decision', {
+      orderCode: cleanCode,
+      decision: 'return_requested',
+      phase: 5
+    });
+    return { success: true, message: 'Đã gửi yêu cầu trả hàng, chờ manager xét duyệt.' };
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
+  }
+}
+
+async function getReturnRequests() {
+  const [rows] = await pool.query(
+    `SELECT rr.*, o.order_code, o.payment_method, o.final_amount,
+            COALESCE(
+              (
+                SELECT GROUP_CONCAT(DISTINCT oi.product_name ORDER BY oi.id SEPARATOR ', ')
+                FROM order_items oi
+                WHERE oi.order_id = rr.order_id
+              ),
+              'Sản phẩm trong đơn hàng'
+            ) AS product_name,
+            COALESCE(o.recipient_name, c.name, 'Khách hàng') AS customer_name,
+            COALESCE(o.recipient_phone, c.phone, '') AS customer_phone
+     FROM return_requests rr
+     JOIN orders o ON o.id = rr.order_id
+     LEFT JOIN customers c ON c.id = rr.customer_id
+     ORDER BY rr.created_at DESC`
+  );
+  return rows;
+}
+
+async function reviewReturnRequest(requestId, status, managerNote = '') {
+  if (!['approved', 'rejected'].includes(status)) throw httpError('Trạng thái xử lý không hợp lệ.');
+  const connection = await pool.getConnection();
+  try {
+    await connection.beginTransaction();
+    const [rows] = await connection.query(
+      'SELECT * FROM return_requests WHERE id = ? LIMIT 1 FOR UPDATE',
+      [Number(requestId)]
+    );
+    const request = rows[0];
+    if (!request) throw httpError('Không tìm thấy yêu cầu trả hàng.', 404);
+    if (request.status !== 'pending') throw httpError('Yêu cầu này đã được xử lý.', 409);
+    if (status === 'approved') {
+      const [items] = await connection.query(
+        'SELECT variant_id, quantity FROM order_items WHERE order_id = ?',
+        [request.order_id]
+      );
+      for (const item of items) {
+        if (item.variant_id) {
+          await connection.query(
+            `UPDATE product_variants SET stock = stock + ?, status = 'available', updated_at = NOW()
+             WHERE id = ?`,
+            [item.quantity, item.variant_id]
+          );
+        }
+      }
+      await connection.query(
+        `UPDATE orders SET payment_status = 'refunded', shipping_status = 'cancelled', updated_at = NOW()
+         WHERE id = ?`,
+        [request.order_id]
+      );
+    }
+    await connection.query(
+      'UPDATE return_requests SET status = ?, manager_note = ?, updated_at = NOW() WHERE id = ?',
+      [status, String(managerNote || '').trim() || null, request.id]
+    );
+    await connection.commit();
+    return { success: true, message: status === 'approved' ? 'Đã duyệt return và ghi nhận refund.' : 'Đã từ chối yêu cầu.' };
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
+  }
+}
+
+async function cancelUnpaidOrder(orderCode) {
+  const cleanCode = String(orderCode || '').trim();
+  if (!cleanCode) return { success: false, message: 'Mã đơn hàng không hợp lệ.' };
+
+  const connection = await pool.getConnection();
+  try {
+    await connection.beginTransaction();
+    const [rows] = await connection.query(
+      `SELECT id, payment_status, shipping_status FROM orders WHERE order_code = ? LIMIT 1 FOR UPDATE`,
+      [cleanCode]
+    );
+    if (!rows.length) {
+      await connection.rollback();
+      return { success: false, message: 'Không tìm thấy đơn hàng.' };
+    }
+    const order = rows[0];
+
+    // Chỉ hủy nếu đơn hàng chưa được thanh toán thành công
+    if (order.payment_status === 'paid') {
+      await connection.rollback();
+      return { success: false, message: 'Đơn hàng đã được thanh toán, không thể hủy draft.' };
+    }
+
+    // Hoàn trả lại tồn kho sản phẩm
+    const [items] = await connection.query(
+      `SELECT variant_id, quantity FROM order_items WHERE order_id = ?`,
+      [order.id]
+    );
+    for (const item of items) {
+      if (item.variant_id && item.quantity > 0) {
+        await connection.query(
+          `UPDATE product_variants
+           SET stock = stock + ?,
+               status = CASE WHEN stock + ? > 0 THEN 'available' ELSE status END,
+               updated_at = NOW()
+           WHERE id = ?`,
+          [item.quantity, item.quantity, item.variant_id]
+        );
+      }
+    }
+
+    // Xóa order_items và orders để không lưu vào danh sách đơn hàng
+    await connection.query('DELETE FROM order_items WHERE order_id = ?', [order.id]);
+    await connection.query('DELETE FROM orders WHERE id = ?', [order.id]);
+
+    await connection.commit();
+    return { success: true, message: 'Đã hủy đơn hàng chưa thanh toán và hoàn lại giỏ hàng.' };
   } catch (error) {
     await connection.rollback();
     throw error;
@@ -851,7 +1183,16 @@ async function cancelCustomerOrder(customerId, orderCode, reason = '') {
 }
 
 module.exports = {
+  cancelUnpaidOrder,
   createOrder,
+  expirePendingVietqrOrders,
+  expireUnpaidOrderIfNeeded,
+  requestOrderCancellation,
+  requestReturn,
+  updateOrderStatus,
+  getReturnRequests,
+  reviewReturnRequest,
+  confirmCustomerDecision,
   getOrderByCode,
   getCustomerOrders,
   getAllOrders,

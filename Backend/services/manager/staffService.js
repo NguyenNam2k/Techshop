@@ -63,7 +63,11 @@ class StaffService {
    */
   static async getStaffById(id) {
     const staffId = parseInt(id, 10);
-    if (!staffId) throw new Error('ID nhân viên không hợp lệ.');
+    if (!staffId || isNaN(staffId)) {
+      const err = new Error('ID nhân viên không hợp lệ.');
+      err.statusCode = 400;
+      throw err;
+    }
     const staff = await StaffRepository.findById(staffId);
     if (!staff) {
       const err = new Error(`Không tìm thấy nhân viên với ID: ${staffId}`);

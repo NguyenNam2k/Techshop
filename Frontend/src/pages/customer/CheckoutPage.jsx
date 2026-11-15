@@ -28,7 +28,6 @@ import { useCart } from '../../context/CartContext';
 import { useAuth } from '../../context/AuthContext';
 import { api } from '../../services/api';
 import vietnamAdminUnits from '../../data/vietnam-administrative-units.json';
-
 const isDevEnvironment =
   import.meta.env.DEV ||
   typeof window !== 'undefined' &&
@@ -109,6 +108,7 @@ const CheckoutPage = () => {
   const [createdOrder, setCreatedOrder] = useState(null);
   const [isVietqrModalOpen, setIsVietqrModalOpen] = useState(false);
   const [simulatingWaiting, setSimulatingWaiting] = useState(false);
+  const [paymentSecondsRemaining, setPaymentSecondsRemaining] = useState(null);
 
   const provinces = useMemo(() => vietnamAdminUnits.provinces || [], []);
   const wards = useMemo(
@@ -343,17 +343,20 @@ const CheckoutPage = () => {
       });
 
       if (response.success && response.data) {
-        setCreatedOrder(response.data);
-        try {
-          sessionStorage.removeItem('techshop_pending_voucher');
-          localStorage.removeItem('techshop_orders');
-        } catch {
-          // ignore storage error
-        }
-        await clearCart();
         if (formData.paymentMethod === 'vietqr_banking' && response.data.vietQR) {
+          // Với VietQR: chỉ mở modal thanh toán, CHƯA xóa giỏ hàng
+          setCreatedOrder(response.data);
           setIsVietqrModalOpen(true);
         } else {
+          // Với COD: Lưu đơn hàng và xóa giỏ hàng ngay lập tức
+          setCreatedOrder(response.data);
+          try {
+            sessionStorage.removeItem('techshop_pending_voucher');
+            localStorage.removeItem('techshop_orders');
+          } catch {
+            // ignore storage error
+          }
+          await clearCart();
           navigate(`/success/${response.data.orderCode}`, { replace: true });
         }
       } else {
@@ -368,6 +371,52 @@ const CheckoutPage = () => {
     }
   };
 
+  // Xử lý khi thanh toán VietQR thành công: lúc này mới lưu đơn và xóa giỏ hàng
+  const handlePaymentSuccess = async (targetOrder) => {
+    const order = targetOrder || createdOrder;
+    if (!order) return;
+    try {
+      const prevOrders = JSON.parse(localStorage.getItem('techshop_orders') || '[]');
+      const formatted = {
+        orderId: order.orderCode || `ORD-${Date.now().toString().slice(-4)}`,
+        date: new Date().toLocaleString('vi-VN', { dateStyle: 'short', timeStyle: 'short' }),
+        phase: 1,
+        statusLabel: 'Đã thanh toán',
+        carrier: 'GIAO HÀNG NHANH (GHN)',
+        trackingCode: `GHN${Date.now().toString().slice(-9)}`,
+        paymentMethod: 'VietQR Banking Auto',
+        total: Number(order.finalAmount || order.totalAmount || finalTotal),
+        items: cartItems.map((item) => ({
+          id: item.productId || item.id,
+          name: item.name,
+          variant: item.variant,
+          quantity: item.quantity,
+          price: item.price,
+          image: item.image
+        }))
+      };
+      localStorage.setItem('techshop_orders', JSON.stringify([formatted, ...prevOrders]));
+    } catch {
+      // ignore
+    }
+    await clearCart();
+    navigate(`/success/${order.orderCode}`, { replace: true });
+  };
+
+  // Xử lý khi khách chưa muốn thanh toán vội mà nhấn "Đóng" hoặc Hủy
+  // -> Hủy draft đơn hàng chưa thanh toán trong DB, giữ nguyên giỏ hàng và form checkout
+  const handleCancelVietqr = async () => {
+    if (createdOrder?.orderCode) {
+      try {
+        await api.cancelUnpaidOrder(createdOrder.orderCode);
+      } catch (err) {
+        console.warn('Hủy draft đơn hàng lỗi:', err);
+      }
+    }
+    setIsVietqrModalOpen(false);
+    setCreatedOrder(null);
+  };
+
   // Poll backend mỗi 3s; khi đã nhận tiền thì tự động chuyển sang /success
   useEffect(() => {
     if (!createdOrder || createdOrder.paymentMethod !== 'vietqr_banking') return undefined;
@@ -376,7 +425,7 @@ const CheckoutPage = () => {
       try {
         const status = await api.getPaymentStatus(createdOrder.orderCode);
         if (!cancelled && status?.paid) {
-          navigate(`/success/${createdOrder.orderCode}`, { replace: true });
+          await handlePaymentSuccess(createdOrder);
         }
       } catch {
         // bỏ qua lỗi mạng tạm thời, lần poll sau sẽ thử lại
@@ -388,14 +437,41 @@ const CheckoutPage = () => {
       cancelled = true;
       clearInterval(timer);
     };
-  }, [createdOrder, navigate]);
+  }, [createdOrder]);
+
+  useEffect(() => {
+    if (!createdOrder?.paymentExpiresAt) {
+      setPaymentSecondsRemaining(null);
+      return undefined;
+    }
+
+    let expiredHandled = false;
+    const updateRemaining = async () => {
+      const seconds = Math.max(
+        0,
+        Math.ceil((new Date(createdOrder.paymentExpiresAt).getTime() - Date.now()) / 1000)
+      );
+      setPaymentSecondsRemaining(seconds);
+      if (seconds === 0 && !expiredHandled) {
+        expiredHandled = true;
+        await api.cancelUnpaidOrder(createdOrder.orderCode);
+        setIsVietqrModalOpen(false);
+        setCreatedOrder(null);
+        setSubmitError('Đơn VietQR đã hết thời gian chờ thanh toán. Tồn kho đã được hoàn lại, vui lòng đặt lại.');
+      }
+    };
+
+    updateRemaining();
+    const timer = setInterval(updateRemaining, 1000);
+    return () => clearInterval(timer);
+  }, [createdOrder]);
 
   const handleSimulatePaymentFromWaiting = async () => {
     if (!createdOrder?.orderCode) return;
     try {
       setSimulatingWaiting(true);
       await api.simulatePayment(createdOrder.orderCode);
-      navigate(`/success/${createdOrder.orderCode}`, { replace: true });
+      await handlePaymentSuccess(createdOrder);
     } catch (err) {
       console.error('Lỗi giả lập thanh toán:', err);
     } finally {
@@ -423,6 +499,17 @@ const CheckoutPage = () => {
             <p className="text-sky-100 text-sm max-w-sm mx-auto">
               Vui lòng quét mã VietQR để chuyển khoản. Hệ thống sẽ tự động chuyển trang ngay khi nhận được tiền.
             </p>
+            <div className="inline-flex items-center gap-2 rounded-full bg-amber-400/15 border border-amber-300/30 px-4 py-1.5 text-xs font-bold text-amber-200">
+              <AlertCircle className="w-3.5 h-3.5" />
+              <span>
+                Thời gian còn lại:{' '}
+                {paymentSecondsRemaining == null
+                  ? '--:--'
+                  : `${String(Math.floor(paymentSecondsRemaining / 60)).padStart(2, '0')}:${String(
+                      paymentSecondsRemaining % 60
+                    ).padStart(2, '0')}`}
+              </span>
+            </div>
             <div className="inline-flex items-center gap-2 bg-slate-950/40 px-4 py-1.5 rounded-full text-xs font-mono border border-white/20">
               <span>Mã đơn hàng:</span>
               <span className="font-extrabold text-amber-300 text-sm">{createdOrder.orderCode}</span>
@@ -482,22 +569,23 @@ const CheckoutPage = () => {
                   <span>Mở mã QR Thanh Toán</span>
                 </button>
               )}
-              <Link
-                to="/profile/orders"
-                className="flex-1 py-3.5 px-5 rounded-xl bg-slate-800 border border-slate-700 hover:bg-slate-700 text-slate-200 font-bold text-center transition text-sm"
+              <button
+                type="button"
+                onClick={handleCancelVietqr}
+                className="flex-1 py-3.5 px-5 rounded-xl bg-slate-800 border border-slate-700 hover:bg-slate-700 text-slate-300 font-bold text-center transition text-sm cursor-pointer"
               >
-                Xem Đơn Hàng Của Tôi
-              </Link>
+                ← Hủy &amp; Quay lại Checkout
+              </button>
             </div>
           </div>
         </div>
 
         <VietqrModal
           isOpen={isVietqrModalOpen}
-          onClose={() => setIsVietqrModalOpen(false)}
+          onClose={handleCancelVietqr}
           vietQRData={createdOrder.vietQR}
           orderCode={createdOrder.orderCode}
-          onPaymentSuccess={() => navigate(`/success/${createdOrder.orderCode}`, { replace: true })}
+          onPaymentSuccess={() => handlePaymentSuccess(createdOrder)}
         />
       </div>
     );
@@ -516,7 +604,7 @@ const CheckoutPage = () => {
               <ArrowLeft className="w-4 h-4" />
               <span>Quay lại giỏ hàng</span>
             </Link>
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-white flex items-center gap-2.5">
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-100 flex items-center gap-2.5">
               <CreditCard className="w-7 h-7 text-sky-400" />
               <span>Thanh Toán &amp; Giao Nhận</span>
             </h1>
@@ -575,7 +663,7 @@ const CheckoutPage = () => {
                       <MapPin className="w-5 h-5" />
                     </div>
                     <div>
-                      <h2 className="text-base font-extrabold text-white">
+                      <h2 className="text-base font-extrabold text-slate-100">
                         1. Thông Tin Giao Nhận Hàng
                       </h2>
                       <p className="text-xs text-slate-400">
@@ -624,7 +712,7 @@ const CheckoutPage = () => {
                         onChange={handleInputChange}
                         required
                         placeholder="Nhập họ tên người nhận"
-                        className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-950 border border-slate-700 focus:border-sky-500 text-sm text-white outline-none transition"
+                        className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-950 border border-slate-700 focus:border-sky-500 text-sm text-slate-100 placeholder:text-slate-400 outline-none transition"
                       />
                     </div>
                   </div>
@@ -642,7 +730,7 @@ const CheckoutPage = () => {
                         onChange={handleInputChange}
                         required
                         placeholder="Ví dụ: 0988123456"
-                        className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-950 border border-slate-700 focus:border-sky-500 text-sm text-white outline-none transition"
+                        className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-950 border border-slate-700 focus:border-sky-500 text-sm text-slate-100 placeholder:text-slate-400 outline-none transition"
                       />
                     </div>
                   </div>
@@ -676,7 +764,7 @@ const CheckoutPage = () => {
                       name="provinceId"
                       value={formData.provinceId}
                       onChange={handleInputChange}
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-700 focus:border-sky-500 text-sm text-white outline-none transition"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-700 focus:border-sky-500 text-sm text-slate-100 outline-none transition"
                     >
                       {provinces.map((province) => (
                         <option key={province.id} value={province.id}>
@@ -694,7 +782,7 @@ const CheckoutPage = () => {
                       name="wardId"
                       value={formData.wardId}
                       onChange={handleInputChange}
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-700 focus:border-sky-500 text-sm text-white outline-none transition"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-700 focus:border-sky-500 text-sm text-slate-100 outline-none transition"
                     >
                       {wards.map((ward) => (
                         <option key={ward.id} value={ward.id}>
@@ -716,7 +804,7 @@ const CheckoutPage = () => {
                     onChange={handleInputChange}
                     required
                     placeholder="Ví dụ: Số 123 Nguyễn Huệ, Tòa nhà Bitexco"
-                    className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-700 focus:border-sky-500 text-sm text-white outline-none transition"
+                    className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-700 focus:border-sky-500 text-sm text-slate-100 placeholder:text-slate-400 outline-none transition"
                   />
                 </div>
 
@@ -727,7 +815,7 @@ const CheckoutPage = () => {
                       <Truck className="w-5 h-5" />
                     </div>
                     <div>
-                      <div className="text-xs font-bold text-white flex items-center gap-2">
+                      <div className="text-xs font-bold text-slate-100 flex items-center gap-2">
                         <span>
                           {shippingQuote?.deliveryLabel || 'Giao Hỏa Tốc 2H (Nội thành)'}
                         </span>
@@ -759,7 +847,7 @@ const CheckoutPage = () => {
                       value={formData.orderNotes}
                       onChange={handleInputChange}
                       placeholder="Ghi chú giờ hành chính, gọi trước khi giao, xuất hóa đơn VAT..."
-                      className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-950 border border-slate-700 focus:border-sky-500 text-sm text-white outline-none transition"
+                      className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-950 border border-slate-700 focus:border-sky-500 text-sm text-slate-100 placeholder:text-slate-400 outline-none transition"
                     />
                   </div>
                 </div>
@@ -772,7 +860,7 @@ const CheckoutPage = () => {
                     <CreditCard className="w-5 h-5" />
                   </div>
                   <div>
-                    <h2 className="text-base font-extrabold text-white">
+                    <h2 className="text-base font-extrabold text-slate-100">
                       2. Phương Thức Thanh Toán
                     </h2>
                     <p className="text-xs text-slate-400">
@@ -799,7 +887,7 @@ const CheckoutPage = () => {
                       className="mt-1 accent-sky-500"
                     />
                     <div className="space-y-1">
-                      <div className="flex items-center gap-2 font-bold text-sm text-white">
+                      <div className="flex items-center gap-2 font-bold text-sm text-slate-100">
                         <Banknote className="w-4 h-4 text-emerald-400" />
                         <span>Thanh toán khi nhận (COD)</span>
                       </div>
@@ -826,7 +914,7 @@ const CheckoutPage = () => {
                       className="mt-1 accent-sky-500"
                     />
                     <div className="space-y-1">
-                      <div className="flex items-center gap-2 font-bold text-sm text-white">
+                      <div className="flex items-center gap-2 font-bold text-sm text-slate-100">
                         <QrCode className="w-4 h-4 text-sky-400" />
                         <span>Chuyển khoản VietQR 24/7</span>
                       </div>
@@ -843,7 +931,7 @@ const CheckoutPage = () => {
             <div className="lg:col-span-5 lg:sticky lg:top-24 space-y-5">
               <div className="bg-slate-900 rounded-2xl border border-slate-800 p-6 space-y-5 shadow-2xl">
                 <div className="flex items-center justify-between border-b border-slate-800 pb-4">
-                  <h2 className="text-base font-extrabold text-white uppercase tracking-wider">
+                  <h2 className="text-base font-extrabold text-slate-100 uppercase tracking-wider">
                     Đơn Hàng Của Bạn ({cartItems.length})
                   </h2>
                   <Link
@@ -868,7 +956,7 @@ const CheckoutPage = () => {
                         }}
                       />
                       <div className="flex-1 min-w-0">
-                        <p className="text-xs font-bold text-white truncate">{item.name}</p>
+                        <p className="text-xs font-bold text-slate-100 truncate">{item.name}</p>
                         <p className="text-[11px] text-slate-400 truncate">{item.variant}</p>
                         <p className="text-[11px] text-slate-500">Số lượng: x{item.quantity}</p>
                       </div>
@@ -908,7 +996,7 @@ const CheckoutPage = () => {
                         setCouponError('');
                       }}
                       placeholder="Nhập mã (VD: TECH10, SALE500)"
-                      className="flex-1 px-3.5 py-2 rounded-xl bg-slate-950 border border-slate-700 focus:border-sky-500 text-xs font-mono font-bold uppercase text-white outline-none"
+                      className="flex-1 px-3.5 py-2 rounded-xl bg-slate-950 border border-slate-700 focus:border-sky-500 text-xs font-mono font-bold uppercase text-slate-100 placeholder:text-slate-400 outline-none"
                     />
                     {appliedCoupon ? (
                       <button
@@ -986,7 +1074,7 @@ const CheckoutPage = () => {
 
                 <div className="pt-4 border-t border-slate-800">
                   <div className="flex justify-between items-baseline">
-                    <span className="text-sm font-bold text-white">Tổng thanh toán</span>
+                    <span className="text-sm font-bold text-slate-100">Tổng thanh toán</span>
                     <span className="text-2xl font-extrabold text-sky-400">
                       {formatVND(finalAmount)}
                     </span>
@@ -1036,7 +1124,7 @@ const CheckoutPage = () => {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="p-5 bg-slate-950 border-b border-slate-800 flex items-center justify-between">
-              <div className="flex items-center gap-2 font-extrabold text-white text-sm">
+              <div className="flex items-center gap-2 font-extrabold text-slate-100 text-sm">
                 <Ticket className="w-5 h-5 text-sky-400" />
                 <span>Chọn Mã Giảm Giá Techshop</span>
               </div>

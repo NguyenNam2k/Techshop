@@ -123,7 +123,79 @@ async function cancelOrder(req, res) {
   }
 }
 
+async function cancelUnpaidOrder(req, res) {
+  try {
+    const orderCode = String(req.params.orderCode || '').trim();
+    if (!orderCode) {
+      return res.status(400).json({ success: false, message: 'Mã đơn hàng không hợp lệ.' });
+    }
+
+    const result = await orderService.cancelUnpaidOrder(orderCode);
+    return res.status(200).json(result);
+  } catch (error) {
+    console.error('Error in cancelUnpaidOrder controller:', error);
+    return res.status(500).json({ success: false, message: 'Lỗi khi hủy đơn hàng chưa thanh toán.' });
+  }
+}
+
+async function requestCancellation(req, res) {
+  try {
+    const result = await orderService.requestOrderCancellation(
+      req.user?.role === 'customer' ? req.user.id : null,
+      req.params.orderCode,
+      req.body?.reason
+    );
+    return res.status(200).json({ success: true, data: result });
+  } catch (error) {
+    return res.status(error.statusCode || 400).json({ success: false, message: error.message });
+  }
+}
+
+async function requestReturn(req, res) {
+  try {
+    const result = await orderService.requestReturn(
+      req.user?.role === 'customer' ? req.user.id : null,
+      req.params.orderCode,
+      req.body?.reason
+    );
+    return res.status(201).json(result);
+  } catch (error) {
+    return res.status(error.statusCode || 400).json({ success: false, message: error.message });
+  }
+}
+
+async function updateStatus(req, res) {
+  try {
+    const result = await orderService.updateOrderStatus(
+      req.params.orderCode,
+      req.body?.shippingStatus
+    );
+    return res.json({ success: true, data: result });
+  } catch (error) {
+    return res.status(error.statusCode || 400).json({ success: false, message: error.message });
+  }
+}
+
+async function confirmCustomerDecision(req, res) {
+  try {
+    const customerId = req.user?.role === 'customer' ? req.user.id : null;
+    const result = await orderService.confirmCustomerDecision(
+      customerId,
+      req.params.orderCode,
+      req.body?.decision
+    );
+    return res.json({ success: true, data: result });
+  } catch (error) {
+    return res.status(error.statusCode || 400).json({ success: false, message: error.message });
+  }
+}
+
 module.exports = {
+  cancelUnpaidOrder,
+  requestCancellation,
+  requestReturn,
+  updateStatus,
+  confirmCustomerDecision,
   createOrder,
   getOrderDetail,
   getOrdersList,

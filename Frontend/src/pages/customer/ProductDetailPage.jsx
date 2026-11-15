@@ -12,8 +12,9 @@ import {
 import ProductGallery from '../../components/pdp/ProductGallery';
 import VariantSelector from '../../components/pdp/VariantSelector';
 import AddToCartSection from '../../components/pdp/AddToCartSection';
-import ProductSpecsTable from '../../components/pdp/ProductSpecsTable';
+import ProductDescriptionShowcase from '../../components/pdp/ProductDescriptionShowcase';
 import SimilarProductsSlider from '../../components/pdp/SimilarProductsSlider';
+import ProductReviews from '../../components/pdp/ProductReviews';
 import { useCart } from '../../context/CartContext';
 import { useAuth } from '../../context/AuthContext';
 import AuthRequiredModal from '../../components/common/AuthRequiredModal';
@@ -172,8 +173,8 @@ const ProductDetailPage = () => {
         </div>
       )}
 
-      {/* Breadcrumbs */}
-      <div className="bg-slate-900/90 border-b border-slate-800 sticky top-16 z-20 backdrop-blur-md">
+      {/* Breadcrumbs (Tự nhiên trên đầu trang, không chiếm diện tích khi cuộn) */}
+      <div className="bg-slate-900/60 border-b border-slate-800 backdrop-blur-md">
         <div className="max-w-7xl mx-auto px-4 py-3">
           <nav className="flex items-center gap-2 text-xs text-slate-400 font-medium">
             <Link
@@ -199,20 +200,18 @@ const ProductDetailPage = () => {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 py-8 space-y-10">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
-          {/* Cột trái: Thư viện ảnh + Thông số kỹ thuật */}
-          <div className="lg:col-span-7 space-y-8">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-10 items-start">
+          {/* Cột trái: Thư viện ảnh */}
+          <div className="lg:col-span-7 space-y-6">
             <ProductGallery
               product={product}
               selectedVariant={selectedVariant}
               onVariantSelect={setSelectedVariant}
             />
-
-            <ProductSpecsTable specifications={product.specifications} />
           </div>
 
-          {/* Cột phải: Thông tin giá, Chọn biến thể, Nút mua */}
-          <div className="lg:col-span-5 space-y-6">
+          {/* Cột phải: Thông tin giá, Chọn biến thể, Nút mua (Sticky dưới Header, dừng tự nhiên khi hết bảng thông số) */}
+          <div className="lg:col-span-5 space-y-6 lg:sticky lg:top-20">
             <div>
               <div className="flex items-center gap-2 text-xs font-mono text-slate-400 mb-1.5">
                 <span className="font-bold text-sky-400 uppercase tracking-wider bg-sky-500/10 px-2 py-0.5 rounded border border-sky-500/20">
@@ -227,11 +226,21 @@ const ProductDetailPage = () => {
               </h1>
 
               <div className="flex items-center gap-3 mt-3 flex-wrap">
-                <div className="flex items-center gap-1.5 text-xs">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const el = document.getElementById('product-reviews');
+                    if (el) el.scrollIntoView({ behavior: 'smooth' });
+                  }}
+                  className="flex items-center gap-1.5 text-xs hover:opacity-85 transition cursor-pointer"
+                  title="Cuộn tới phần đánh giá khách hàng"
+                >
                   <Star className="w-4 h-4 fill-amber-400 text-amber-500" />
-                  <span className="font-extrabold text-slate-100">4.9</span>
-                  <span className="text-slate-400 text-xs">(128 Đánh giá)</span>
-                </div>
+                  <span className="font-extrabold text-slate-100">5.0</span>
+                  <span className="text-slate-400 text-xs hover:text-sky-400 transition underline underline-offset-2">
+                    (Đánh giá &amp; nhận xét)
+                  </span>
+                </button>
                 <span className="text-slate-700">|</span>
                 {selectedVariant && Number(selectedVariant.stock) > 0 ? (
                   <span className="text-xs text-emerald-400 font-bold flex items-center gap-1 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-md">
@@ -327,10 +336,23 @@ const ProductDetailPage = () => {
               </div>
             </div>
           </div>
+
+          {/* Thông số kỹ thuật & Mô tả chi tiết showcase */}
+          <div className="lg:col-span-7 space-y-8">
+            <ProductDescriptionShowcase product={product} />
+          </div>
         </div>
 
+        {/* Đánh giá & nhận xét từ khách hàng */}
+        <ProductReviews productId={product.id} productName={product.name} />
+
         {/* Sản phẩm cùng danh mục */}
-        <SimilarProductsSlider id={product.id} currentProductId={product.id} />
+        <SimilarProductsSlider
+          id={product.id}
+          currentProductId={product.id}
+          categoryId={product.category_id}
+          brand={product.brand}
+        />
       </div>
 
       {/* Modal yêu cầu đăng nhập khi khách bấm mua hàng */}

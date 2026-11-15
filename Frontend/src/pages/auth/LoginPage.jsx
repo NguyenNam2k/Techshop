@@ -130,6 +130,10 @@ function LoginPage() {
   const handleLoginSuccess = (token, userData) => {
     login(token, userData);
     const role = (userData?.role || '').toLowerCase();
+    if (role === 'staff') {
+      window.location.href = '/staff';
+      return;
+    }
     if (role === 'manager') {
       window.location.href = '/manager/products';
       return;

@@ -4,6 +4,7 @@ const path = require('path');
 const fs = require('fs');
 require('dotenv').config({ path: path.join(__dirname, '../.env') });
 require('dotenv').config();
+require('dotenv').config({ path: path.join(__dirname, '.env') });
 
 // Khởi tạo Express app
 const app = express();
@@ -17,7 +18,9 @@ app.use(express.urlencoded({ extended: true }));
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:3000';
 
 // Đường dẫn tài nguyên tĩnh
-const frontendDistPath = path.join(__dirname, '../Frontend/dist');
+const frontendDistPath = fs.existsSync(path.join(__dirname, '../Frontend/dist'))
+  ? path.join(__dirname, '../Frontend/dist')
+  : path.join(__dirname, '../frontend/dist');
 const legacyPublicPath = path.join(__dirname, '../public');
 
 // 1. Ưu tiên phục vụ Giao diện Khách hàng Storefront (React SPA) từ Frontend/dist
@@ -47,9 +50,14 @@ const cartRoutes = require('./routes/customer/cartRoutes');
 const orderRoutes = require('./routes/customer/orderRoutes');
 const shippingRoutes = require('./routes/customer/shippingRoutes');
 const paymentRoutes = require('./routes/customer/paymentRoutes');
+const returnRoutes = require('./routes/customer/return.routes');
+const reviewRoutes = require('./routes/customer/review.routes');
+const supportRoutes = require('./routes/customer/support.routes');
 const adminOrderRoutes = require('./routes/admin/orderRoutes');
 const adminRevenueRoutes = require('./routes/admin/revenueRoutes');
 const { testConnection } = require('./config/database');
+const { expirePendingVietqrOrders } = require('./services/customer/orderService');
+const { attachSupportWebSocket } = require('./services/customer/realtime.service');
 
 // 3. Phục vụ Manager App SPA nếu đã build dist (Duong's Manager Portal)
 const managerAppDist = path.join(__dirname, '../views/manager-app/dist');
@@ -95,6 +103,9 @@ app.use('/api/cart', cartRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/shipping', shippingRoutes);
 app.use('/api/payments', paymentRoutes);
+app.use('/api/returns', returnRoutes);
+app.use('/api/reviews', reviewRoutes);
+app.use('/api/support', supportRoutes);
 app.use('/api/admin/orders', adminOrderRoutes);
 app.use('/api/admin/revenue', adminRevenueRoutes);
 
@@ -125,7 +136,13 @@ app.get('/{*splat}', (req, res) => {
 async function startServer() {
   await testConnection();
 
-  app.listen(PORT, () => {
+  setInterval(() => {
+    expirePendingVietqrOrders().catch((error) => {
+      console.error('Error expiring pending VietQR orders:', error);
+    });
+  }, 60 * 1000);
+
+  const httpServer = app.listen(PORT, () => {
     console.log(`=================================================`);
     console.log(`🚀 Techshop Server đang chạy tại: http://localhost:${PORT}`);
     console.log(`📊 Manager Portal Dashboard:     ${FRONTEND_URL}/manager/products`);
@@ -133,7 +150,13 @@ async function startServer() {
     console.log(`🔑 Auth API Endpoint:            http://localhost:${PORT}/api/auth`);
     console.log(`=================================================`);
   });
+
+  // Realtime WebSocket cho Support Ticket & Chat (Customer <-> Staff)
+  try {
+    attachSupportWebSocket(httpServer);
+  } catch (error) {
+    console.error('[TechGear] Cannot start support WebSocket server:', error.message);
+  }
 }
 
 startServer();
-

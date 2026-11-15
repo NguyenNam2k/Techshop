@@ -58,11 +58,11 @@ const VietqrModal = ({ isOpen, onClose, vietQRData, orderCode, onPaymentSuccess 
             <div>
               <div className="flex items-center gap-2">
                 <h3 className="font-extrabold text-base">Thanh Toán VietQR 24/7</h3>
-                {isDevEnvironment && (
+                {/* {isDevEnvironment && (
                   <span className="px-2 py-0.5 text-[10px] font-mono font-bold bg-amber-400 text-slate-950 rounded-md uppercase tracking-wider">
                     TEST MODE
                   </span>
-                )}
+                )} */}
               </div>
               <p className="text-sky-100 text-xs">Quét mã bằng mọi ứng dụng Ngân hàng</p>
             </div>
@@ -80,20 +80,20 @@ const VietqrModal = ({ isOpen, onClose, vietQRData, orderCode, onPaymentSuccess 
         <div className="p-6 flex flex-col items-center space-y-4 overflow-y-auto">
           {/* QR Code Container */}
           <div className="bg-white p-3.5 rounded-2xl shadow-lg border-2 border-sky-500/40 relative">
-            {isDevEnvironment && (
+            {/* {isDevEnvironment && (
               <div className="absolute top-2 right-2 px-2 py-0.5 bg-amber-500 text-slate-950 font-bold text-[9px] uppercase rounded-md tracking-wider shadow">
                 Sandbox QR
               </div>
-            )}
+            )} */}
             <img
               src={vietQRData.qrUrl}
               alt="VietQR Payment Code"
               className="w-52 h-52 object-contain"
             />
-            <div className="mt-2 flex items-center justify-center gap-1.5 text-[11px] font-bold text-emerald-600 bg-emerald-50 py-1 px-3 rounded-full">
+            {/* <div className="mt-2 flex items-center justify-center gap-1.5 text-[11px] font-bold text-emerald-600 bg-emerald-50 py-1 px-3 rounded-full">
               <ShieldCheck className="w-3.5 h-3.5" />
-              {/* <span>Tự động điền số tiền &amp; nội dung</span> */}
-            </div>
+              <span>Tự động điền số tiền &amp; nội dung</span>
+            </div> */}
           </div>
 
           {/* Dev / Sandbox Test Simulator */}

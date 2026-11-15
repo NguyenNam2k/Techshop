@@ -1,8 +1,24 @@
 const express = require('express');
 const router = express.Router();
+const path = require('path');
+const fs = require('fs');
 const CouponController = require('../../controllers/manager/couponController');
 const customerCouponController = require('../../controllers/customer/couponController');
 const { optionalAuth } = require('../../middlewares/authMiddleware');
+
+// Hỗ trợ cả Windows và Linux (khi phân tách thư mục Backend và backend)
+let couponSrcController;
+try {
+  couponSrcController = require('../../src/controllers/coupon.controller');
+} catch (err) {
+  if (err.code === 'MODULE_NOT_FOUND') {
+    couponSrcController = require('../../../backend/src/controllers/coupon.controller');
+  } else {
+    throw err;
+  }
+}
+
+router.post('/validate', couponSrcController.validateCoupon);
 
 /**
  * Coupon Management & Customer Storefront API Routes

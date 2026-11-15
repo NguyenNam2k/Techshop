@@ -731,13 +731,13 @@ function mapCustomerOrder(order, items) {
     canCancel: shippingStatus === 'pending',
     carrier: hasCarrierTracking
       ? order.carrier ||
-        (shippingStatus === 'delivered'
-          ? 'Giao Hàng Tiết Kiệm (GHTK)'
-          : 'GIAO HÀNG NHANH (GHN)')
+      (shippingStatus === 'delivered'
+        ? 'Giao Hàng Tiết Kiệm (GHTK)'
+        : 'GIAO HÀNG NHANH (GHN)')
       : null,
     trackingCode: hasCarrierTracking
       ? order.tracking_code ||
-        (cleanCodeDigits ? `GHN${cleanCodeDigits.slice(-9).padStart(9, '5')}` : null)
+      (cleanCodeDigits ? `GHN${cleanCodeDigits.slice(-9).padStart(9, '5')}` : null)
       : null,
     items: items.map(mapOrderItem)
   };
@@ -837,7 +837,6 @@ async function cancelCustomerOrder(customerId, orderCode, reason = '') {
       'SELECT variant_id, quantity FROM order_items WHERE order_id = ?',
       [order.id]
     );
-    );
     for (const item of items) {
       if (!item.variant_id) continue;
       const qty = Number(item.quantity) || 0;
@@ -925,6 +924,14 @@ async function cancelCustomerOrder(customerId, orderCode, reason = '') {
 
     const updatedOrders = await getAllOrders({ customerId: Number(customerId), limit: 50 });
     return updatedOrders.find((o) => o.orderCode === cleanCode) || null;
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
+  }
+}
+
 
 async function updateOrderStatus(orderCode, shippingStatus) {
   const allowedStatuses = ['pending', 'processing', 'shipping', 'delivered', 'cancelled'];
@@ -942,17 +949,17 @@ async function updateOrderStatus(orderCode, shippingStatus) {
     shippingStatus === 'cancelled'
       ? ['pending', 'processing'].includes(order.shipping_status)
       : (order.shipping_status === 'pending' &&
-          shippingStatus === 'processing' &&
-          (order.payment_method === 'cod' || order.payment_status === 'paid')) ||
-        (order.shipping_status === 'processing' && shippingStatus === 'shipping') ||
-        (order.shipping_status === 'shipping' && shippingStatus === 'delivered');
+        shippingStatus === 'processing' &&
+        (order.payment_method === 'cod' || order.payment_status === 'paid')) ||
+      (order.shipping_status === 'processing' && shippingStatus === 'shipping') ||
+      (order.shipping_status === 'shipping' && shippingStatus === 'delivered');
   if (!validTransition) {
     throw httpError('Không thể chuyển trạng thái đơn hàng theo thứ tự hiện tại.', 409);
   }
   const [result] = await pool.query(
     `UPDATE orders SET shipping_status = ?,
-       payment_status = CASE WHEN ? = 'delivered' AND payment_method = 'cod' THEN 'paid' ELSE payment_status END,
-       updated_at = NOW() WHERE order_code = ?`,
+   payment_status = CASE WHEN ? = 'delivered' AND payment_method = 'cod' THEN 'paid' ELSE payment_status END,
+   updated_at = NOW() WHERE order_code = ?`,
     [shippingStatus, shippingStatus, cleanCode]
   );
   if (result.affectedRows !== 1) throw httpError('Không tìm thấy đơn hàng.', 404);
@@ -990,7 +997,7 @@ async function confirmCustomerDecision(customerId, orderCode, decision) {
     if (decision === 'return_requested') {
       await connection.query(
         `INSERT INTO return_requests (order_id, customer_id, reason, refund_method)
-         VALUES (?, ?, 'Khách hàng yêu cầu trả hàng sau khi nhận hàng.', 'manual_bank')`,
+     VALUES (?, ?, 'Khách hàng yêu cầu trả hàng sau khi nhận hàng.', 'manual_bank')`,
         [order.id, order.customer_id]
       );
     }
@@ -1016,7 +1023,7 @@ async function requestReturn(customerId, orderCode, reason) {
     await connection.beginTransaction();
     const [orders] = await connection.query(
       `SELECT id, customer_id, shipping_status, payment_method, updated_at
-       FROM orders WHERE order_code = ? LIMIT 1 FOR UPDATE`,
+   FROM orders WHERE order_code = ? LIMIT 1 FOR UPDATE`,
       [cleanCode]
     );
     const order = orders[0];
@@ -1032,13 +1039,13 @@ async function requestReturn(customerId, orderCode, reason) {
     }
     const [recent] = await connection.query(
       `SELECT id FROM return_requests
-       WHERE order_id = ? AND status IN ('pending', 'approved', 'refunded') LIMIT 1`,
+   WHERE order_id = ? AND status IN ('pending', 'approved', 'refunded') LIMIT 1`,
       [order.id]
     );
     if (recent.length) throw httpError('Đơn hàng đã có yêu cầu trả/hoàn tiền.', 409);
     await connection.query(
       `INSERT INTO return_requests (order_id, customer_id, reason, refund_method)
-       VALUES (?, ?, ?, ?)`,
+   VALUES (?, ?, ?, ?)`,
       [order.id, order.customer_id, cleanReason, order.payment_method === 'cod' ? 'manual_bank' : 'original_method']
     );
     await connection.query(
@@ -1063,20 +1070,20 @@ async function requestReturn(customerId, orderCode, reason) {
 async function getReturnRequests() {
   const [rows] = await pool.query(
     `SELECT rr.*, o.order_code, o.payment_method, o.final_amount,
-            COALESCE(
-              (
-                SELECT GROUP_CONCAT(DISTINCT oi.product_name ORDER BY oi.id SEPARATOR ', ')
-                FROM order_items oi
-                WHERE oi.order_id = rr.order_id
-              ),
-              'Sản phẩm trong đơn hàng'
-            ) AS product_name,
-            COALESCE(o.recipient_name, c.name, 'Khách hàng') AS customer_name,
-            COALESCE(o.recipient_phone, c.phone, '') AS customer_phone
-     FROM return_requests rr
-     JOIN orders o ON o.id = rr.order_id
-     LEFT JOIN customers c ON c.id = rr.customer_id
-     ORDER BY rr.created_at DESC`
+        COALESCE(
+          (
+            SELECT GROUP_CONCAT(DISTINCT oi.product_name ORDER BY oi.id SEPARATOR ', ')
+            FROM order_items oi
+            WHERE oi.order_id = rr.order_id
+          ),
+          'Sản phẩm trong đơn hàng'
+        ) AS product_name,
+        COALESCE(o.recipient_name, c.name, 'Khách hàng') AS customer_name,
+        COALESCE(o.recipient_phone, c.phone, '') AS customer_phone
+ FROM return_requests rr
+ JOIN orders o ON o.id = rr.order_id
+ LEFT JOIN customers c ON c.id = rr.customer_id
+ ORDER BY rr.created_at DESC`
   );
   return rows;
 }
@@ -1102,14 +1109,14 @@ async function reviewReturnRequest(requestId, status, managerNote = '') {
         if (item.variant_id) {
           await connection.query(
             `UPDATE product_variants SET stock = stock + ?, status = 'available', updated_at = NOW()
-             WHERE id = ?`,
+         WHERE id = ?`,
             [item.quantity, item.variant_id]
           );
         }
       }
       await connection.query(
         `UPDATE orders SET payment_status = 'refunded', shipping_status = 'cancelled', updated_at = NOW()
-         WHERE id = ?`,
+     WHERE id = ?`,
         [request.order_id]
       );
     }
@@ -1159,10 +1166,10 @@ async function cancelUnpaidOrder(orderCode) {
       if (item.variant_id && item.quantity > 0) {
         await connection.query(
           `UPDATE product_variants
-           SET stock = stock + ?,
-               status = CASE WHEN stock + ? > 0 THEN 'available' ELSE status END,
-               updated_at = NOW()
-           WHERE id = ?`,
+       SET stock = stock + ?,
+           status = CASE WHEN stock + ? > 0 THEN 'available' ELSE status END,
+           updated_at = NOW()
+       WHERE id = ?`,
           [item.quantity, item.quantity, item.variant_id]
         );
       }

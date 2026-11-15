@@ -403,8 +403,8 @@ async function testConnection() {
   }
 }
 
-module.exports = {
-  pool,
-  testConnection,
-  initDatabaseSchema
-};
+pool.pool = pool;
+pool.testConnection = testConnection;
+pool.initDatabaseSchema = initDatabaseSchema;
+
+module.exports = pool;

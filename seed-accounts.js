@@ -139,7 +139,8 @@ async function main() {
       console.log(`   ✓ ${c.email} (username: ${c.username}, password: ${c.password})`);
     } catch (e) {
       if (e.code === 'ER_DUP_ENTRY') {
-        console.log(`   ⚠ ${c.email} hoặc ${c.username} đã tồn tại — bỏ qua`);
+        await conn.execute('UPDATE customers SET password_hash = ? WHERE email = ? OR username = ?', [hash, c.email, c.username]);
+        console.log(`   ↻ ${c.email} đã tồn tại — đã cập nhật mật khẩu`);
       } else throw e;
     }
   }
@@ -156,7 +157,8 @@ async function main() {
       console.log(`   ✓ ${a.email}  (username: ${a.username}, password: ${a.password})`);
     } catch (e) {
       if (e.code === 'ER_DUP_ENTRY') {
-        console.log(`   ⚠ ${a.email} đã tồn tại — bỏ qua`);
+        await conn.execute('UPDATE admins SET password_hash = ? WHERE email = ? OR username = ?', [hash, a.email, a.username]);
+        console.log(`   ↻ ${a.email} đã tồn tại — đã cập nhật mật khẩu`);
       } else throw e;
     }
   }
@@ -173,7 +175,8 @@ async function main() {
       console.log(`   ✓ ${m.email}  (username: ${m.username}, code: ${m.manager_code}, password: ${m.password})`);
     } catch (e) {
       if (e.code === 'ER_DUP_ENTRY') {
-        console.log(`   ⚠ ${m.email} đã tồn tại — bỏ qua`);
+        await conn.execute('UPDATE managers SET password_hash = ? WHERE email = ? OR username = ?', [hash, m.email, m.username]);
+        console.log(`   ↻ ${m.email} đã tồn tại — đã cập nhật mật khẩu`);
       } else throw e;
     }
   }
@@ -190,7 +193,8 @@ async function main() {
       console.log(`   ✓ ${s.email}  (username: ${s.username}, code: ${s.staff_code}, password: ${s.password})`);
     } catch (e) {
       if (e.code === 'ER_DUP_ENTRY') {
-        console.log(`   ⚠ ${s.email} đã tồn tại — bỏ qua`);
+        await conn.execute('UPDATE staffs SET password_hash = ? WHERE email = ? OR username = ?', [hash, s.email, s.username]);
+        console.log(`   ↻ ${s.email} đã tồn tại — đã cập nhật mật khẩu`);
       } else throw e;
     }
   }

@@ -199,7 +199,7 @@ export default function AiSearchPage() {
                                 setActiveTab('semantic');
                                 setSearched(false);
                             }}
-                            className={`p-5 rounded-2xl border cursor-pointer transition-all duration-200 ${activeTab === 'semantic'
+                            className={`ai-search-card p-5 rounded-2xl border cursor-pointer transition-all duration-200 ${activeTab === 'semantic'
                                 ? 'bg-cyan-500/15 border-cyan-500 shadow-lg shadow-cyan-500/10 ring-1 ring-cyan-500'
                                 : 'bg-slate-900/80 border-slate-800 hover:border-slate-700 hover:bg-slate-850'
                                 }`}
@@ -207,8 +207,8 @@ export default function AiSearchPage() {
                             <div className="w-10 h-10 rounded-xl bg-cyan-500/20 text-cyan-400 flex items-center justify-center mb-3">
                                 <Search className="w-5 h-5" />
                             </div>
-                            <h3 className="text-base font-bold text-white mb-1">1. Semantic Search</h3>
-                            <p className="text-xs text-slate-400">
+                            <h3 className="ai-search-card-title text-base font-bold text-black dark:text-white mb-1">1. Semantic Search</h3>
+                            <p className="ai-search-card-desc text-xs text-black/90 dark:text-slate-300 font-medium leading-relaxed">
                                 Tìm theo ngôn ngữ tự nhiên tiếng Việt, tự động chuẩn hóa văn bản &amp; Mean Centering.
                             </p>
                         </div>
@@ -219,7 +219,7 @@ export default function AiSearchPage() {
                                 setActiveTab('visual');
                                 setSearched(false);
                             }}
-                            className={`p-5 rounded-2xl border cursor-pointer transition-all duration-200 ${activeTab === 'visual'
+                            className={`ai-search-card p-5 rounded-2xl border cursor-pointer transition-all duration-200 ${activeTab === 'visual'
                                 ? 'bg-purple-500/15 border-purple-500 shadow-lg shadow-purple-500/10 ring-1 ring-purple-500'
                                 : 'bg-slate-900/80 border-slate-800 hover:border-slate-700 hover:bg-slate-850'
                                 }`}
@@ -227,8 +227,8 @@ export default function AiSearchPage() {
                             <div className="w-10 h-10 rounded-xl bg-purple-500/20 text-purple-400 flex items-center justify-center mb-3">
                                 <ImageIcon className="w-5 h-5" />
                             </div>
-                            <h3 className="text-base font-bold text-white mb-1">2. Visual Search</h3>
-                            <p className="text-xs text-slate-400">
+                            <h3 className="ai-search-card-title text-base font-bold text-black dark:text-white mb-1">2. Visual Search</h3>
+                            <p className="ai-search-card-desc text-xs text-black/90 dark:text-slate-300 font-medium leading-relaxed">
                                 Tải ảnh chụp phụ kiện/thiết bị từ máy tính, trích xuất đặc trưng Vision CLIP 512D.
                             </p>
                         </div>
@@ -239,7 +239,7 @@ export default function AiSearchPage() {
                                 setActiveTab('hybrid');
                                 setSearched(false);
                             }}
-                            className={`p-5 rounded-2xl border cursor-pointer transition-all duration-200 ${activeTab === 'hybrid'
+                            className={`ai-search-card p-5 rounded-2xl border cursor-pointer transition-all duration-200 ${activeTab === 'hybrid'
                                 ? 'bg-amber-500/15 border-amber-500 shadow-lg shadow-amber-500/10 ring-1 ring-amber-500'
                                 : 'bg-slate-900/80 border-slate-800 hover:border-slate-700 hover:bg-slate-850'
                                 }`}
@@ -247,8 +247,8 @@ export default function AiSearchPage() {
                             <div className="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center mb-3">
                                 <Layers className="w-5 h-5" />
                             </div>
-                            <h3 className="text-base font-bold text-white mb-1">3. Hybrid Search</h3>
-                            <p className="text-xs text-slate-400">
+                            <h3 className="ai-search-card-title text-base font-bold text-black dark:text-white mb-1">3. Hybrid Search</h3>
+                            <p className="ai-search-card-desc text-xs text-black/90 dark:text-slate-300 font-medium leading-relaxed">
                                 Kết hợp cả Ảnh + Mô tả văn bản, điều chỉnh trọng số dung hợp vector linh hoạt.
                             </p>
                         </div>

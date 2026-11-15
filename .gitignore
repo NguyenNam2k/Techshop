@@ -188,3 +188,13 @@ __pycache__/
 *$py.class
 venv/
 .venv/
+
+# Documentation & presentation artifacts
+*.docx
+*.xlsx
+*.pptx
+*.zip
+
+# Temporary test scripts & intermediate files
+test-*.js
+product-list-for-images.json

@@ -90,14 +90,10 @@ const VietqrModal = ({ isOpen, onClose, vietQRData, orderCode, onPaymentSuccess 
               alt="VietQR Payment Code"
               className="w-52 h-52 object-contain"
             />
-            <div className="mt-2 flex items-center justify-center gap-1.5 text-[11px] font-bold text-emerald-600 bg-emerald-50 py-1 px-3 rounded-full">
-              <ShieldCheck className="w-3.5 h-3.5" />
-              {/* <span>Tự động điền số tiền &amp; nội dung</span> */}
-            </div>
           </div>
 
           {/* Dev / Sandbox Test Simulator */}
-          {/* {isDevEnvironment && (
+          {isDevEnvironment && (
             <div className="w-full bg-amber-500/10 border border-dashed border-amber-500/40 rounded-2xl p-3.5 space-y-2.5">
               <div className="flex items-center justify-between text-xs font-bold text-amber-300">
                 <span className="flex items-center gap-1.5">
@@ -139,7 +135,7 @@ const VietqrModal = ({ isOpen, onClose, vietQRData, orderCode, onPaymentSuccess 
                 )}
               </button>
             </div>
-          )} */}
+          )}
 
           {/* Bank Transfer Info */}
           <div className="w-full bg-slate-950/90 p-4 rounded-2xl border border-slate-800 space-y-2.5 text-sm">

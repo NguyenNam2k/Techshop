@@ -40,6 +40,10 @@ class CouponController {
     }
   }
 
+  static async getCouponById(req, res, next) {
+    return CouponController.getCoupon(req, res, next);
+  }
+
   /**
    * POST /api/coupons - Tạo mới mã giảm giá
    */

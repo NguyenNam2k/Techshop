@@ -78,7 +78,7 @@ export default function App({ user: propUser, onLogout: propLogout }) {
   };
 
   // Navigation / View State
-  const [activeView, setActiveView] = useState('products');
+  const [activeView, setActiveView] = useState(currentUser?.role === 'staff' ? 'staffs' : 'products');
 
   // Products & Pagination Data
   const [products, setProducts] = useState([]);
@@ -139,7 +139,7 @@ export default function App({ user: propUser, onLogout: propLogout }) {
   // Load Categories
   const loadCategories = useCallback(async () => {
     try {
-      const res = await fetch('/api/categories');
+      const res = await fetch('/api/categories?all=true');
       const json = await res.json();
       if (json.success) setCategories(json.data || []);
     } catch (e) {
@@ -278,7 +278,8 @@ export default function App({ user: propUser, onLogout: propLogout }) {
         return;
       }
       setBatchStockTarget({
-        variant_id: product.default_variant_id || product.id,
+        variant_id: product.default_variant_id,
+        product_id: product.id,
         sku_code: product.sku_code,
         total_stock: product.total_stock,
         name: product.name
@@ -407,6 +408,7 @@ export default function App({ user: propUser, onLogout: propLogout }) {
             <BatchStockView
               products={products}
               initialTarget={batchStockTarget}
+              onBackToProducts={() => setActiveView('products')}
               onSuccess={() => {
                 loadProducts();
                 loadStats();
@@ -425,7 +427,7 @@ export default function App({ user: propUser, onLogout: propLogout }) {
 
           {/* VIEW 8: STAFFS & ROLES (DEDICATED FULL-SCREEN VIEW) */}
           {activeView === 'staffs' && (
-            <StaffsView onStaffUpdated={() => loadStaffs()} />
+            <StaffsView onStaffUpdated={loadStaffs} />
           )}
         </div>
       </main>

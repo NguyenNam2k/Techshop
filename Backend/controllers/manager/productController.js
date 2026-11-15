@@ -274,6 +274,23 @@ class ProductController {
   }
 
   /**
+   * GET /api/products/inventory/variants
+   * Lấy toàn bộ danh sách biến thể đầy đủ để phục vụ quản lý & điều chỉnh kho hàng
+   */
+  static async getInventoryVariants(req, res, next) {
+    try {
+      const variants = await ProductService.getAllVariantsForInventory();
+      return res.status(200).json({
+        success: true,
+        data: variants
+      });
+    } catch (error) {
+      if (typeof next === 'function') next(error);
+      else res.status(500).json({ success: false, message: error.message });
+    }
+  }
+
+  /**
    * POST /api/products/batch-stock
    * TRANSACTION 4: Batch Adjust Stock / Restock
    */

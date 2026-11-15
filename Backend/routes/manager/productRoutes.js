@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const productController = require('../../controllers/manager/productController');
+const reviewController = require('../../controllers/customer/reviewController');
 const upload = require('../../middlewares/uploadMiddleware');
 
 /**
@@ -10,6 +11,7 @@ const upload = require('../../middlewares/uploadMiddleware');
 
 // 1. KPI Stats & Batch Operations
 router.get('/stats', productController.getCatalogStats);
+router.get('/inventory/variants', productController.getInventoryVariants);
 router.post('/batch-stock', productController.batchAdjustStock);
 
 // 2. Product List for Manager Data Table / AJAX (GET /api/products)
@@ -45,6 +47,9 @@ router.patch('/:id/images/:imageId/primary', productController.setPrimaryImage);
 // 4. Customer PDP Sub-resources
 router.get('/:id/variants', productController.getProductVariants);
 router.get('/:id/similar', productController.getSimilarProducts);
+router.get('/:id/reviews', reviewController.getProductReviews);
+router.post('/:id/reviews', reviewController.createProductReview);
+router.post('/:id/reviews/:reviewId/like', reviewController.likeProductReview);
 
 // 5. Product Single Details & CRUD
 router.get('/:id', productController.getProductDetail);

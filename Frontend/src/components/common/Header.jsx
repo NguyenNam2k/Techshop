@@ -159,21 +159,20 @@ export default function Header() {
   const isLoggedOut = !user;
 
   return (
-    <header className="sticky top-0 z-30 w-full bg-slate-900/95 backdrop-blur-md border-b border-slate-800 shadow-md transition-colors duration-200">
+    <header className="sticky top-0 z-50 w-full bg-slate-900/95 backdrop-blur-md border-b border-slate-800 shadow-md transition-colors duration-200">
       {/* Top Banner */}
-      <div className="bg-gradient-to-r from-blue-700 via-indigo-600 to-purple-700 text-white text-xs py-1.5 px-4 text-center font-medium">
+      <div className="bg-gradient-to-r from-blue-700 via-indigo-600 to-purple-700 text-white text-[10px] sm:text-xs py-1.5 px-3 text-center font-medium truncate">
         ⚡ Siêu sale phụ kiện công nghệ - Giảm tới 30% cho khách hàng mới | Giao hỏa tốc 2H
       </div>
-
       {/* Main Nav */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 min-h-16 py-2 sm:py-0 flex flex-wrap sm:flex-nowrap items-center justify-between gap-2 sm:gap-4">
         {/* Brand Logo */}
         <Link to="/" className="flex items-center gap-2 group flex-shrink-0">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center text-white text-xl shadow-lg shadow-blue-500/20 group-hover:scale-105 transition-transform">
+          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center text-white text-xl shadow-lg shadow-blue-500/20 group-hover:scale-105 transition-transform duration-300">
             💻
           </div>
           <div>
-            <h1 className="text-xl font-bold text-slate-100 tracking-tight">
+            <h1 className="text-lg sm:text-xl font-bold text-slate-100 tracking-tight">
               Tech<span className="text-sky-400">shop</span>
             </h1>
             <p className="text-[10px] text-slate-400 leading-none">Gaming &amp; Gear Store</p>
@@ -181,7 +180,7 @@ export default function Header() {
         </Link>
 
         {/* Redesigned Smart Search Bar */}
-        <div ref={searchContainerRef} className="flex-1 max-w-2xl mx-2 relative">
+        <div ref={searchContainerRef} className="order-3 sm:order-none basis-full sm:basis-auto flex-1 max-w-2xl mx-0 sm:mx-2 relative">
           <form onSubmit={handleSearch} className="relative group/search">
             <div className="relative flex items-center rounded-xl bg-slate-950/80 border border-slate-800 hover:border-slate-700 focus-within:border-sky-500 focus-within:bg-slate-900 focus-within:ring-2 focus-within:ring-sky-500/20 transition-all shadow-inner">
               <Search className="w-4 h-4 text-slate-400 group-focus-within/search:text-sky-400 ml-3.5 shrink-0 transition-colors pointer-events-none" />
@@ -236,6 +235,14 @@ export default function Header() {
                 <button
                   type="submit"
                   title="Tìm kiếm ngay (🔍)"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    const q = searchText.trim();
+                    if (!q) return;
+                    setIsSearchOpen(false);
+                    setActiveIndex(-1);
+                    navigate(`/catalog?q=${encodeURIComponent(q)}`);
+                  }}
                   className="p-1.5 rounded-lg bg-sky-500/20 hover:bg-sky-500 text-sky-400 hover:text-slate-950 border border-sky-500/30 hover:border-sky-400 active:scale-95 transition cursor-pointer flex items-center justify-center shadow-sm"
                 >
                   <Search className="w-4 h-4" />
@@ -269,7 +276,10 @@ export default function Header() {
                     </span>
                     <span className="text-[10px] text-slate-500 font-mono">↑↓ Chọn · Enter Mở</span>
                   </div>
-                  <div className="max-h-80 overflow-y-auto p-1.5 space-y-1">
+                  <div
+                    className="max-h-80 overflow-y-auto p-1.5 space-y-1"
+                    onMouseLeave={() => setActiveIndex(-1)}
+                  >
                     {searchResults.map((item, idx) => {
                       const isHighlighted = idx === activeIndex;
                       return (
@@ -465,7 +475,24 @@ export default function Header() {
                 className="flex items-center gap-2 p-1 pr-2.5 rounded-full bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-sky-500/60 transition cursor-pointer shadow-sm"
               >
                 <div className="relative">
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-sky-500 to-blue-600 flex items-center justify-center text-white font-black text-xs border border-sky-400/30">
+                  {user.avatar || user.avatar_url ? (
+                    <img
+                      src={user.avatar || user.avatar_url}
+                      alt={user.name || 'Avatar'}
+                      className="w-8 h-8 rounded-full object-cover border border-sky-400/30"
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none';
+                        if (e.currentTarget.nextElementSibling) {
+                          e.currentTarget.nextElementSibling.style.display = 'flex';
+                        }
+                      }}
+                    />
+                  ) : null}
+                  <div
+                    className={`w-8 h-8 rounded-full bg-gradient-to-tr from-sky-500 to-blue-600 items-center justify-center text-white font-black text-xs border border-sky-400/30 ${
+                      user.avatar || user.avatar_url ? 'hidden' : 'flex'
+                    }`}
+                  >
                     {(user.name || user.email || 'U')[0].toUpperCase()}
                   </div>
                   <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border-2 border-slate-900 bg-emerald-400" />
@@ -481,11 +508,28 @@ export default function Header() {
                 <div className="bg-slate-900 rounded-2xl shadow-2xl border border-slate-800 overflow-hidden">
                   {/* User Info Header */}
                   <div className="p-4 bg-slate-950/80 border-b border-slate-800 flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-sky-500 to-indigo-600 flex items-center justify-center text-white font-extrabold text-sm shrink-0 shadow-md">
+                    {user.avatar || user.avatar_url ? (
+                      <img
+                        src={user.avatar || user.avatar_url}
+                        alt={user.name || 'Avatar'}
+                        className="w-10 h-10 rounded-full object-cover border border-sky-400/30 shrink-0 shadow-md"
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                          if (e.currentTarget.nextElementSibling) {
+                            e.currentTarget.nextElementSibling.style.display = 'flex';
+                          }
+                        }}
+                      />
+                    ) : null}
+                    <div
+                      className={`w-10 h-10 rounded-full bg-gradient-to-tr from-sky-500 to-indigo-600 items-center justify-center text-white font-extrabold text-sm shrink-0 shadow-md ${
+                        user.avatar || user.avatar_url ? 'hidden' : 'flex'
+                      }`}
+                    >
                       {(user.name || user.email || 'U')[0].toUpperCase()}
                     </div>
                     <div className="min-w-0">
-                      <p className="text-xs font-bold text-white truncate">
+                      <p className="text-xs font-bold text-slate-100 truncate">
                         {user.name || 'Người dùng'}
                       </p>
                       <p className="text-[11px] text-slate-400 truncate">
@@ -522,7 +566,7 @@ export default function Header() {
 
                     <Link
                       to="/profile/orders"
-                      className="flex items-center justify-between px-3 py-2 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800 transition"
+                      className="flex items-center justify-between px-3 py-2 rounded-xl text-slate-200 hover:text-slate-100 hover:bg-slate-800 transition"
                     >
                       <span className="flex items-center gap-2.5">
                         <Package className="w-4 h-4 text-indigo-400" />
@@ -532,7 +576,7 @@ export default function Header() {
 
                     <Link
                       to="/profile/account"
-                      className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-slate-300 hover:text-white hover:bg-slate-800 transition"
+                      className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-slate-200 hover:text-slate-100 hover:bg-slate-800 transition"
                     >
                       <User className="w-4 h-4 text-sky-400" />
                       <span>Hồ sơ &amp; Bảo mật</span>

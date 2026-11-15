@@ -318,7 +318,8 @@ export default function ProductTable({
                           type="button"
                           onClick={() =>
                             onQuickAdjustStock({
-                              variant_id: prod.default_variant_id || prod.id,
+                              variant_id: prod.default_variant_id,
+                              product_id: prod.id,
                               sku_code: prod.sku_code,
                               total_stock: prod.total_stock,
                               name: prod.name

@@ -1,3 +1,4 @@
+import StaffPortalView from './StaffPortalView';
 import React, { useState, useEffect } from 'react';
 import {
   UserCog,
@@ -357,6 +358,19 @@ export default function StaffsView({ onStaffUpdated }) {
         >
           <Award className="w-4 h-4" />
           <span>Hiệu Suất & KPI</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab('workspace')}
+          className={`px-4 py-2 rounded-xl flex items-center gap-2 transition-all shrink-0 ${
+            activeTab === 'workspace'
+              ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 shadow-sm'
+              : 'text-slate-400 hover:text-white'
+          }`}
+        >
+          <Sparkles className="w-4 h-4 text-cyan-400" />
+          <span>Bàn Làm Việc Vận Hành (Staff Workspace)</span>
         </button>
       </div>
 
@@ -1049,6 +1063,13 @@ export default function StaffsView({ onStaffUpdated }) {
               ))
             )}
           </div>
+        </div>
+      )}
+
+      {/* Tab 5: Staff Workspace Console */}
+      {activeTab === 'workspace' && (
+        <div className="rounded-2xl overflow-hidden border border-slate-800">
+          <StaffPortalView embedded={true} />
         </div>
       )}
     </div>

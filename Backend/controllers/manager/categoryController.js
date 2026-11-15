@@ -14,7 +14,7 @@ class CategoryController {
     try {
       const { page, limit, search, all } = req.query;
 
-      if (all === 'true' || all === '1') {
+      if (all === 'true' || all === '1' || (!page && !limit)) {
         const categories = await CategoryService.getAllCategories();
         return res.status(200).json({
           success: true,

@@ -12,9 +12,11 @@ const StaffController = require('../../controllers/manager/staffController');
 // =========================================================================
 
 // Tasks (Assign Tasks)
+router.get('/events', StaffController.streamEvents);
 router.get('/tasks', StaffController.getTasks);
 router.post('/tasks', StaffController.assignTask);
 router.patch('/tasks/:id/status', StaffController.updateTaskStatus);
+router.patch('/tasks/:id', StaffController.updateTaskStatus);
 router.delete('/tasks/:id', StaffController.deleteTask);
 
 // Schedules (View Working Schedule)
@@ -28,6 +30,9 @@ router.get('/performance', StaffController.getPerformance);
 // =========================================================================
 // CORE STAFF CRUD & PERMISSIONS
 // =========================================================================
+
+// GET /api/staffs - Lấy danh sách nhân viên cấp dưới của Manager
+router.get('/profile', StaffController.getProfile);
 
 // GET /api/staffs - Lấy danh sách nhân viên cấp dưới của Manager
 router.get('/', StaffController.getStaffs);

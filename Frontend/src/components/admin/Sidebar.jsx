@@ -3,6 +3,8 @@ import { useAuth } from '../../context/AuthContext';
 
 const menuItems = [
   { path: '/admin',             icon: '📊', label: 'Tổng quan', end: true },
+  { path: '/admin/orders',      icon: '📦', label: 'Quản lý Đơn hàng' },
+  { path: '/admin/revenue',     icon: '📈', label: 'Doanh thu bán hàng' },
   { path: '/admin/users',       icon: '👥', label: 'Quản lý Người dùng' },
   { path: '/admin/roles',       icon: '🛡️', label: 'Quản lý Vai trò (Roles)' },
   { path: '/admin/permissions', icon: '🔑', label: 'Quản lý Quyền hạn' },

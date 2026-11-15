@@ -1,4 +1,5 @@
 const cloudinary = require('cloudinary').v2;
+const { Readable } = require('stream');
 require('dotenv').config();
 
 const isConfigured = Boolean(
@@ -17,9 +18,9 @@ if (isConfigured) {
 }
 
 /**
- * Tải file từ máy tính lên Cloudinary CDN
+ * Tải file từ máy tính lên Cloudinary CDN (Được sử dụng bởi Product Controller của Dương)
  * @param {string} filePath - Đường dẫn file cục bộ
- * @param {string} folder - Thư mục trên Cloudinary
+ * @param {string} folder - Thư mục trên Cloudinary (mặc định: 'techshop/products')
  * @returns {Promise<{ secure_url: string, public_id: string }>}
  */
 async function uploadToCloudinary(filePath, folder = 'techshop/products') {
@@ -41,8 +42,69 @@ async function uploadToCloudinary(filePath, folder = 'techshop/products') {
   };
 }
 
+/**
+ * Tải trực tiếp buffer hình ảnh lên Cloudinary
+ * @param {Buffer} buffer - Buffer dữ liệu file ảnh từ multer memoryStorage
+ * @param {string} [folder='techshop/products'] - Thư mục lưu trữ trên Cloudinary
+ * @param {object} [options={}] - Các tùy chọn bổ sung
+ * @returns {Promise<{ secure_url: string, public_id: string, format: string, bytes: number }>}
+ */
+const uploadBufferToCloud = (buffer, folder = 'techshop/products', options = {}) => {
+  return new Promise((resolve, reject) => {
+    if (!isConfigured) {
+      return reject(
+        new Error(
+          'Cloudinary chưa được cấu hình! Vui lòng thiết lập CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET trong file .env'
+        )
+      );
+    }
+
+    const uploadStream = cloudinary.uploader.upload_stream(
+      {
+        folder,
+        resource_type: 'image',
+        ...options
+      },
+      (error, result) => {
+        if (error) {
+          return reject(error);
+        }
+        resolve({
+          secure_url: result.secure_url,
+          public_id: result.public_id,
+          format: result.format,
+          bytes: result.bytes,
+          width: result.width,
+          height: result.height
+        });
+      }
+    );
+
+    const stream = Readable.from(buffer);
+    stream.pipe(uploadStream);
+  });
+};
+
+/**
+ * Xóa tài nguyên hình ảnh trên Cloudinary theo public_id
+ * @param {string} publicId - ID tài nguyên trên Cloudinary
+ * @returns {Promise<any>}
+ */
+const deleteFromCloud = async (publicId) => {
+  if (!isConfigured || !publicId) return null;
+  try {
+    return await cloudinary.uploader.destroy(publicId);
+  } catch (error) {
+    console.error(`[Cloudinary] Lỗi khi xóa ảnh ${publicId}:`, error.message);
+    return null;
+  }
+};
+
 module.exports = {
   cloudinary,
+  isConfigured,
   isCloudinaryConfigured: () => isConfigured,
-  uploadToCloudinary
+  uploadToCloudinary,
+  uploadBufferToCloud,
+  deleteFromCloud
 };

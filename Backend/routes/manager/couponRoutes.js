@@ -1,8 +1,10 @@
 const express = require('express');
 const router = express.Router();
+const path = require('path');
+const fs = require('fs');
 const CouponController = require('../../controllers/manager/couponController');
-const customerCouponController = require('../../src/controllers/coupon.controller');
-const { optionalAuth } = require('../../middleware/authMiddleware');
+const customerCouponController = require('../../controllers/customer/couponController');
+const { optionalAuth } = require('../../middlewares/authMiddleware');
 
 /**
  * Coupon Management & Customer Storefront API Routes
@@ -17,16 +19,13 @@ router.post('/validate', optionalAuth, customerCouponController.validateCoupon);
 router.get('/', CouponController.getCoupons);
 
 // GET /api/coupons/:id - Xem chi tiết mã
-router.get('/:id', CouponController.getCoupon);
+router.get('/:id', CouponController.getCouponById);
 
 // POST /api/coupons - Tạo mã giảm giá mới
 router.post('/', CouponController.createCoupon);
 
 // PUT /api/coupons/:id - Cập nhật mã giảm giá
 router.put('/:id', CouponController.updateCoupon);
-
-// PATCH /api/coupons/:id/toggle - Kích hoạt / Tạm dừng mã
-router.patch('/:id/toggle', CouponController.toggleStatus);
 
 // DELETE /api/coupons/:id - Xóa mã giảm giá
 router.delete('/:id', CouponController.deleteCoupon);

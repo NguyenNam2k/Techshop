@@ -1,6 +1,63 @@
 const { pool } = require('../../config/database');
 const BaseRepository = require('../baseRepository');
 
+const CATEGORY_SLUG_ALIASES = {
+  cpu: 'cpus',
+  cpus: 'cpus',
+  'cpu-mainboard': 'cpus',
+  vga: 'gpus',
+  gpu: 'gpus',
+  gpus: 'gpus',
+  'card-man-hinh-vga': 'gpus',
+  mainboard: 'motherboards',
+  main: 'motherboards',
+  motherboard: 'motherboards',
+  motherboards: 'motherboards',
+  ram: 'ram',
+  'ram-ssd': 'ram',
+  psu: 'power-supplies',
+  'power-supplies': 'power-supplies',
+  ssd: 'storage',
+  hdd: 'storage',
+  storage: 'storage',
+  case: 'cases',
+  cases: 'cases',
+  cooling: 'cooling',
+  'nguon-case-tan-nhiet': 'power-supplies',
+  keyboard: 'keyboards',
+  keyboards: 'keyboards',
+  'ban-phim-co': 'keyboards',
+  mouse: 'mice',
+  mice: 'mice',
+  'chuot-gaming': 'mice',
+  monitor: 'monitors',
+  monitors: 'monitors',
+  'man-hinh-may-tinh': 'monitors',
+  laptop: 'laptops',
+  laptops: 'laptops',
+  'laptop-gaming': 'laptops',
+  'laptop-gaming-ultrabook': 'laptops',
+  headset: 'headsets',
+  headsets: 'headsets',
+  'tai-nghe-audio': 'headsets',
+  chair: 'chairs',
+  chairs: 'chairs',
+  'phu-kien-gaming': 'chairs',
+  mousepad: 'mousepads',
+  mousepads: 'mousepads',
+  webcam: 'webcams',
+  webcams: 'webcams',
+  speaker: 'speakers',
+  speakers: 'speakers',
+  network: 'network'
+};
+
+const resolveCategorySlug = (raw) => {
+  if (!raw) return raw;
+  const str = String(raw).trim().toLowerCase();
+  return CATEGORY_SLUG_ALIASES[str] || str;
+};
+
 /**
  * Product Repository
  * Unified repository supporting:
@@ -120,6 +177,7 @@ class ProductRepository extends BaseRepository {
         p.id,
         p.category_id,
         c.name AS category_name,
+        c.slug AS category_slug,
         p.name,
         p.slug,
         p.brand,
@@ -235,6 +293,37 @@ class ProductRepository extends BaseRepository {
       [variantId]
     );
     return rows[0] || null;
+  }
+
+  /**
+   * Find all variants with full product & stock info for inventory control / batch adjustments
+   */
+  static async getAllVariantsForInventory(connection = null) {
+    const executor = connection || pool;
+    const [rows] = await executor.query(`
+      SELECT 
+        pv.id AS variant_id,
+        pv.product_id,
+        p.name AS product_name,
+        p.brand,
+        COALESCE(pv.image_url, p.thumbnail_url) AS thumbnail_url,
+        pv.sku,
+        pv.color,
+        pv.color_code,
+        pv.spec_version,
+        pv.price AS variant_price,
+        pv.stock,
+        pv.status AS variant_status,
+        p.status AS product_status,
+        c.id AS category_id,
+        c.name AS category_name,
+        (SELECT COALESCE(SUM(pv2.stock), 0) FROM product_variants pv2 WHERE pv2.product_id = p.id) AS total_product_stock
+      FROM product_variants pv
+      JOIN products p ON pv.product_id = p.id
+      LEFT JOIN categories c ON p.category_id = c.id
+      ORDER BY p.id DESC, pv.id ASC
+    `);
+    return rows;
   }
 
   /**
@@ -515,8 +604,9 @@ class ProductRepository extends BaseRepository {
         whereConditions.push('p.category_id = ?');
         params.push(parseInt(category, 10));
       } else {
+        const resolvedSlug = resolveCategorySlug(category);
         whereConditions.push('c.slug = ?');
-        params.push(String(category).trim());
+        params.push(resolvedSlug);
       }
     }
 
@@ -625,8 +715,9 @@ class ProductRepository extends BaseRepository {
         whereConditions.push('p.category_id = ?');
         params.push(parseInt(category, 10));
       } else {
+        const resolvedSlug = resolveCategorySlug(category);
         whereConditions.push('c.slug = ?');
-        params.push(String(category).trim());
+        params.push(resolvedSlug);
       }
     }
 
@@ -702,8 +793,9 @@ class ProductRepository extends BaseRepository {
     const brandParams = [];
 
     if (categorySlug) {
+      const resolvedSlug = resolveCategorySlug(categorySlug);
       brandQuery += ' AND p.category_id = (SELECT id FROM categories WHERE slug = ? LIMIT 1)';
-      brandParams.push(categorySlug);
+      brandParams.push(resolvedSlug);
     }
     brandQuery += ' ORDER BY p.brand ASC';
 

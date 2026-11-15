@@ -35,6 +35,8 @@ import {
 } from 'lucide-react';
 import { api } from '../../services/api';
 import { useCart } from '../../context/CartContext';
+import ProductImage from '../../components/common/ProductImage';
+import BrandLogosSection from '../../components/home/BrandLogosSection';
 
 const formatVND = (n) =>
   new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(n || 0);
@@ -252,19 +254,13 @@ function ProductCard({ product, onAddToCart, onNavigate }) {
   return (
     <div
       onClick={() => onNavigate(product)}
-      className="bg-slate-950 rounded-2xl border border-slate-800 hover:border-sky-500/60 p-4 transition-all duration-300 flex flex-col justify-between group cursor-pointer shadow-sm hover:shadow-xl relative"
+      className="bg-slate-950 rounded-2xl border border-slate-800 hover:border-sky-500/60 p-3 sm:p-4 transition-all duration-300 flex flex-col justify-between group cursor-pointer shadow-sm hover:shadow-xl hover:shadow-sky-500/10 motion-card glow-card-hover relative active:scale-[0.98]"
     >
       <div className="space-y-3">
-        <div className="relative h-44 rounded-xl bg-slate-900 border border-slate-800/80 overflow-hidden flex items-center justify-center p-3">
-          <img
-            src={
-              product.thumbnail_url ||
-              product.image_url ||
-              product.images?.[0]?.image_url ||
-              'https://images.unsplash.com/photo-1587202372775-e229f172b9d7?w=400'
-            }
-            alt={product.name}
-            className="max-h-full max-w-full object-contain group-hover:scale-105 transition-transform duration-300"
+        <div className="relative h-36 sm:h-44 rounded-xl bg-slate-900 border border-slate-800/80 overflow-hidden flex items-center justify-center p-2.5 sm:p-3">
+          <ProductImage
+            product={product}
+            className="max-h-full max-w-full object-contain group-hover:scale-110 transition-transform duration-500 ease-out"
           />
           {discountPercent > 0 && (
             <span className="absolute top-2.5 left-2.5 px-2 py-0.5 text-[10px] font-extrabold rounded-lg bg-rose-600 text-white shadow-sm">
@@ -320,7 +316,7 @@ function ProductCard({ product, onAddToCart, onNavigate }) {
           type="button"
           onClick={(e) => onAddToCart(e, product)}
           title="Thêm vào giỏ hàng"
-          className="p-2.5 bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-400 hover:to-blue-500 text-white rounded-xl shadow-md transition cursor-pointer flex items-center justify-center active:scale-95"
+          className="p-2 sm:p-2.5 bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-400 hover:to-blue-500 text-white rounded-xl shadow-md transition-all cursor-pointer flex items-center justify-center active:scale-90 hover:scale-105 hover:shadow-sky-500/25"
         >
           <ShoppingCart className="w-4 h-4" />
         </button>
@@ -412,8 +408,8 @@ export default function HomePage() {
         const list = Array.isArray(prodsRes.data)
           ? prodsRes.data
           : Array.isArray(prodsRes)
-          ? prodsRes
-          : [];
+            ? prodsRes
+            : [];
         setAllProducts(list);
       } catch (err) {
         console.error('Lỗi khi tải dữ liệu trang chủ:', err);
@@ -640,26 +636,24 @@ export default function HomePage() {
                     setHoveredCategory(null);
                     navigate(`/catalog?category=${cat.slug}`);
                   }}
-                  className={`w-full flex items-center justify-between py-2 px-2.5 rounded-xl transition cursor-pointer text-left group ${
-                    isSelected
+                  className={`w-full flex items-center justify-between py-2 px-2.5 rounded-xl transition cursor-pointer text-left group ${isSelected
                       ? 'bg-sky-500/15 text-sky-400 border border-sky-500/30 font-bold'
                       : isHovered
-                      ? 'bg-slate-800 text-sky-400 font-semibold'
-                      : 'text-slate-200 hover:text-slate-100 hover:bg-slate-800/80'
-                  }`}
+                        ? 'bg-slate-800 text-sky-400 font-semibold'
+                        : 'text-slate-200 hover:text-slate-100 hover:bg-slate-800/80'
+                    }`}
                 >
                   <div className="flex items-center gap-2.5 truncate">
-                    <Icon className={`w-4 h-4 ${cat.color} shrink-0`} />
+                    <Icon className={`w-4 h-4 ${cat.color} shrink-0 group-hover:scale-110 group-hover:rotate-3 transition-transform duration-200`} />
                     <span className="text-xs font-semibold truncate group-hover:text-sky-400 transition-colors">
                       {cat.name}
                     </span>
                   </div>
                   <ChevronRight
-                    className={`w-3.5 h-3.5 shrink-0 transition-all ${
-                      isHovered
+                    className={`w-3.5 h-3.5 shrink-0 transition-all ${isHovered
                         ? 'text-sky-400 translate-x-1'
                         : 'text-slate-500 group-hover:text-sky-400 group-hover:translate-x-0.5'
-                    }`}
+                      }`}
                   />
                 </button>
               );
@@ -809,12 +803,8 @@ export default function HomePage() {
                       }}
                       className="p-2.5 rounded-xl bg-slate-950 border border-slate-800/80 hover:border-sky-500/50 hover:bg-slate-900 transition cursor-pointer group/mini flex items-center gap-2.5"
                     >
-                      <img
-                        src={
-                          prod.thumbnail_url ||
-                          'https://images.unsplash.com/photo-1587202372775-e229f172b9d7?w=200'
-                        }
-                        alt={prod.name}
+                      <ProductImage
+                        product={prod}
                         className="w-12 h-12 object-contain rounded-lg bg-slate-900 p-1 border border-slate-800 shrink-0 group-hover/mini:scale-105 transition-transform"
                       />
                       <div className="min-w-0">
@@ -834,7 +824,7 @@ export default function HomePage() {
         )}
 
         {/* Mobile: Horizontal scrollable categories */}
-        <div className="lg:hidden flex gap-2 overflow-x-auto no-scrollbar pb-1">
+        <div className="lg:hidden flex gap-2 overflow-x-auto no-scrollbar pb-2 px-1">
           {FULL_CATEGORIES.map((cat) => {
             const Icon = cat.icon;
             const isSelected = selectedCategory?.slug === cat.slug;
@@ -846,7 +836,11 @@ export default function HomePage() {
                 onClick={() => {
                   navigate(`/catalog?category=${cat.slug}`);
                 }}
-                className="shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-xl border border-slate-800 bg-slate-900 text-slate-200 text-xs font-bold cursor-pointer shadow-sm hover:border-sky-500/50 hover:text-sky-400 transition"
+                className={`shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-xl border text-xs font-bold cursor-pointer shadow-sm active:scale-95 transition-all ${
+                  isSelected
+                    ? 'border-sky-500/60 bg-sky-500/15 text-sky-400'
+                    : 'border-slate-800 bg-slate-900/90 text-slate-200 hover:border-sky-500/40 hover:text-sky-300'
+                }`}
               >
                 <Icon className={`w-3.5 h-3.5 ${cat.color}`} />
                 <span>{cat.name.split(' - ')[0]}</span>
@@ -858,20 +852,26 @@ export default function HomePage() {
         {/* Cột Phải: Poster Siêu Sale (2nd image) + 3 Banners Tiện Ích (1st image) */}
         <div className="space-y-4 min-w-0">
           {/* Poster Siêu Sale Build PC (Ảnh 2) */}
-          <section className="relative overflow-hidden rounded-3xl bg-slate-900 border border-slate-800 shadow-xl p-6 sm:p-8 md:p-10 flex items-center min-h-[430px]">
+          <section className="relative overflow-hidden rounded-3xl bg-slate-900 border border-slate-800 shadow-xl p-6 sm:p-8 md:p-10 flex items-center min-h-[430px] group">
+            {/* Ambient Animated Cyber Glow Lights */}
+            <div className="absolute -top-24 -right-24 w-96 h-96 bg-sky-500/20 rounded-full blur-3xl pointer-events-none animate-pulse-aura" />
+            <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-indigo-500/15 rounded-full blur-3xl pointer-events-none animate-pulse-aura" style={{ animationDelay: '2.5s' }} />
             <div className="absolute -top-24 -right-24 w-96 h-96 bg-sky-500/15 rounded-full blur-3xl pointer-events-none" />
             <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
 
             <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center w-full">
               <div className="lg:col-span-7 space-y-4">
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-sky-500/15 text-sky-400 text-xs font-bold border border-sky-500/30 w-fit">
-                  <Flame className="w-3.5 h-3.5 text-rose-500 fill-rose-500 animate-pulse" />
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-sky-500/15 text-sky-400 text-xs font-bold border border-sky-500/30 w-fit glow-badge">
+                  <span className="relative flex h-2 w-2 mr-0.5">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500"></span>
+                  </span>                  
                   <span>Chương Trình Ưu Đãi Công Nghệ 2026</span>
                 </div>
 
-                <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black text-slate-100 tracking-tight leading-tight">
+                <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-extrabold text-slate-100 tracking-normal sm:tracking-tight leading-tight">
                   SIÊU SALE BUILD PC <br />
-                  <span className="text-sky-400">GIẢM ĐẾN 20%</span>
+                  <span className="bg-gradient-to-r from-sky-400 via-cyan-300 to-blue-400 bg-clip-text text-transparent animate-gradient-text inline-block">GIẢM ĐẾN 20%</span>
                 </h1>
 
                 <p className="text-slate-300 text-xs sm:text-sm leading-relaxed max-w-lg font-medium">
@@ -881,15 +881,15 @@ export default function HomePage() {
                 <div className="flex flex-wrap gap-3 pt-2">
                   <Link
                     to="/build-pc"
-                    className="px-5 py-3 bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-400 hover:to-blue-500 text-white font-extrabold text-xs uppercase tracking-wider rounded-xl shadow-lg shadow-sky-500/25 transition flex items-center gap-2 cursor-pointer active:scale-95"
+                    className="btn-shimmer animate-btn-pulse px-5 py-3 bg-gradient-to-r from-sky-500 via-sky-400 to-blue-600 hover:from-sky-400 hover:to-blue-500 text-white font-extrabold text-xs uppercase tracking-wider rounded-xl shadow-lg shadow-sky-500/25 hover:shadow-sky-400/40 hover:scale-[1.02] transition-all flex items-center gap-2 cursor-pointer active:scale-95 group/btn"
                   >
-                    <Wrench className="w-4 h-4" />
+                    <Wrench className="w-4 h-4 group-hover/btn:rotate-45 transition-transform duration-300" />
                     <span>Xây Dựng Cấu Hình PC Ngay</span>
                   </Link>
 
                   <Link
                     to="/products/14"
-                    className="px-5 py-3 bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-slate-100 font-bold text-xs uppercase tracking-wider rounded-xl transition cursor-pointer border border-slate-700 active:scale-95 flex items-center gap-1.5"
+                    className="px-5 py-3 bg-slate-800/90 hover:bg-slate-750 text-slate-200 hover:text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer border border-slate-700 hover:border-slate-600 active:scale-95 flex items-center gap-1.5 hover:shadow-md group/link"
                   >
                     <span>Xem Chi Tiết Sản Phẩm</span>
                     <ArrowRight className="w-3.5 h-3.5" />
@@ -918,7 +918,7 @@ export default function HomePage() {
                   <img
                     src="https://images.unsplash.com/photo-1587202372775-e229f172b9d7?w=800&auto=format&fit=crop&q=80"
                     alt="PC Gaming High End"
-                    className="relative z-10 max-h-[300px] w-auto object-contain filter drop-shadow-[0_15px_30px_rgba(2,132,199,0.3)] hover:scale-105 transition-transform duration-500"
+                    className="relative z-10 max-h-[310px] w-auto object-contain animate-float-pc hover:scale-105 transition-transform duration-500 cursor-pointer"
                   />
                 </div>
               </div>
@@ -930,7 +930,7 @@ export default function HomePage() {
             {/* Banner 1: Build PC Trả Góp 0% */}
             <Link
               to="/build-pc"
-              className="relative overflow-hidden rounded-2xl p-4 bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-700 text-white shadow-md hover:shadow-xl transition-all duration-300 group flex flex-col justify-between min-h-[115px] active:scale-[0.99] border border-blue-400/20"
+              className="relative overflow-hidden rounded-2xl p-4 bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 text-white shadow-md hover:shadow-xl hover:shadow-blue-600/25 transition-all duration-300 group flex flex-col justify-between min-h-[120px] active:scale-[0.99] border border-blue-400/25 hover:border-blue-400/50 glow-card-blue hover:-translate-y-1.5 btn-shimmer"
             >
               <div className="relative z-10 space-y-1">
                 <h4 className="font-extrabold text-sm sm:text-base leading-tight tracking-tight text-white drop-shadow-sm">
@@ -947,7 +947,7 @@ export default function HomePage() {
               </div>
 
               {/* Watermark Icon */}
-              <Wrench className="absolute -right-3 -bottom-3 w-20 h-20 text-white/15 pointer-events-none group-hover:scale-110 group-hover:rotate-6 transition-transform duration-300" />
+              <Wrench className="absolute -right-3 -bottom-3 w-20 h-20 text-white/15 pointer-events-none group-hover:scale-125 group-hover:rotate-12 transition-transform duration-500 ease-out" />
             </Link>
 
             {/* Banner 2: Laptop Gaming Giảm Đến 7 Triệu */}
@@ -955,7 +955,7 @@ export default function HomePage() {
               onClick={() => {
                 navigate('/catalog?category=laptops');
               }}
-              className="relative overflow-hidden rounded-2xl p-4 bg-slate-900 hover:bg-slate-850 text-white shadow-md hover:shadow-xl transition-all duration-300 group flex flex-col justify-between min-h-[115px] active:scale-[0.99] border border-slate-800 hover:border-slate-700 cursor-pointer"
+              className="relative overflow-hidden rounded-2xl p-4 bg-slate-900 hover:bg-slate-850 text-white shadow-md hover:shadow-xl hover:shadow-sky-500/10 transition-all duration-300 group flex flex-col justify-between min-h-[120px] active:scale-[0.99] border border-slate-800 hover:border-sky-500/40 glow-card-hover hover:-translate-y-1.5 cursor-pointer btn-shimmer"
             >
               <div className="relative z-10 space-y-1">
                 <h4 className="font-extrabold text-sm sm:text-base leading-tight tracking-tight text-slate-100 group-hover:text-sky-400 transition-colors">
@@ -972,7 +972,7 @@ export default function HomePage() {
               </div>
 
               {/* Watermark Icon */}
-              <Laptop className="absolute -right-3 -bottom-3 w-20 h-20 text-slate-700/25 pointer-events-none group-hover:scale-110 group-hover:-rotate-6 transition-transform duration-300" />
+              <Laptop className="absolute -right-3 -bottom-3 w-20 h-20 text-slate-700/25 pointer-events-none group-hover:scale-125 group-hover:-rotate-12 transition-transform duration-500 ease-out" />
             </div>
 
             {/* Banner 3: Gear Esports Chính Hãng */}
@@ -980,24 +980,24 @@ export default function HomePage() {
               onClick={() => {
                 navigate('/catalog?category=keyboards');
               }}
-              className="relative overflow-hidden rounded-2xl p-4 bg-gradient-to-r from-red-600 via-rose-600 to-orange-500 text-white shadow-md hover:shadow-xl transition-all duration-300 group flex flex-col justify-between min-h-[115px] active:scale-[0.99] border border-rose-400/20 cursor-pointer"
+              className="relative overflow-hidden rounded-2xl p-4 bg-gradient-to-br from-red-600 via-rose-600 to-orange-500 !text-white text-white shadow-md hover:shadow-xl hover:shadow-rose-600/25 transition-all duration-300 group flex flex-col justify-between min-h-[120px] active:scale-[0.99] border border-rose-400/30 hover:border-rose-400/60 glow-card-rose hover:-translate-y-1.5 cursor-pointer btn-shimmer"
             >
               <div className="relative z-10 space-y-1">
-                <h4 className="font-extrabold text-sm sm:text-base leading-tight tracking-tight text-white drop-shadow-sm">
+                <h4 className="font-extrabold text-sm sm:text-base leading-tight tracking-tight !text-white text-white drop-shadow-sm">
                   Gear Esports Chính Hãng
                 </h4>
-                <p className="text-[11px] text-rose-100 font-medium leading-relaxed">
+                <p className="text-[11px] !text-rose-100 text-rose-100 font-medium leading-relaxed">
                   Chuột, phím, tai nghe giá tốt tuần này
                 </p>
               </div>
 
-              <div className="relative z-10 pt-2 flex items-center gap-1.5 text-xs font-bold text-white group-hover:translate-x-1 transition-transform">
-                <span>Xem ngay</span>
-                <ArrowRight className="w-3.5 h-3.5" />
+              <div className="relative z-10 pt-2 flex items-center gap-1.5 text-xs font-bold !text-white text-white group-hover:translate-x-1 transition-transform">
+                <span className="!text-white text-white">Xem ngay</span>
+                <ArrowRight className="w-3.5 h-3.5 text-white" />
               </div>
 
               {/* Watermark Icon */}
-              <Mouse className="absolute -right-3 -bottom-3 w-20 h-20 text-white/15 pointer-events-none group-hover:scale-110 group-hover:rotate-6 transition-transform duration-300" />
+              <Mouse className="absolute -right-3 -bottom-3 w-20 h-20 text-white/15 pointer-events-none group-hover:scale-125 group-hover:rotate-12 transition-transform duration-500 ease-out" />
             </div>
           </div>
         </div>
@@ -1036,7 +1036,7 @@ export default function HomePage() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-800">
           <div className="flex items-center gap-3">
             <div className="p-2.5 bg-rose-500/10 border border-rose-500/30 text-rose-500 rounded-2xl">
-              <Flame className="w-6 h-6 fill-rose-500 animate-bounce" />
+              <Flame className="w-6 h-6 fill-rose-500 animate-flame-pulse" />
             </div>
             <div>
               <h2 className="text-xl font-black text-slate-100 uppercase tracking-tight flex items-center gap-2">
@@ -1051,8 +1051,12 @@ export default function HomePage() {
             </div>
           </div>
 
-          <div className="flex items-center gap-2 bg-slate-950 px-4 py-2 rounded-2xl text-xs font-bold font-mono border border-slate-800">
-            <Clock className="w-4 h-4 text-sky-400 animate-spin" />
+          <div className="flex items-center gap-2.5 bg-slate-950 px-4 py-2 rounded-2xl text-xs font-bold font-mono border border-slate-800 shadow-inner">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500"></span>
+            </span>
+            <Clock className="w-4 h-4 text-sky-400 animate-pulse" />
             <span className="text-slate-400">Kết thúc sau:</span>
             <span className="text-sky-400 text-sm tracking-wider font-extrabold">
               {formatCountdown(timeLeft)}
@@ -1061,13 +1065,13 @@ export default function HomePage() {
         </div>
 
         {loading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-5">
             {[1, 2, 3, 4].map((i) => (
               <div key={i} className="h-80 rounded-2xl bg-slate-950 animate-pulse border border-slate-800" />
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-5">
             {flashSaleProducts.map((prod) => (
               <ProductCard
                 key={prod.id}
@@ -1106,11 +1110,10 @@ export default function HomePage() {
                 key={tab.id}
                 type="button"
                 onClick={() => setActivePcTab(tab.id)}
-                className={`px-3 py-1.5 text-xs font-bold rounded-xl transition cursor-pointer border ${
-                  activePcTab === tab.id
+                className={`px-3 py-1.5 text-xs font-bold rounded-xl transition cursor-pointer border ${activePcTab === tab.id
                     ? 'bg-sky-500/20 text-sky-400 border-sky-500/40'
                     : 'bg-slate-950 text-slate-400 border-slate-800 hover:text-slate-200'
-                }`}
+                  }`}
               >
                 {tab.label}
               </button>
@@ -1126,7 +1129,7 @@ export default function HomePage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
           {pcBuilds.map((build) => (
             <div
               key={build.id}
@@ -1211,11 +1214,10 @@ export default function HomePage() {
                 key={b.id}
                 type="button"
                 onClick={() => setSelectedLaptopBrand(b.id)}
-                className={`px-3 py-1.5 text-xs font-bold rounded-xl transition cursor-pointer border ${
-                  selectedLaptopBrand === b.id
+                className={`px-3 py-1.5 text-xs font-bold rounded-xl transition cursor-pointer border ${selectedLaptopBrand === b.id
                     ? 'bg-purple-500/20 text-purple-400 border-purple-500/40'
                     : 'bg-slate-950 text-slate-400 border-slate-800 hover:text-slate-200'
-                }`}
+                  }`}
               >
                 {b.label}
               </button>
@@ -1231,7 +1233,7 @@ export default function HomePage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-5">
           {laptopProducts.map((prod) => (
             <ProductCard
               key={prod.id}
@@ -1274,11 +1276,10 @@ export default function HomePage() {
                 key={tab.id}
                 type="button"
                 onClick={() => setActivePartTab(tab.id)}
-                className={`px-3 py-1.5 text-xs font-bold rounded-xl transition cursor-pointer border ${
-                  activePartTab === tab.id
+                className={`px-3 py-1.5 text-xs font-bold rounded-xl transition cursor-pointer border ${activePartTab === tab.id
                     ? 'bg-sky-500/20 text-sky-400 border-sky-500/40'
                     : 'bg-slate-950 text-slate-400 border-slate-800 hover:text-slate-200'
-                }`}
+                  }`}
               >
                 {tab.label}
               </button>
@@ -1286,7 +1287,7 @@ export default function HomePage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-5">
           {partProducts.map((prod) => (
             <ProductCard
               key={prod.id}
@@ -1325,7 +1326,7 @@ export default function HomePage() {
           </Link>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-5">
           {monitorProducts.map((prod) => (
             <ProductCard
               key={prod.id}
@@ -1367,11 +1368,10 @@ export default function HomePage() {
                 key={tab.id}
                 type="button"
                 onClick={() => setActiveGearTab(tab.id)}
-                className={`px-3 py-1.5 text-xs font-bold rounded-xl transition cursor-pointer border ${
-                  activeGearTab === tab.id
+                className={`px-3 py-1.5 text-xs font-bold rounded-xl transition cursor-pointer border ${activeGearTab === tab.id
                     ? 'bg-indigo-500/20 text-indigo-400 border-indigo-500/40'
                     : 'bg-slate-950 text-slate-400 border-slate-800 hover:text-slate-200'
-                }`}
+                  }`}
               >
                 {tab.label}
               </button>
@@ -1379,7 +1379,7 @@ export default function HomePage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-5">
           {gearProducts.map((prod) => (
             <ProductCard
               key={prod.id}
@@ -1392,62 +1392,33 @@ export default function HomePage() {
       </section>
 
       {/* ========================================================================= */}
-      {/* 8. HỆ SINH THÁI THƯƠNG HIỆU ĐỐI TÁC CHÍNH HÃNG                            */}
+      {/* 8. HỆ SINH THÁI THƯƠNG HIỆU ĐỐI TÁC CHÍNH HÃNG (SVG VECTOR LOGOS)           */}
       {/* ========================================================================= */}
-      <section className="p-6 rounded-3xl bg-slate-900 border border-slate-800 shadow-sm space-y-5">
-        <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-          <div className="flex items-center gap-2">
-            <Sparkles className="w-5 h-5 text-amber-400" />
-            <h3 className="text-base font-extrabold uppercase tracking-wider text-slate-100">
-              Hệ Sinh Thái Thương Hiệu Hàng Đầu
-            </h3>
-          </div>
-          <span className="text-xs text-slate-400 font-medium hidden sm:inline">
-            100% Phân phối ủy quyền chính hãng tại Việt Nam
-          </span>
-        </div>
-
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
-          {FEATURED_BRANDS.map((brand, idx) => (
-            <div
-              key={idx}
-              onClick={() => {
-                navigate(`/catalog?brands=${encodeURIComponent(brand.tag)}`);
-              }}
-              className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800 hover:border-sky-500/60 hover:bg-slate-900/60 transition cursor-pointer text-center group"
-            >
-              <h4 className="font-extrabold text-sm text-slate-200 group-hover:text-sky-400 transition">
-                {brand.name}
-              </h4>
-              <p className="text-[11px] text-slate-500 mt-0.5 truncate">{brand.desc}</p>
-            </div>
-          ))}
-        </div>
-      </section>
+      <BrandLogosSection />
 
       {/* ========================================================================= */}
       {/* 9. BANNER CALL TO ACTION: XÂY DỰNG CẤU HÌNH PC CHUYÊN NGHIỆP               */}
       {/* ========================================================================= */}
-      <section className="p-8 rounded-3xl bg-gradient-to-r from-sky-600 via-blue-600 to-indigo-700 text-white shadow-xl flex flex-col md:flex-row items-center justify-between gap-6 border border-sky-500/20">
+      <section className="dark-locked p-8 rounded-3xl bg-gradient-to-r from-sky-600 via-blue-600 to-indigo-700 text-white shadow-xl flex flex-col md:flex-row items-center justify-between gap-6 border border-sky-400/30">
         <div className="space-y-2 text-center md:text-left">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/15 text-white text-xs font-bold backdrop-blur-md border border-white/20">
-            <Wrench className="w-3.5 h-3.5 text-sky-300" />
-            <span>Công Cụ Tương Thích 100%</span>
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/20 text-white text-xs font-bold backdrop-blur-md border border-white/25">
+            <Wrench className="w-3.5 h-3.5 text-sky-200" />
+            <span className="text-white font-bold">Công Cụ Tương Thích 100%</span>
           </div>
-          <h2 className="text-2xl sm:text-3xl font-black">
+          <h2 className="text-2xl sm:text-3xl font-black text-white drop-shadow-sm">
             Tự Tay Xây Dựng Cấu Hình PC Trong Mơ
           </h2>
-          <p className="text-xs sm:text-sm text-sky-100 max-w-xl font-medium">
+          <p className="text-xs sm:text-sm text-sky-100 max-w-xl font-medium leading-relaxed">
             Tự do chọn linh kiện, tự động kiểm tra tương thích phần cứng qua Socket, dự toán chi phí chính xác và nhận quà tặng gaming trị giá 1.500.000₫!
           </p>
         </div>
 
         <Link
           to="/build-pc"
-          className="px-6 py-3.5 rounded-2xl bg-white hover:bg-sky-50 text-sky-900 font-black text-xs uppercase tracking-wider shadow-2xl transition active:scale-95 shrink-0 flex items-center gap-2"
+          className="px-6 py-3.5 rounded-2xl bg-white hover:bg-sky-50 text-sky-950 font-black text-xs uppercase tracking-wider shadow-2xl transition active:scale-95 shrink-0 flex items-center gap-2 group/btn"
         >
-          <Wrench className="w-4 h-4 text-sky-600" />
-          <span>Bắt Đầu Xây Dựng PC →</span>
+          <Wrench className="w-4 h-4 text-sky-600 group-hover/btn:rotate-45 transition-transform" />
+          <span className="text-sky-950 font-extrabold">Bắt Đầu Xây Dựng PC →</span>
         </Link>
       </section>
     </div>

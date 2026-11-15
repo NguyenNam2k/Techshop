@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Link, useSearchParams, useNavigate, useParams } from 'react-router-dom';
 import {
   Package,
@@ -42,10 +42,13 @@ import {
   CreditCard,
   Share2,
   ShoppingCart,
+  Mail,
+  Camera,
   Search,
   XCircle,
   RotateCcw,
-  Tag
+  Tag,
+  X
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useCart } from '../../context/CartContext';
@@ -71,7 +74,8 @@ const ORDER_PHASES = [
   { title: 'Đã xác nhận', desc: 'Đơn hàng & thanh toán đã được xác nhận' },
   { title: 'Đang chuẩn bị hàng', desc: 'Kiểm tra, đóng gói và dán tem bảo hành' },
   { title: 'Đã bàn giao vận chuyển', desc: 'Kiện hàng đã được giao cho đơn vị vận chuyển' },
-  { title: 'Giao hàng thành công', desc: 'Khách hàng đã nhận hàng' }
+  { title: 'Giao hàng thành công', desc: 'Khách hàng đã nhận hàng' },
+  { title: 'Khách hàng xác nhận', desc: 'Đã nhận hàng hoặc yêu cầu trả hàng' }
 ];
 
 const PHASE_BADGES = {
@@ -79,92 +83,9 @@ const PHASE_BADGES = {
   1: 'bg-sky-500/15 border-sky-500/30 text-sky-400',
   2: 'bg-indigo-500/15 border-indigo-500/30 text-indigo-400',
   3: 'bg-blue-500/15 border-blue-500/30 text-blue-400',
-  4: 'bg-emerald-500/15 border-emerald-500/30 text-emerald-400'
+  4: 'bg-emerald-500/15 border-emerald-500/30 text-emerald-400',
+  5: 'bg-violet-500/15 border-violet-500/30 text-violet-400'
 };
-
-const SEED_ORDERS = [
-  {
-    orderId: 'ORD-8917',
-    date: '28/09/2026 09:42',
-    phase: 3,
-    statusLabel: 'Đã bàn giao vận chuyển',
-    carrier: 'GIAO HÀNG NHANH (GHN)',
-    trackingCode: 'GHN582019374',
-    paymentMethod: 'VietQR Banking Auto',
-    total: 12470000,
-    recipientName: 'Đặng Minh Thuận',
-    recipientPhone: '0908 123 456',
-    shippingAddress: 'Số 12, Ngõ 45 Cầu Giấy, Hà Nội',
-    items: [
-      {
-        id: 15,
-        name: 'Chuột Gaming Không Dây Logitech G Pro X Superlight 2 DEX White',
-        variant: 'Trắng Tuyết (White)',
-        quantity: 1,
-        price: 3490000,
-        image:
-          'https://images.unsplash.com/photo-1615663245857-ac93bb7c39e7?w=300&auto=format&fit=crop&q=80'
-      },
-      {
-        id: 14,
-        name: 'Bàn Phím Cơ Custom Keychron Q1 Pro QMK/VIA Full Nhôm CNC',
-        variant: 'Bạc Trắng (Silver)',
-        quantity: 2,
-        price: 4490000,
-        image:
-          'https://images.unsplash.com/photo-1587829741301-dc798b83add3?w=300&auto=format&fit=crop&q=80'
-      }
-    ]
-  },
-  {
-    orderId: 'ORD-8871',
-    date: '21/09/2026 20:15',
-    phase: 1,
-    statusLabel: 'Đã xác nhận',
-    carrier: 'Hỏa Tốc 2H Nội Thành',
-    trackingCode: 'HT2H-8871-TECH',
-    paymentMethod: 'COD (Thanh toán khi nhận)',
-    total: 14990000,
-    recipientName: 'Đặng Minh Thuận',
-    recipientPhone: '0908 123 456',
-    shippingAddress: 'Số 12, Ngõ 45 Cầu Giấy, Hà Nội',
-    items: [
-      {
-        id: 17,
-        name: 'Màn Hình Gaming ASUS ROG Swift OLED 240Hz 0.03ms',
-        variant: '27 Inch 2K OLED',
-        quantity: 1,
-        price: 14990000,
-        image:
-          'https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?w=300&auto=format&fit=crop&q=80'
-      }
-    ]
-  },
-  {
-    orderId: 'ORD-8702',
-    date: '02/09/2026 11:03',
-    phase: 4,
-    statusLabel: 'Giao hàng thành công',
-    carrier: 'Giao Hàng Tiết Kiệm (GHTK)',
-    trackingCode: 'S21.HN.A7.418290',
-    paymentMethod: 'VietQR Banking Auto',
-    total: 36680000,
-    recipientName: 'Đặng Minh Thuận',
-    recipientPhone: '0908 123 456',
-    shippingAddress: 'Số 12, Ngõ 45 Cầu Giấy, Hà Nội',
-    items: [
-      {
-        id: 1,
-        name: 'VGA ASUS ROG Strix GeForce RTX 4090 OC 24GB GDDR6X',
-        variant: 'Bản Ép Xung OC',
-        quantity: 1,
-        price: 36680000,
-        image:
-          'https://images.unsplash.com/photo-1587202372775-e229f172b9d7?w=300&auto=format&fit=crop&q=80'
-      }
-    ]
-  }
-];
 
 const SEED_WISHLIST = [
   {
@@ -287,12 +208,11 @@ const SEED_PC_BUILDS = [
 function loadSavedOrders() {
   try {
     const raw = localStorage.getItem('techshop_orders');
-    if (!raw) return SEED_ORDERS;
+    if (!raw) return [];
     const parsed = JSON.parse(raw);
-    if (!Array.isArray(parsed) || parsed.length === 0) return SEED_ORDERS;
-    return [...parsed, ...SEED_ORDERS];
+    return Array.isArray(parsed) ? parsed : [];
   } catch {
-    return SEED_ORDERS;
+    return [];
   }
 }
 
@@ -331,7 +251,7 @@ function Head({ title, desc, action }) {
   return (
     <div className="flex flex-wrap items-end justify-between gap-3 mb-6">
       <div>
-        <h2 className="text-xl sm:text-2xl font-extrabold text-white tracking-tight">{title}</h2>
+        <h2 className="text-xl sm:text-2xl font-extrabold text-slate-100 tracking-tight">{title}</h2>
         {desc && <p className="text-xs text-slate-400 mt-1">{desc}</p>}
       </div>
       {action}
@@ -349,9 +269,8 @@ function Pill({ tone = 'slate', children }) {
   };
   return (
     <span
-      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-bold whitespace-nowrap border ${
-        tones[tone] || tones.slate
-      }`}
+      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-bold whitespace-nowrap border ${tones[tone] || tones.slate
+        }`}
     >
       {children}
     </span>
@@ -478,7 +397,7 @@ function VouchersPanel({ onUseCoupon }) {
                         : `Giảm ${formatVND(c.discount_value)}`}
                     </span>
                   </div>
-                  <div className="text-xs text-white font-medium line-clamp-1">{c.description}</div>
+                  <div className="text-xs text-slate-100 font-medium line-clamp-1">{c.description}</div>
                   <div className="text-[11px] text-slate-400">
                     Đơn tối thiểu: {formatVND(c.min_order_value || 0)}
                   </div>
@@ -786,11 +705,10 @@ function PaymentMethodsPanel() {
         {methods.map((m) => (
           <div
             key={m.id}
-            className={`rounded-2xl border p-5 flex flex-col justify-between h-48 transition shadow-xl ${
-              m.isDefault
-                ? 'bg-gradient-to-br from-slate-900 to-sky-950/60 border-sky-500 ring-1 ring-sky-500/30'
-                : 'bg-slate-900 border-slate-800 hover:border-slate-700'
-            }`}
+            className={`rounded-2xl border p-5 flex flex-col justify-between h-48 transition shadow-xl ${m.isDefault
+              ? 'bg-gradient-to-br from-slate-900 to-sky-950/60 border-sky-500 ring-1 ring-sky-500/30'
+              : 'bg-slate-900 border-slate-800 hover:border-slate-700'
+              }`}
           >
             <div className="space-y-2">
               <div className="flex items-center justify-between">
@@ -872,11 +790,10 @@ function PaymentMethodsPanel() {
                     key={t.id}
                     type="button"
                     onClick={() => setNewMethod((p) => ({ ...p, type: t.id }))}
-                    className={`flex-1 py-2 rounded-xl text-xs font-semibold border transition cursor-pointer ${
-                      newMethod.type === t.id
-                        ? 'bg-sky-600/20 border-sky-500 text-sky-400'
-                        : 'bg-slate-950 border-slate-800 text-slate-400'
-                    }`}
+                    className={`flex-1 py-2 rounded-xl text-xs font-semibold border transition cursor-pointer ${newMethod.type === t.id
+                      ? 'bg-sky-600/20 border-sky-500 text-sky-400'
+                      : 'bg-slate-950 border-slate-800 text-slate-400'
+                      }`}
                   >
                     {t.label}
                   </button>
@@ -1081,11 +998,10 @@ function RewardsPanel() {
                   type="button"
                   disabled={!canAfford}
                   onClick={() => handleRedeem(r.cost, r.title)}
-                  className={`px-3.5 py-2 rounded-xl text-xs font-bold transition shrink-0 cursor-pointer ${
-                    canAfford
-                      ? 'bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-md shadow-amber-500/20'
-                      : 'bg-slate-800 text-slate-500 cursor-not-allowed opacity-60'
-                  }`}
+                  className={`px-3.5 py-2 rounded-xl text-xs font-bold transition shrink-0 cursor-pointer ${canAfford
+                    ? 'bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-md shadow-amber-500/20'
+                    : 'bg-slate-800 text-slate-500 cursor-not-allowed opacity-60'
+                    }`}
                 >
                   Đổi ngay
                 </button>
@@ -1356,18 +1272,20 @@ function PCBuildsPanel({ onAddToCart }) {
 
 function ProfilePanel({ user, setUser }) {
   const [profile, setProfile] = useState({
-    name: user?.name || 'Đặng Minh Thuận',
-    email: user?.email || 'thuan.dang@techshop.vn',
-    phone: '0908 123 456',
-    address: 'Số 12, Ngõ 45 Cầu Giấy, Hà Nội',
-    avatar_url: user?.avatar || DEFAULT_AVATAR,
-    birth_date: '1998-05-15',
+    id: user?.id || null,
+    name: user?.name || '',
+    email: user?.email || '',
+    phone: user?.phone || '',
+    address: user?.address || '',
+    avatar_url: user?.avatar || user?.avatar_url || DEFAULT_AVATAR,
+    birth_date: '',
     gender: 'male',
-    bio: 'Tech enthusiast & mechanical keyboard customizer.',
-    role: 'Thành viên VIP Diamond',
-    points: 2450,
-    totalSpent: 54140000,
-    orderCount: 18,
+    bio: '',
+    role: 'customer',
+    memberTier: 'Khách hàng thành viên',
+    points: 0,
+    totalSpent: 0,
+    orderCount: 0,
     two_factor_enabled: false,
     notification_preferences: {
       orderUpdates: true,
@@ -1375,64 +1293,51 @@ function ProfilePanel({ user, setUser }) {
       warrantyAlerts: true,
       smsAlerts: false
     },
-    savedAddresses: [
-      {
-        id: 'addr-1',
-        title: 'Nhà riêng',
-        recipientName: 'Đặng Minh Thuận',
-        phone: '0908 123 456',
-        address: 'Số 12, Ngõ 45 Cầu Giấy, Phường Quan Hoa, Quận Cầu Giấy, Hà Nội',
-        isDefault: true
-      },
-      {
-        id: 'addr-2',
-        title: 'Văn phòng',
-        recipientName: 'Đặng Minh Thuận',
-        phone: '0908 123 456',
-        address: 'Tầng 8, Tòa nhà FPT Cầu Giấy, Phố Duy Tân, Quận Cầu Giấy, Hà Nội',
-        isDefault: false
-      }
-    ],
-    connectedAccounts: {
-      google: { connected: true, email: 'thuan.dang@techshop.vn' },
-      github: { connected: true, username: 'thuan-tech' },
-      discord: { connected: true, username: 'bleen_gear#8821' },
-      steam: { connected: false, username: null }
-    },
-    activeSessions: [
-      {
-        id: 'sess-1',
-        device: 'Windows 11 (Chrome 129)',
-        location: 'Hà Nội, Việt Nam',
-        ip: '113.190.24.81',
-        current: true,
-        lastActive: 'Đang hoạt động'
-      },
-      {
-        id: 'sess-2',
-        device: 'iPhone 15 Pro Max (TechShop App)',
-        location: 'Hà Nội, Việt Nam',
-        ip: '14.162.180.12',
-        current: false,
-        lastActive: '2 giờ trước'
-      },
-      {
-        id: 'sess-3',
-        device: 'MacBook Pro M3 (Safari)',
-        location: 'Đà Nẵng, Việt Nam',
-        ip: '118.69.135.90',
-        current: false,
-        lastActive: '3 ngày trước'
-      }
-    ]
+    hasPassword: true,
+    isGoogleAccount: false,
+    savedAddresses: []
   });
 
+  const [isEditing, setIsEditing] = useState(false);
   const [activeSubTab, setActiveSubTab] = useState('general');
   const [profileLoading, setProfileLoading] = useState(false);
   const [flashMsg, setFlashMsg] = useState('');
   const [showAddAddressModal, setShowAddAddressModal] = useState(false);
-  const [showTwoFactorModal, setShowTwoFactorModal] = useState(false);
-  const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
+  const [editingAddressId, setEditingAddressId] = useState(null);
+  const fileInputRef = useRef(null);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+
+  const handleAvatarFileChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      flash('Vui lòng chỉ chọn tệp hình ảnh!');
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      flash('Kích thước ảnh tối đa là 5MB!');
+      return;
+    }
+
+    try {
+      setUploadingAvatar(true);
+      const res = await api.uploadAvatar(file);
+      if (res.success && res.avatar_url) {
+        setProfile((prev) => ({ ...prev, avatar_url: res.avatar_url }));
+        if (typeof setUser === 'function') {
+          setUser((prev) => (prev ? { ...prev, avatar: res.avatar_url, avatar_url: res.avatar_url } : prev));
+        }
+        flash('Cập nhật ảnh đại diện thành công!');
+      }
+    } catch (err) {
+      flash(err.message || 'Lỗi tải ảnh đại diện lên máy chủ!');
+    } finally {
+      setUploadingAvatar(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
 
   const [newAddr, setNewAddr] = useState({
     title: 'Nhà riêng',
@@ -1451,29 +1356,44 @@ function ProfilePanel({ user, setUser }) {
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [passwordError, setPasswordError] = useState('');
+  const [passwordSuccess, setPasswordSuccess] = useState('');
 
   const flash = (m) => {
     setFlashMsg(m);
-    setTimeout(() => setFlashMsg(''), 2500);
+    setTimeout(() => setFlashMsg(''), 5000);
   };
 
   useEffect(() => {
     let active = true;
     async function loadData() {
       try {
-        const data = await api.getProfile();
+        const data = await api.getProfile(user?.id);
         if (active && data) {
           setProfile((prev) => ({
             ...prev,
             ...data,
-            name: data.name || prev.name,
-            email: data.email || prev.email,
+            name: data.name !== undefined ? data.name : (prev.name || user?.name || ''),
+            email: data.email !== undefined ? data.email : (prev.email || user?.email || ''),
+            phone: data.phone !== undefined ? data.phone : prev.phone,
+            address: data.address !== undefined ? data.address : prev.address,
             avatar_url: data.avatar_url || prev.avatar_url,
-            savedAddresses: data.savedAddresses || prev.savedAddresses,
-            connectedAccounts: data.connectedAccounts || prev.connectedAccounts,
-            activeSessions: data.activeSessions || prev.activeSessions
+            birth_date: data.birth_date || '',
+            gender: data.gender || prev.gender || 'male',
+            bio: data.bio || '',
+            role: 'customer',
+            memberTier: data.memberTier || prev.memberTier || 'Khách hàng thành viên',
+            points: data.points != null ? Number(data.points) : prev.points,
+            totalSpent: data.totalSpent != null ? Number(data.totalSpent) : prev.totalSpent,
+            orderCount: data.orderCount != null ? Number(data.orderCount) : prev.orderCount,
+            hasPassword: data.hasPassword !== undefined ? Boolean(data.hasPassword) : prev.hasPassword,
+            isGoogleAccount: Boolean(data.isGoogleAccount),
+            savedAddresses: data.savedAddresses || []
           }));
           setTwoFactorEnabled(Boolean(data.two_factor_enabled));
+          if (typeof setUser === 'function' && (data.avatar_url || data.avatar)) {
+            const av = data.avatar_url || data.avatar;
+            setUser((prev) => (prev ? { ...prev, avatar: av, avatar_url: av } : prev));
+          }
         }
       } catch (e) {
         console.warn('Could not load profile from BE:', e);
@@ -1483,29 +1403,34 @@ function ProfilePanel({ user, setUser }) {
     return () => {
       active = false;
     };
-  }, []);
+  }, [user?.id, user?.name, user?.email, setUser]);
 
   const handleSaveProfile = async (e) => {
     e.preventDefault();
     try {
       setProfileLoading(true);
-      await api.updateProfile(profile);
+      await api.updateProfile({
+        ...profile,
+        id: user?.id || profile.id,
+        gender: profile.gender || 'male',
+        bio: profile.bio || ''
+      });
       if (setUser) {
-        setUser((prev) => {
-          const updated = {
-            ...(prev || {}),
-            name: profile.name,
-            email: profile.email,
-            avatar: profile.avatar_url,
-            role: profile.role
-          };
-          localStorage.setItem('techgear_user', JSON.stringify(updated));
-          return updated;
-        });
+        setUser((prev) => ({
+          ...(prev || {}),
+          name: profile.name,
+          email: profile.email,
+          phone: profile.phone,
+          address: profile.address,
+          avatar: profile.avatar_url,
+          avatar_url: profile.avatar_url,
+          role: 'customer'
+        }));
       }
-      flash('Đã lưu hồ sơ thành công');
+      setIsEditing(false);
+      flash('Đã lưu hồ sơ thành công!');
     } catch (err) {
-      alert(err.message || 'Lỗi lưu thông tin');
+      flash(err.message || 'Lỗi lưu thông tin');
     } finally {
       setProfileLoading(false);
     }
@@ -1514,6 +1439,11 @@ function ProfilePanel({ user, setUser }) {
   const handleSavePassword = async (e) => {
     e.preventDefault();
     setPasswordError('');
+    setPasswordSuccess('');
+    if (profile.hasPassword && !passwords.currentPassword) {
+      setPasswordError('Vui lòng nhập mật khẩu hiện tại.');
+      return;
+    }
     if (passwords.newPassword.length < 8) {
       setPasswordError('Mật khẩu mới phải có tối thiểu 8 ký tự.');
       return;
@@ -1524,26 +1454,21 @@ function ProfilePanel({ user, setUser }) {
     }
 
     try {
-      await api.changePassword({
-        currentPassword: passwords.currentPassword,
-        newPassword: passwords.newPassword
+      const wasFirstTime = !profile.hasPassword;
+      const res = await api.changePassword({
+        currentPassword: profile.hasPassword ? passwords.currentPassword : '',
+        newPassword: passwords.newPassword,
+        id: user?.id || profile.id
       });
       setPasswords({ currentPassword: '', newPassword: '', confirmPassword: '' });
-      flash('Đã đổi mật khẩu thành công');
+      setProfile((prev) => ({ ...prev, hasPassword: true }));
+      const successMsg = res?.message || (wasFirstTime
+        ? 'Thiết lập mật khẩu mới thành công! Giờ đây bạn có thể dùng Email + Mật khẩu mới hoặc Google để đăng nhập.'
+        : 'Đã đổi mật khẩu thành công! Mật khẩu mới đã được cập nhật.');
+      setPasswordSuccess(successMsg);
+      flash(successMsg);
     } catch (err) {
       setPasswordError(err.message || 'Không thể đổi mật khẩu.');
-    }
-  };
-
-  const handleToggleTwoFactor = async () => {
-    const nextState = !twoFactorEnabled;
-    setTwoFactorEnabled(nextState);
-    try {
-      await api.updateProfile({ two_factor_enabled: nextState });
-      flash(nextState ? 'Đã bật xác thực 2 bước (2FA)' : 'Đã tắt xác thực 2 bước');
-    } catch {
-      setTwoFactorEnabled(!nextState);
-      alert('Không thể cập nhật trạng thái 2FA.');
     }
   };
 
@@ -1554,46 +1479,100 @@ function ProfilePanel({ user, setUser }) {
     };
     setProfile((prev) => ({ ...prev, notification_preferences: nextPrefs }));
     try {
-      await api.updateProfile({ notification_preferences: nextPrefs });
+      await api.updateProfile({ id: user?.id || profile.id, notification_preferences: nextPrefs });
       flash('Đã cập nhật cài đặt thông báo');
     } catch {
       // ignore
     }
   };
 
-  const handleAddAddress = async (e) => {
+  const handleOpenAddAddress = () => {
+    setEditingAddressId(null);
+    setNewAddr({
+      title: 'Nhà riêng',
+      recipientName: profile.name || user?.name || '',
+      phone: profile.phone || '',
+      address: '',
+      isDefault: profile.savedAddresses.length === 0
+    });
+    setShowAddAddressModal(true);
+  };
+
+  const handleOpenEditAddress = (addr) => {
+    setEditingAddressId(addr.id);
+    setNewAddr({
+      title: addr.title,
+      recipientName: addr.recipientName,
+      phone: addr.phone,
+      address: addr.address,
+      isDefault: Boolean(addr.isDefault)
+    });
+    setShowAddAddressModal(true);
+  };
+
+  const handleSaveAddressModal = async (e) => {
     e.preventDefault();
     if (!newAddr.recipientName || !newAddr.phone || !newAddr.address) return;
-    const item = {
-      id: `addr-${Date.now()}`,
-      title: newAddr.title,
-      recipientName: newAddr.recipientName,
-      phone: newAddr.phone,
-      address: newAddr.address,
-      isDefault: newAddr.isDefault || profile.savedAddresses.length === 0
-    };
-    let updated = [...profile.savedAddresses];
-    if (item.isDefault) {
-      updated = updated.map((a) => ({ ...a, isDefault: false }));
+
+    let updated = [];
+    if (editingAddressId) {
+      updated = profile.savedAddresses.map((a) => {
+        if (a.id === editingAddressId) {
+          return {
+            ...a,
+            title: newAddr.title,
+            recipientName: newAddr.recipientName,
+            phone: newAddr.phone,
+            address: newAddr.address,
+            isDefault: newAddr.isDefault
+          };
+        }
+        return newAddr.isDefault ? { ...a, isDefault: false } : a;
+      });
+    } else {
+      const item = {
+        id: `addr-${Date.now()}`,
+        title: newAddr.title,
+        recipientName: newAddr.recipientName,
+        phone: newAddr.phone,
+        address: newAddr.address,
+        isDefault: newAddr.isDefault || profile.savedAddresses.length === 0
+      };
+      updated = [...profile.savedAddresses];
+      if (item.isDefault) {
+        updated = updated.map((a) => ({ ...a, isDefault: false }));
+      }
+      updated.push(item);
     }
-    updated.push(item);
-    setProfile((p) => ({ ...p, savedAddresses: updated }));
+
+    const defaultAddr = updated.find((a) => a.isDefault) || updated[0];
+    const newAddressStr = defaultAddr ? defaultAddr.address : profile.address;
+
+    setProfile((p) => ({
+      ...p,
+      savedAddresses: updated,
+      address: newAddressStr
+    }));
     setShowAddAddressModal(false);
+    setEditingAddressId(null);
     setNewAddr({ title: 'Nhà riêng', recipientName: '', phone: '', address: '', isDefault: false });
+
     try {
       await api.updateAddresses(updated);
-      flash('Đã lưu địa chỉ mới vào database!');
+      flash(editingAddressId ? 'Đã cập nhật địa chỉ giao hàng!' : 'Đã thêm địa chỉ giao hàng mới!');
     } catch {
-      flash('Đã thêm địa chỉ giao hàng');
+      flash('Đã lưu địa chỉ giao hàng');
     }
   };
 
   const handleDeleteAddress = async (id) => {
     const updated = profile.savedAddresses.filter((a) => a.id !== id);
-    setProfile((p) => ({ ...p, savedAddresses: updated }));
+    const defaultAddr = updated.find((a) => a.isDefault) || updated[0];
+    const newAddressStr = defaultAddr ? defaultAddr.address : '';
+    setProfile((p) => ({ ...p, savedAddresses: updated, address: newAddressStr }));
     try {
       await api.updateAddresses(updated);
-      flash('Đã xóa địa chỉ khỏi database!');
+      flash('Đã xóa địa chỉ thành công!');
     } catch {
       flash('Đã xóa địa chỉ');
     }
@@ -1601,10 +1580,12 @@ function ProfilePanel({ user, setUser }) {
 
   const handleSetDefaultAddress = async (id) => {
     const updated = profile.savedAddresses.map((a) => ({ ...a, isDefault: a.id === id }));
-    setProfile((p) => ({ ...p, savedAddresses: updated }));
+    const defaultAddr = updated.find((a) => a.id === id);
+    const newAddressStr = defaultAddr ? defaultAddr.address : profile.address;
+    setProfile((p) => ({ ...p, savedAddresses: updated, address: newAddressStr }));
     try {
       await api.updateAddresses(updated);
-      flash('Đã lưu địa chỉ mặc định vào database!');
+      flash('Đã đặt làm địa chỉ mặc định!');
     } catch {
       flash('Đã đặt làm địa chỉ mặc định');
     }
@@ -1618,33 +1599,53 @@ function ProfilePanel({ user, setUser }) {
       <div className="rounded-2xl border border-slate-800 bg-gradient-to-r from-slate-900 via-slate-900/90 to-sky-950/40 p-6 shadow-2xl relative overflow-hidden">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-5 relative z-10">
           <div className="flex items-center gap-4">
-            <div className="relative shrink-0">
+            <div className="relative shrink-0 group">
               <img
                 src={profile.avatar_url || DEFAULT_AVATAR}
                 alt={profile.name}
-                className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl object-cover border-2 border-sky-500/40 shadow-lg"
+                className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl object-cover border-2 border-sky-500/40 shadow-lg transition-transform group-hover:scale-102"
               />
-              <span className="absolute bottom-0 right-0 w-4 h-4 rounded-full bg-emerald-500 border-2 border-slate-900" />
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploadingAvatar}
+                className="absolute inset-0 bg-slate-950/65 rounded-2xl flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200 cursor-pointer text-white backdrop-blur-[2px]"
+                title="Thay đổi ảnh đại diện"
+              >
+                {uploadingAvatar ? (
+                  <Loader2 className="w-5 h-5 animate-spin text-sky-400" />
+                ) : (
+                  <>
+                    <Camera className="w-5 h-5 text-sky-300 drop-shadow" />
+                    <span className="text-[10px] font-semibold mt-1 text-sky-100">Đổi ảnh</span>
+                  </>
+                )}
+              </button>
+
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleAvatarFileChange}
+              />
+              <span className="absolute bottom-0 right-0 w-4 h-4 rounded-full bg-emerald-500 border-2 border-slate-900 shadow-sm" />
             </div>
 
             <div className="space-y-1">
               <div className="flex items-center gap-2.5 flex-wrap">
-                <h1 className="text-xl sm:text-2xl font-black text-white">{profile.name}</h1>
-                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-gradient-to-r from-sky-500/20 to-blue-500/20 border border-sky-500/40 text-sky-400 flex items-center gap-1">
-                  <Sparkles className="w-3 h-3" />
-                  {profile.role || 'Thành viên VIP Diamond'}
-                </span>
+                <h1 className="text-xl sm:text-2xl font-black text-white">{profile.name || user?.name || 'Khách hàng'}</h1>
               </div>
 
               <div className="flex items-center gap-3 text-xs text-slate-400 flex-wrap">
-                <span className="flex items-center gap-1 text-slate-300">
-                  <CheckCheck className="w-3.5 h-3.5 text-emerald-400" />
-                  {profile.email}
+                <span className="flex items-center gap-1.5 text-slate-300">
+                  <Mail className="w-3.5 h-3.5 text-slate-400" />
+                  {profile.email || user?.email || 'Chưa cập nhật email'}
                 </span>
                 <span>·</span>
-                <span className="font-mono text-slate-400">Mã KH: #KH-00109</span>
+                <span className="font-mono text-slate-400">Mã KH: #KH-{profile.id || user?.id || '---'}</span>
                 <span>·</span>
-                <span>Tham gia từ 09/2026</span>
+                <span>{profile.created_at ? `Tham gia từ ${new Date(profile.created_at).toLocaleDateString('vi-VN')}` : 'Tài khoản hoạt động'}</span>
               </div>
             </div>
           </div>
@@ -1654,42 +1655,26 @@ function ProfilePanel({ user, setUser }) {
           </div>
         </div>
 
-        {/* 4 Loyalty & Account Stat Badges */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-5 border-t border-slate-800/80">
-          <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800/80">
-            <div className="text-[11px] font-semibold text-slate-400 flex items-center gap-1.5">
-              <Award className="w-3.5 h-3.5 text-sky-400" /> Hạng thành viên
-            </div>
-            <div className="text-sm sm:text-base font-extrabold text-white mt-1">VIP Diamond</div>
-            <div className="text-[10px] text-emerald-400 font-semibold mt-0.5">Giảm thêm 5% đơn hàng</div>
-          </div>
-
-          <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800/80">
-            <div className="text-[11px] font-semibold text-slate-400 flex items-center gap-1.5">
-              <Star className="w-3.5 h-3.5 text-amber-400" /> Điểm thưởng TechShop
-            </div>
-            <div className="text-sm sm:text-base font-extrabold font-mono text-amber-400 mt-1">
-              {profile.points.toLocaleString('vi-VN')} Xu
-            </div>
-            <div className="text-[10px] text-slate-400 mt-0.5">Tương đương 245.000đ</div>
-          </div>
-
+        {/* Real Stats from Backend (Orders & Customers table) */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-6 pt-5 border-t border-slate-800/80">
           <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800/80">
             <div className="text-[11px] font-semibold text-slate-400 flex items-center gap-1.5">
               <Package className="w-3.5 h-3.5 text-indigo-400" /> Đơn hàng đã đặt
             </div>
             <div className="text-sm sm:text-base font-extrabold font-mono text-white mt-1">
-              {profile.orderCount} đơn hàng
+              {profile.orderCount || 0} đơn hàng
             </div>
-            <div className="text-[10px] text-sky-400 font-semibold mt-0.5">100% hoàn tất</div>
+            <div className="text-[10px] text-sky-400 font-semibold mt-0.5">Dữ liệu từ lịch sử mua sắm</div>
           </div>
 
           <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800/80">
             <div className="text-[11px] font-semibold text-slate-400 flex items-center gap-1.5">
-              <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" /> Bảo hành thiết bị
+              <Award className="w-3.5 h-3.5 text-emerald-400" /> Tổng chi tiêu tích lũy
             </div>
-            <div className="text-sm sm:text-base font-extrabold text-white mt-1">3 linh kiện</div>
-            <div className="text-[10px] text-emerald-400 font-semibold mt-0.5">Đang kích hoạt NSX</div>
+            <div className="text-sm sm:text-base font-extrabold font-mono text-emerald-400 mt-1">
+              {Number(profile.totalSpent || 0).toLocaleString('vi-VN')} ₫
+            </div>
+            <div className="text-[10px] text-emerald-400/80 font-semibold mt-0.5">Tổng giá trị đơn hoàn tất</div>
           </div>
         </div>
       </div>
@@ -1698,9 +1683,8 @@ function ProfilePanel({ user, setUser }) {
       <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar border-b border-slate-800">
         {[
           { id: 'general', label: 'Hồ sơ & Sổ địa chỉ', icon: User },
-          { id: 'security', label: 'Mật khẩu & Bảo mật 2FA', icon: KeyRound },
-          { id: 'sessions', label: 'Thiết bị & Đăng nhập', icon: Laptop },
-          { id: 'preferences', label: 'Liên kết & Thông báo', icon: Bell }
+          { id: 'security', label: 'Mật khẩu & Bảo mật', icon: KeyRound },
+          { id: 'notifications', label: 'Cài đặt thông báo', icon: Bell }
         ].map((tab) => {
           const Icon = tab.icon;
           const isActive = activeSubTab === tab.id;
@@ -1709,11 +1693,10 @@ function ProfilePanel({ user, setUser }) {
               key={tab.id}
               type="button"
               onClick={() => setActiveSubTab(tab.id)}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition whitespace-nowrap cursor-pointer ${
-                isActive
-                  ? 'bg-sky-600 text-white shadow-md shadow-sky-600/20'
-                  : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
-              }`}
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition whitespace-nowrap cursor-pointer ${isActive
+                ? 'bg-sky-600 text-white shadow-md shadow-sky-600/20'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+                }`}
             >
               <Icon className="w-3.5 h-3.5 shrink-0" />
               <span>{tab.label}</span>
@@ -1722,200 +1705,318 @@ function ProfilePanel({ user, setUser }) {
         })}
       </div>
 
+      {/* Thông báo thao tác chung (Lưu hồ sơ, đổi mật khẩu, v.v.) */}
+      {flashMsg && (
+        <div className="p-4 rounded-2xl bg-emerald-500/15 border border-emerald-500/40 text-emerald-300 text-xs font-semibold flex items-center justify-between gap-3 shadow-lg shadow-emerald-500/5">
+          <div className="flex items-center gap-2.5">
+            <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
+            <span>{flashMsg}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setFlashMsg('')}
+            className="text-emerald-400 hover:text-white text-xs font-bold px-2 py-1 rounded-lg hover:bg-emerald-500/20 transition cursor-pointer"
+          >
+            ✕ Đóng
+          </button>
+        </div>
+      )}
+
       {/* Sub-tab 1: General Profile & Address Book */}
       {activeSubTab === 'general' && (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-          {/* Left Form: Personal Information */}
-          <form
-            onSubmit={handleSaveProfile}
-            className="lg:col-span-7 rounded-2xl border border-slate-800 bg-slate-900 p-6 space-y-4 shadow-xl"
-          >
-            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-200 flex items-center gap-2">
-                <User className="w-4 h-4 text-sky-400" />
-                <span>Thông tin cá nhân</span>
-              </h3>
-              <span className="text-[11px] text-slate-400">ID tài khoản: #{profile.id || 1}</span>
-            </div>
-
-            <div className="grid sm:grid-cols-2 gap-4">
-              <div className="space-y-1">
-                <label className="text-[11px] font-semibold text-slate-400">Họ và tên</label>
-                <input
-                  type="text"
-                  required
-                  value={profile.name}
-                  onChange={(e) => setProfile((p) => ({ ...p, name: e.target.value }))}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-sky-500"
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-[11px] font-semibold text-slate-400">Email</label>
-                <div className="relative">
-                  <input
-                    type="email"
-                    required
-                    value={profile.email}
-                    onChange={(e) => setProfile((p) => ({ ...p, email: e.target.value }))}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-sky-500 pr-20"
-                  />
-                  <span className="absolute right-2 top-2 px-1.5 py-0.5 rounded text-[9px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/40">
-                    Đã xác thực
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <div className="grid sm:grid-cols-2 gap-4">
-              <div className="space-y-1">
-                <label className="text-[11px] font-semibold text-slate-400">Số điện thoại</label>
-                <div className="relative">
-                  <input
-                    type="tel"
-                    required
-                    value={profile.phone}
-                    onChange={(e) => setProfile((p) => ({ ...p, phone: e.target.value }))}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-sky-500 pr-18"
-                  />
-                  <span className="absolute right-2 top-2 px-1.5 py-0.5 rounded text-[9px] font-bold bg-sky-500/20 text-sky-400 border border-sky-500/40">
-                    Đã liên kết
-                  </span>
-                </div>
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-[11px] font-semibold text-slate-400">Ngày sinh</label>
-                <input
-                  type="date"
-                  value={profile.birth_date || '1998-05-15'}
-                  onChange={(e) => setProfile((p) => ({ ...p, birth_date: e.target.value }))}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-sky-500"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-1">
-              <label className="text-[11px] font-semibold text-slate-400">Giới tính</label>
-              <div className="flex gap-3">
-                {[
-                  { id: 'male', label: 'Nam' },
-                  { id: 'female', label: 'Nữ' },
-                  { id: 'other', label: 'Khác' }
-                ].map((g) => (
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+            {/* Left: Personal Information Card */}
+            <div className="lg:col-span-7 rounded-2xl border border-slate-800 bg-slate-900 p-6 space-y-5 shadow-xl">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-200 flex items-center gap-2">
+                  <User className="w-4 h-4 text-sky-400" />
+                  <span>{isEditing ? 'Chỉnh sửa thông tin cá nhân' : 'Thông tin cá nhân'}</span>
+                </h3>
+                {!isEditing ? (
                   <button
-                    key={g.id}
                     type="button"
-                    onClick={() => setProfile((p) => ({ ...p, gender: g.id }))}
-                    className={`flex-1 py-2 rounded-xl text-xs font-semibold border transition cursor-pointer ${
-                      profile.gender === g.id
-                        ? 'bg-sky-600/20 border-sky-500 text-sky-400 shadow-sm'
-                        : 'bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-700'
-                    }`}
+                    onClick={() => setIsEditing(true)}
+                    className="px-3.5 py-1.5 rounded-xl bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-md shadow-sky-600/20"
                   >
-                    {g.label}
+                    <Edit3 className="w-3.5 h-3.5" />
+                    <span>Update</span>
                   </button>
-                ))}
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setIsEditing(false)}
+                    className="text-xs text-slate-400 hover:text-white transition font-medium cursor-pointer"
+                  >
+                    Hủy
+                  </button>
+                )}
               </div>
-            </div>
 
-            <div className="space-y-1">
-              <label className="text-[11px] font-semibold text-slate-400">Địa chỉ mặc định</label>
-              <input
-                type="text"
-                required
-                value={profile.address}
-                onChange={(e) => setProfile((p) => ({ ...p, address: e.target.value }))}
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-sky-500"
-              />
-            </div>
+              {!isEditing ? (
+                /* CHẾ ĐỘ VIEW (CHỈ HIỂN THỊ THÔNG TIN ĐÃ LƯU) */
+                <div className="space-y-4 text-xs">
+                  <div className="grid sm:grid-cols-2 gap-4">
+                    <div className="p-3.5 rounded-xl bg-slate-950/60 border border-slate-800/80 space-y-1">
+                      <span className="text-[11px] font-semibold text-slate-400 block">Họ và tên</span>
+                      <span className="text-white font-bold text-sm block">
+                        {profile.name || '(Chưa cập nhật)'}
+                      </span>
+                    </div>
 
-            <div className="space-y-1">
-              <label className="text-[11px] font-semibold text-slate-400">Tiểu sử / Ghi chú</label>
-              <textarea
-                rows={2}
-                value={profile.bio || ''}
-                onChange={(e) => setProfile((p) => ({ ...p, bio: e.target.value }))}
-                placeholder="Tech enthusiast & mechanical keyboard customizer..."
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-sky-500 resize-none"
-              />
-            </div>
-
-            <button
-              type="submit"
-              disabled={profileLoading}
-              className="w-full py-2.5 px-4 rounded-xl bg-sky-600 hover:bg-sky-500 disabled:opacity-50 text-white font-bold text-xs transition shadow-md shadow-sky-600/20 cursor-pointer flex items-center justify-center gap-1.5"
-            >
-              {profileLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-              <span>Lưu thay đổi hồ sơ</span>
-            </button>
-          </form>
-
-          {/* Right Card: Saved Address Book */}
-          <div className="lg:col-span-5 rounded-2xl border border-slate-800 bg-slate-900 p-6 space-y-4 shadow-xl">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-200 flex items-center gap-2">
-                <MapPin className="w-4 h-4 text-emerald-400" />
-                <span>Sổ địa chỉ nhận hàng</span>
-              </h3>
-              <button
-                type="button"
-                onClick={() => setShowAddAddressModal(true)}
-                className="flex items-center gap-1 text-xs font-bold text-sky-400 hover:text-sky-300 transition cursor-pointer"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                <span>Thêm mới</span>
-              </button>
-            </div>
-
-            <div className="space-y-3">
-              {profile.savedAddresses.map((addr) => (
-                <div
-                  key={addr.id}
-                  className={`p-3.5 rounded-xl border transition ${
-                    addr.isDefault
-                      ? 'bg-slate-950/80 border-sky-500/50 shadow-sm shadow-sky-500/10'
-                      : 'bg-slate-950/50 border-slate-800 hover:border-slate-700'
-                  }`}
-                >
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-bold text-white">{addr.title}</span>
-                      {addr.isDefault && (
-                        <span className="px-1.5 py-0.5 rounded text-[9px] font-extrabold uppercase bg-sky-500/20 text-sky-400 border border-sky-500/40">
-                          Mặc định
+                    <div className="p-3.5 rounded-xl bg-slate-950/60 border border-slate-800/80 space-y-1">
+                      <span className="text-[11px] font-semibold text-slate-400 block">Email</span>
+                      <span className="text-white font-bold text-sm block truncate">
+                        {profile.email || '(Chưa cập nhật)'}
+                      </span>
+                      {profile.isGoogleAccount && (
+                        <span className="inline-block mt-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-sky-500/20 text-sky-400">
+                          Đăng nhập bằng Google
                         </span>
                       )}
                     </div>
-                    <div className="flex items-center gap-1.5">
-                      {!addr.isDefault && (
-                        <button
-                          type="button"
-                          onClick={() => handleSetDefaultAddress(addr.id)}
-                          className="text-[10px] text-slate-400 hover:text-sky-400 transition cursor-pointer"
-                        >
-                          Đặt mặc định
-                        </button>
-                      )}
-                      {profile.savedAddresses.length > 1 && (
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteAddress(addr.id)}
-                          className="p-1 text-slate-500 hover:text-rose-400 transition cursor-pointer"
-                          title="Xóa địa chỉ"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
+                  </div>
+
+                  <div className="grid sm:grid-cols-2 gap-4">
+                    <div className="p-3.5 rounded-xl bg-slate-950/60 border border-slate-800/80 space-y-1">
+                      <span className="text-[11px] font-semibold text-slate-400 block">Số điện thoại</span>
+                      <span className="text-white font-mono font-bold text-sm block">
+                        {profile.phone || '(Chưa cập nhật)'}
+                      </span>
+                    </div>
+
+                    <div className="p-3.5 rounded-xl bg-slate-950/60 border border-slate-800/80 space-y-1">
+                      <span className="text-[11px] font-semibold text-slate-400 block">Ngày sinh</span>
+                      <span className="text-white font-bold text-sm block">
+                        {profile.birth_date
+                          ? new Date(profile.birth_date).toLocaleDateString('vi-VN')
+                          : '(Chưa cập nhật)'}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="p-3.5 rounded-xl bg-slate-950/60 border border-slate-800/80 space-y-1">
+                    <span className="text-[11px] font-semibold text-slate-400 block">Giới tính</span>
+                    <span className="text-white font-bold text-sm block">
+                      {profile.gender === 'female' ? 'Nữ' : profile.gender === 'other' ? 'Khác' : 'Nam'}
+                    </span>
+                  </div>
+
+                  <div className="p-3.5 rounded-xl bg-slate-950/60 border border-slate-800/80 space-y-1">
+                    <span className="text-[11px] font-semibold text-slate-400 block">Tiểu sử / Ghi chú</span>
+                    <span className="text-slate-300 text-xs block italic leading-relaxed">
+                      {profile.bio || '(Chưa có thông tin tiểu sử)'}
+                    </span>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setIsEditing(true)}
+                    className="w-full py-2.5 px-4 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs transition shadow-md shadow-sky-600/20 cursor-pointer flex items-center justify-center gap-2 mt-2"
+                  >
+                    <Edit3 className="w-4 h-4" />
+                    <span>Chỉnh sửa thông tin (Update)</span>
+                  </button>
+                </div>
+              ) : (
+                /* CHẾ ĐỘ FORM CHỈNH SỬA KHI ẤN UPDATE */
+                <form onSubmit={handleSaveProfile} className="space-y-4">
+                  <div className="grid sm:grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <label className="text-[11px] font-semibold text-slate-400">Họ và tên</label>
+                      <input
+                        type="text"
+                        required
+                        value={profile.name}
+                        onChange={(e) => setProfile((p) => ({ ...p, name: e.target.value }))}
+                        className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-sky-500"
+                        placeholder="Nhập họ và tên..."
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-[11px] font-semibold text-slate-400">Email</label>
+                      <input
+                        type="email"
+                        required
+                        value={profile.email}
+                        onChange={(e) => setProfile((p) => ({ ...p, email: e.target.value }))}
+                        className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-sky-500"
+                        placeholder="email@example.com"
+                      />
+                      {profile.isGoogleAccount && (
+                        <p className="text-[10px] text-sky-400">Tài khoản Google: email được đồng bộ tự động</p>
                       )}
                     </div>
                   </div>
 
-                  <div className="text-xs text-slate-300 mt-1 font-medium">
-                    {addr.recipientName} · <span className="font-mono text-slate-400">{addr.phone}</span>
+                  <div className="grid sm:grid-cols-2 gap-4">
+                    <div className="space-y-1">
+                      <label className="text-[11px] font-semibold text-slate-400">Số điện thoại</label>
+                      <input
+                        type="tel"
+                        value={profile.phone}
+                        onChange={(e) => setProfile((p) => ({ ...p, phone: e.target.value }))}
+                        className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-sky-500"
+                        placeholder="Nhập số điện thoại..."
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-[11px] font-semibold text-slate-400">Ngày sinh</label>
+                      <input
+                        type="date"
+                        value={profile.birth_date || ''}
+                        onChange={(e) => setProfile((p) => ({ ...p, birth_date: e.target.value }))}
+                        className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-sky-500"
+                      />
+                    </div>
                   </div>
-                  <div className="text-[11px] text-slate-400 mt-0.5 leading-relaxed">{addr.address}</div>
-                </div>
-              ))}
+
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-semibold text-slate-400">Giới tính</label>
+                    <div className="flex gap-3">
+                      {[
+                        { id: 'male', label: 'Nam' },
+                        { id: 'female', label: 'Nữ' },
+                        { id: 'other', label: 'Khác' }
+                      ].map((g) => (
+                        <button
+                          key={g.id}
+                          type="button"
+                          onClick={() => setProfile((p) => ({ ...p, gender: g.id }))}
+                          className={`flex-1 py-2 rounded-xl text-xs font-semibold border transition cursor-pointer ${profile.gender === g.id
+                            ? 'bg-sky-600/20 border-sky-500 text-sky-400 shadow-sm'
+                            : 'bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-700'
+                            }`}
+                        >
+                          {g.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-semibold text-slate-400">Tiểu sử / Ghi chú</label>
+                    <textarea
+                      rows={2}
+                      value={profile.bio || ''}
+                      onChange={(e) => setProfile((p) => ({ ...p, bio: e.target.value }))}
+                      placeholder="Mô tả ngắn về bạn..."
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-sky-500 resize-none"
+                    />
+                  </div>
+
+                  <div className="flex items-center gap-3 pt-2">
+                    <button
+                      type="button"
+                      onClick={() => setIsEditing(false)}
+                      className="flex-1 py-2.5 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs transition cursor-pointer"
+                    >
+                      Hủy
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={profileLoading}
+                      className="flex-1 py-2.5 px-4 rounded-xl bg-sky-600 hover:bg-sky-500 disabled:opacity-50 text-white font-bold text-xs transition shadow-md shadow-sky-600/20 cursor-pointer flex items-center justify-center gap-1.5"
+                    >
+                      {profileLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                      <span>Lưu thay đổi</span>
+                    </button>
+                  </div>
+                </form>
+              )}
+            </div>
+
+            {/* Right Card: Saved Address Book */}
+            <div className="lg:col-span-5 rounded-2xl border border-slate-800 bg-slate-900 p-6 space-y-4 shadow-xl">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-200 flex items-center gap-2">
+                  <MapPin className="w-4 h-4 text-emerald-400" />
+                  <span>Sổ địa chỉ nhận hàng</span>
+                </h3>
+                <button
+                  type="button"
+                  onClick={handleOpenAddAddress}
+                  className="flex items-center gap-1 text-xs font-bold text-sky-400 hover:text-sky-300 transition cursor-pointer"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Thêm mới</span>
+                </button>
+              </div>
+
+              <div className="space-y-3">
+                {profile.savedAddresses && profile.savedAddresses.length > 0 ? (
+                  profile.savedAddresses.map((addr) => (
+                    <div
+                      key={addr.id}
+                      className={`p-3.5 rounded-xl border transition ${addr.isDefault
+                        ? 'bg-slate-950/80 border-sky-500/50 shadow-sm shadow-sky-500/10'
+                        : 'bg-slate-950/50 border-slate-800 hover:border-slate-700'
+                        }`}
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-bold text-white">{addr.title}</span>
+                          {addr.isDefault && (
+                            <span className="px-1.5 py-0.5 rounded text-[9px] font-extrabold uppercase bg-sky-500/20 text-sky-400 border border-sky-500/40">
+                              Mặc định
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => handleOpenEditAddress(addr)}
+                            className="text-[10px] text-sky-400 hover:text-sky-300 font-medium transition cursor-pointer flex items-center gap-1"
+                            title="Sửa địa chỉ này"
+                          >
+                            <Edit3 className="w-3 h-3" />
+                            <span>Sửa</span>
+                          </button>
+                          {!addr.isDefault && (
+                            <button
+                              type="button"
+                              onClick={() => handleSetDefaultAddress(addr.id)}
+                              className="text-[10px] text-slate-400 hover:text-sky-400 transition cursor-pointer"
+                            >
+                              Đặt mặc định
+                            </button>
+                          )}
+                          {profile.savedAddresses.length > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteAddress(addr.id)}
+                              className="p-1 text-slate-500 hover:text-rose-400 transition cursor-pointer"
+                              title="Xóa địa chỉ"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="text-xs text-slate-300 mt-1.5 font-medium">
+                        {addr.recipientName} · <span className="font-mono text-slate-400">{addr.phone}</span>
+                      </div>
+                      <div className="text-[11px] text-slate-400 mt-1 leading-relaxed">{addr.address}</div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="p-6 text-center rounded-xl bg-slate-950/40 border border-dashed border-slate-800 text-slate-400 space-y-2">
+                    <MapPin className="w-8 h-8 text-slate-600 mx-auto" />
+                    <p className="text-xs font-medium">Bạn chưa lưu địa chỉ giao hàng nào.</p>
+                    <button
+                      type="button"
+                      onClick={handleOpenAddAddress}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-sky-600/20 hover:bg-sky-600/30 text-sky-400 text-xs font-semibold border border-sky-500/30 transition cursor-pointer"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>Thêm địa chỉ ngay</span>
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -1932,33 +2033,49 @@ function ProfilePanel({ user, setUser }) {
             <div className="pb-3 border-b border-slate-800">
               <h3 className="text-xs font-bold uppercase tracking-wider text-slate-200 flex items-center gap-2">
                 <KeyRound className="w-4 h-4 text-sky-400" />
-                <span>Đổi mật khẩu tài khoản</span>
+                <span>{profile.hasPassword ? 'Đổi mật khẩu tài khoản' : 'Thiết lập mật khẩu tài khoản'}</span>
               </h3>
               <p className="text-[11px] text-slate-400 mt-0.5">
-                Nên đổi mật khẩu định kỳ 90 ngày để đảm bảo an toàn tuyệt đối.
+                {profile.hasPassword
+                  ? 'Nên đổi mật khẩu định kỳ 90 ngày để đảm bảo an toàn tuyệt đối.'
+                  : 'Tài khoản đăng nhập Google chưa có mật khẩu TechShop. Bạn có thể tạo mật khẩu để đăng nhập bằng Email.'}
               </p>
             </div>
 
-            <div className="space-y-1">
-              <label className="text-[11px] font-semibold text-slate-400">Mật khẩu hiện tại</label>
-              <div className="relative">
-                <input
-                  type={showCurrentPassword ? 'text' : 'password'}
-                  placeholder="Nhập mật khẩu hiện tại"
-                  required
-                  value={passwords.currentPassword}
-                  onChange={(e) => setPasswords((p) => ({ ...p, currentPassword: e.target.value }))}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-sky-500 pr-10"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-                  className="absolute right-3 top-2.5 text-slate-500 hover:text-slate-300 cursor-pointer"
-                >
-                  {showCurrentPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
+            {!profile.hasPassword && (
+              <div className="p-3.5 rounded-xl bg-sky-950/40 border border-sky-500/30 flex items-start gap-3 text-xs text-sky-200">
+                <Sparkles className="w-4 h-4 text-sky-400 shrink-0 mt-0.5" />
+                <div>
+                  <div className="font-bold text-white">Tài khoản liên kết Google</div>
+                  <div className="text-[11px] text-sky-300/80 mt-0.5 leading-relaxed">
+                    Bạn hiện đang đăng nhập qua Google. Bạn có thể đặt mật khẩu bên dưới để có thêm lựa chọn đăng nhập bằng Email + Mật khẩu.
+                  </div>
+                </div>
               </div>
-            </div>
+            )}
+
+            {profile.hasPassword && (
+              <div className="space-y-1">
+                <label className="text-[11px] font-semibold text-slate-400">Mật khẩu hiện tại</label>
+                <div className="relative">
+                  <input
+                    type={showCurrentPassword ? 'text' : 'password'}
+                    placeholder="Nhập mật khẩu hiện tại"
+                    required={profile.hasPassword}
+                    value={passwords.currentPassword}
+                    onChange={(e) => setPasswords((p) => ({ ...p, currentPassword: e.target.value }))}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-sky-500 pr-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                    className="absolute right-3 top-2.5 text-slate-500 hover:text-slate-300 cursor-pointer"
+                  >
+                    {showCurrentPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+            )}
 
             <div className="space-y-1">
               <label className="text-[11px] font-semibold text-slate-400">Mật khẩu mới</label>
@@ -1992,9 +2109,8 @@ function ProfilePanel({ user, setUser }) {
                     {[1, 2, 3, 4].map((step) => (
                       <div
                         key={step}
-                        className={`rounded-full transition-all ${
-                          step <= pwdStrength.score ? pwdStrength.color : 'bg-slate-800'
-                        }`}
+                        className={`rounded-full transition-all ${step <= pwdStrength.score ? pwdStrength.color : 'bg-slate-800'
+                          }`}
                       />
                     ))}
                   </div>
@@ -2024,327 +2140,120 @@ function ProfilePanel({ user, setUser }) {
             </div>
 
             {passwordError && (
-              <p className="text-[11px] font-semibold text-rose-400 flex items-center gap-1.5">
-                <AlertCircle className="w-4 h-4" />
+              <div className="p-3 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-300 text-xs font-semibold flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
                 <span>{passwordError}</span>
-              </p>
+              </div>
+            )}
+
+            {passwordSuccess && (
+              <div className="p-3.5 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-xs font-semibold flex items-center gap-2.5">
+                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                <span>{passwordSuccess}</span>
+              </div>
             )}
 
             <button
               type="submit"
               className="w-full py-2.5 px-4 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs transition shadow-md shadow-sky-600/20 cursor-pointer"
             >
-              Cập nhật mật khẩu mới
+              {profile.hasPassword ? 'Cập nhật mật khẩu mới' : 'Thiết lập mật khẩu'}
             </button>
           </form>
 
-          {/* Card 2: 2FA & Account Protection */}
-          <div className="lg:col-span-5 space-y-4">
-            <div className="rounded-2xl border border-slate-800 bg-slate-900 p-6 space-y-4 shadow-xl">
-              <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-200 flex items-center gap-2">
-                  <ShieldCheck className="w-4 h-4 text-emerald-400" />
-                  <span>Xác thực 2 bước (2FA)</span>
-                </h3>
-                <span
-                  className={`px-2 py-0.5 rounded text-[10px] font-bold border ${
-                    twoFactorEnabled
-                      ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-400'
-                      : 'bg-slate-800 border-slate-700 text-slate-400'
-                  }`}
-                >
-                  {twoFactorEnabled ? 'Đang bật' : 'Chưa kích hoạt'}
-                </span>
-              </div>
-
-              <p className="text-xs text-slate-400 leading-relaxed">
-                Bảo vệ tài khoản bằng ứng dụng Google Authenticator hoặc tin nhắn xác thực OTP mỗi khi đăng nhập trên thiết bị mới.
-              </p>
-
-              <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between gap-3">
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-lg bg-sky-500/10 border border-sky-500/30 flex items-center justify-center text-sky-400">
-                    <QrCode className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <div className="text-xs font-bold text-white">Google Authenticator</div>
-                    <div className="text-[10px] text-slate-400">Tạo mã 6 số an toàn</div>
-                  </div>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={handleToggleTwoFactor}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${
-                    twoFactorEnabled
-                      ? 'bg-rose-500/20 text-rose-300 hover:bg-rose-500/30 border border-rose-500/40'
-                      : 'bg-sky-600 text-white hover:bg-sky-500 shadow-md shadow-sky-600/20'
-                  }`}
-                >
-                  {twoFactorEnabled ? 'Tắt 2FA' : 'Bật ngay'}
-                </button>
-              </div>
-
-              {twoFactorEnabled && (
-                <button
-                  type="button"
-                  onClick={() => setShowTwoFactorModal(true)}
-                  className="w-full py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold border border-slate-700 transition cursor-pointer flex items-center justify-center gap-1.5"
-                >
-                  <QrCode className="w-3.5 h-3.5 text-sky-400" />
-                  <span>Xem mã QR &amp; Mã khôi phục</span>
-                </button>
-              )}
+          {/* Quick Security Tips */}
+          <div className="lg:col-span-5 rounded-2xl border border-slate-800 bg-slate-900/80 p-6 space-y-3 text-xs text-slate-400 shadow-xl">
+            <div className="font-bold text-white flex items-center gap-2 pb-3 border-b border-slate-800">
+              <ShieldAlert className="w-4 h-4 text-amber-400" />
+              <span>Mẹo bảo mật tài khoản TechShop</span>
             </div>
-
-            {/* Quick Security Tips */}
-            <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-4 space-y-2 text-xs text-slate-400">
-              <div className="font-bold text-white flex items-center gap-1.5">
-                <ShieldAlert className="w-3.5 h-3.5 text-amber-400" />
-                <span>Mẹo bảo mật tài khoản Gear</span>
-              </div>
-              <ul className="list-disc pl-4 space-y-1 text-[11px] leading-relaxed text-slate-400">
-                <li>Không chia sẻ mật khẩu hoặc mã OTP VietQR cho bất kỳ ai.</li>
-                <li>Đăng xuất khỏi máy tính công cộng sau khi thanh toán.</li>
-              </ul>
-            </div>
+            <ul className="list-disc pl-4 space-y-2 text-xs leading-relaxed text-slate-400">
+              <li>Sử dụng mật khẩu có độ dài tối thiểu 8 ký tự, kết hợp chữ hoa, chữ thường và chữ số.</li>
+              <li>Không chia sẻ mật khẩu hoặc thông tin đăng nhập cho bất kỳ ai.</li>
+              <li>Đổi mật khẩu định kỳ 3-6 tháng để bảo vệ tài khoản tốt nhất.</li>
+            </ul>
           </div>
         </div>
       )}
 
-      {/* Sub-tab 3: Active Sessions & Login Audit */}
-      {activeSubTab === 'sessions' && (
-        <div className="rounded-2xl border border-slate-800 bg-slate-900 p-6 space-y-5 shadow-xl">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-slate-800 gap-3">
-            <div>
-              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-200 flex items-center gap-2">
-                <Laptop className="w-4 h-4 text-sky-400" />
-                <span>Thiết bị &amp; Phiên đăng nhập đang hoạt động</span>
-              </h3>
-              <p className="text-[11px] text-slate-400 mt-0.5">
-                Kiểm tra danh sách các thiết bị đã đăng nhập vào tài khoản của bạn.
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={() => flash('Đã đăng xuất khỏi tất cả các thiết bị khác')}
-              className="px-3.5 py-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 text-xs font-bold transition cursor-pointer flex items-center gap-1.5 self-start sm:self-auto"
-            >
-              <LogOut className="w-3.5 h-3.5" />
-              <span>Đăng xuất thiết bị khác</span>
-            </button>
+      {/* Sub-tab 3: Notification Preferences (Lưu trực tiếp vào DB notification_preferences) */}
+      {activeSubTab === 'notifications' && (
+        <div className="rounded-2xl border border-slate-800 bg-slate-900 p-6 space-y-4 shadow-xl max-w-3xl">
+          <div className="pb-3 border-b border-slate-800">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-200 flex items-center gap-2">
+              <Bell className="w-4 h-4 text-sky-400" />
+              <span>Cài đặt thông báo &amp; Quyền riêng tư</span>
+            </h3>
+            <p className="text-[11px] text-slate-400 mt-0.5">
+              Tùy chỉnh các kênh bạn muốn nhận cập nhật từ Techshop. Dữ liệu được lưu trữ tự động vào tài khoản của bạn.
+            </p>
           </div>
 
-          <div className="divide-y divide-slate-800">
-            {profile.activeSessions.map((s) => (
-              <div key={s.id} className="py-4 flex items-center justify-between gap-4 first:pt-0 last:pb-0">
-                <div className="flex items-center gap-3.5 min-w-0">
-                  <div
-                    className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
-                      s.current
-                        ? 'bg-sky-500/20 border border-sky-500/40 text-sky-400'
-                        : 'bg-slate-800 border border-slate-700 text-slate-400'
-                    }`}
-                  >
-                    {s.device.includes('iPhone') || s.device.includes('Mobile') ? (
-                      <Smartphone className="w-5 h-5" />
-                    ) : (
-                      <Laptop className="w-5 h-5" />
-                    )}
-                  </div>
-
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-xs font-bold text-white truncate">{s.device}</span>
-                      {s.current && (
-                        <span className="px-2 py-0.5 rounded text-[9px] font-extrabold uppercase bg-emerald-500/20 text-emerald-400 border border-emerald-500/40">
-                          Thiết bị này
-                        </span>
-                      )}
-                    </div>
-                    <div className="text-[11px] text-slate-400 mt-0.5 font-mono">
-                      {s.location} · IP: {s.ip} · {s.lastActive}
-                    </div>
-                  </div>
-                </div>
-
-                {!s.current && (
-                  <button
-                    type="button"
-                    onClick={() => flash(`Đã gỡ quyền truy cập của ${s.device}`)}
-                    className="text-xs text-rose-400 hover:text-rose-300 font-bold transition cursor-pointer shrink-0"
-                  >
-                    Đăng xuất
-                  </button>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Sub-tab 4: Connected Accounts & Notification Preferences */}
-      {activeSubTab === 'preferences' && (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-          {/* Connected Social Accounts */}
-          <div className="lg:col-span-6 rounded-2xl border border-slate-800 bg-slate-900 p-6 space-y-4 shadow-xl">
-            <div className="pb-3 border-b border-slate-800">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-200 flex items-center gap-2">
-                <Globe className="w-4 h-4 text-sky-400" />
-                <span>Tài khoản liên kết</span>
-              </h3>
-              <p className="text-[11px] text-slate-400 mt-0.5">
-                Đăng nhập nhanh chỉ với 1 cú click và đồng bộ danh hiệu game thủ.
-              </p>
-            </div>
-
-            <div className="space-y-3">
-              {/* Google */}
-              <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between gap-3">
-                <div className="flex items-center gap-3 min-w-0">
-                  <div className="w-8 h-8 rounded-lg bg-red-500/10 border border-red-500/30 flex items-center justify-center text-red-400 font-bold text-sm shrink-0">
-                    G
-                  </div>
-                  <div className="min-w-0">
-                    <div className="text-xs font-bold text-white">Google</div>
-                    <div className="text-[11px] text-slate-400 truncate">
-                      {profile.connectedAccounts.google.email}
-                    </div>
-                  </div>
-                </div>
-                <Pill tone="green">Đã liên kết</Pill>
-              </div>
-
-              {/* GitHub */}
-              <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between gap-3">
-                <div className="flex items-center gap-3 min-w-0">
-                  <div className="w-8 h-8 rounded-lg bg-purple-500/10 border border-purple-500/30 flex items-center justify-center text-purple-400 font-bold text-sm shrink-0">
-                    GH
-                  </div>
-                  <div className="min-w-0">
-                    <div className="text-xs font-bold text-white">GitHub</div>
-                    <div className="text-[11px] text-slate-400 truncate">
-                      @{profile.connectedAccounts.github.username}
-                    </div>
-                  </div>
-                </div>
-                <Pill tone="green">Đã liên kết</Pill>
-              </div>
-
-              {/* Discord */}
-              <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between gap-3">
-                <div className="flex items-center gap-3 min-w-0">
-                  <div className="w-8 h-8 rounded-lg bg-indigo-500/10 border border-indigo-500/30 flex items-center justify-center text-indigo-400 font-bold text-sm shrink-0">
-                    DC
-                  </div>
-                  <div className="min-w-0">
-                    <div className="text-xs font-bold text-white">Discord</div>
-                    <div className="text-[11px] text-slate-400 truncate">
-                      {profile.connectedAccounts.discord.username}
-                    </div>
-                  </div>
-                </div>
-                <Pill tone="green">Đã liên kết</Pill>
-              </div>
-
-              {/* Steam */}
-              <div className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between gap-3">
-                <div className="flex items-center gap-3 min-w-0">
-                  <div className="w-8 h-8 rounded-lg bg-sky-500/10 border border-sky-500/30 flex items-center justify-center text-sky-400 font-bold text-sm shrink-0">
-                    ST
-                  </div>
-                  <div className="min-w-0">
-                    <div className="text-xs font-bold text-white">Steam</div>
-                    <div className="text-[11px] text-slate-400 truncate">Nhận quà Gear khi liên kết</div>
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => flash('Đang chuyển hướng xác thực tài khoản Steam...')}
-                  className="px-3 py-1.5 rounded-lg bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold transition shadow-sm cursor-pointer shrink-0"
+          <div className="space-y-3 text-xs">
+            {[
+              {
+                id: 'orderUpdates',
+                title: 'Hành trình đơn hàng & Vận chuyển',
+                desc: 'Nhận thông báo khi kiện hàng được bàn giao và đang trên đường giao tới bạn.'
+              },
+              {
+                id: 'promotions',
+                title: 'Ưu đãi & Flash Sale sản phẩm',
+                desc: 'Thông báo sớm khi có chương trình khuyến mãi linh kiện và thiết bị công nghệ.'
+              },
+              {
+                id: 'warrantyAlerts',
+                title: 'Cảnh báo thời hạn bảo hành',
+                desc: 'Nhắc nhở về hạn bảo hành sản phẩm đã mua tại hệ thống.'
+              },
+              {
+                id: 'smsAlerts',
+                title: 'Tin nhắn thông báo quan trọng',
+                desc: 'Gửi tin nhắn về trạng thái thay đổi mật khẩu hoặc hoạt động bảo mật.'
+              }
+            ].map((item) => {
+              const isChecked = Boolean(profile.notification_preferences?.[item.id]);
+              return (
+                <div
+                  key={item.id}
+                  onClick={() => handleToggleNotif(item.id)}
+                  className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 hover:border-slate-700 transition cursor-pointer flex items-center justify-between gap-3"
                 >
-                  Kết nối
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Notification Preferences */}
-          <div className="lg:col-span-6 rounded-2xl border border-slate-800 bg-slate-900 p-6 space-y-4 shadow-xl">
-            <div className="pb-3 border-b border-slate-800">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-200 flex items-center gap-2">
-                <Bell className="w-4 h-4 text-sky-400" />
-                <span>Cài đặt thông báo &amp; Quyền riêng tư</span>
-              </h3>
-              <p className="text-[11px] text-slate-400 mt-0.5">
-                Tùy chỉnh các kênh bạn muốn nhận cập nhật từ Techshop.
-              </p>
-            </div>
-
-            <div className="space-y-3 text-xs">
-              {[
-                {
-                  id: 'orderUpdates',
-                  title: 'Hành trình đơn hàng & Vận chuyển',
-                  desc: 'Nhận thông báo khi kiện hàng được bàn giao và đang trên đường giao tới bạn.'
-                },
-                {
-                  id: 'promotions',
-                  title: 'Ưu đãi VIP & Flash Sale linh kiện',
-                  desc: 'Thông báo sớm 30 phút trước khi mở bán các deal VGA, màn hình OLED giá sốc.'
-                },
-                {
-                  id: 'warrantyAlerts',
-                  title: 'Cảnh báo thời hạn bảo hành thiết bị',
-                  desc: 'Nhắc nhở vệ sinh máy, tra keo tản nhiệt và kiểm tra hạn bảo hành định kỳ.'
-                },
-                {
-                  id: 'smsAlerts',
-                  title: 'Tin nhắn SMS / Zalo OA khẩn cấp',
-                  desc: 'Gửi mã xác minh OTP đơn hàng và trạng thái thay đổi mật khẩu.'
-                }
-              ].map((item) => {
-                const isChecked = Boolean(profile.notification_preferences?.[item.id]);
-                return (
+                  <div className="min-w-0 pr-2">
+                    <div className="font-bold text-white">{item.title}</div>
+                    <div className="text-[11px] text-slate-400 mt-0.5 leading-relaxed">{item.desc}</div>
+                  </div>
                   <div
-                    key={item.id}
-                    onClick={() => handleToggleNotif(item.id)}
-                    className="p-3.5 rounded-xl bg-slate-950 border border-slate-800 hover:border-slate-700 transition cursor-pointer flex items-center justify-between gap-3"
-                  >
-                    <div className="min-w-0 pr-2">
-                      <div className="font-bold text-white">{item.title}</div>
-                      <div className="text-[11px] text-slate-400 mt-0.5 leading-relaxed">{item.desc}</div>
-                    </div>
-                    <div
-                      className={`w-11 h-6 flex items-center rounded-full p-1 transition shrink-0 ${
-                        isChecked ? 'bg-sky-600 justify-end' : 'bg-slate-800 justify-start'
+                    className={`w-11 h-6 flex items-center rounded-full p-1 transition shrink-0 ${isChecked ? 'bg-sky-600 justify-end' : 'bg-slate-800 justify-start'
                       }`}
-                    >
-                      <div className="w-4 h-4 rounded-full bg-white shadow-md transition" />
-                    </div>
+                  >
+                    <div className="w-4 h-4 rounded-full bg-white shadow-md transition" />
                   </div>
-                );
-              })}
-            </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       )}
 
-      {/* Modal Add Address */}
+      {/* Modal Add / Edit Address */}
       {showAddAddressModal && (
         <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
           <form
-            onSubmit={handleAddAddress}
+            onSubmit={handleSaveAddressModal}
             className="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl text-white space-y-4"
           >
             <div className="flex items-center justify-between pb-3 border-b border-slate-800">
               <h3 className="text-sm font-bold flex items-center gap-2">
                 <MapPin className="w-4 h-4 text-emerald-400" />
-                <span>Thêm địa chỉ giao hàng mới</span>
+                <span>{editingAddressId ? 'Chỉnh sửa địa chỉ nhận hàng' : 'Thêm địa chỉ giao hàng mới'}</span>
               </h3>
               <button
                 type="button"
-                onClick={() => setShowAddAddressModal(false)}
+                onClick={() => {
+                  setShowAddAddressModal(false);
+                  setEditingAddressId(null);
+                }}
                 className="text-slate-400 hover:text-white font-bold cursor-pointer"
               >
                 ✕
@@ -2359,11 +2268,10 @@ function ProfilePanel({ user, setUser }) {
                     key={t}
                     type="button"
                     onClick={() => setNewAddr((prev) => ({ ...prev, title: t }))}
-                    className={`flex-1 py-1.5 rounded-lg text-xs font-semibold border transition cursor-pointer ${
-                      newAddr.title === t
-                        ? 'bg-sky-600/20 border-sky-500 text-sky-400'
-                        : 'bg-slate-950 border-slate-800 text-slate-400'
-                    }`}
+                    className={`flex-1 py-1.5 rounded-lg text-xs font-semibold border transition cursor-pointer ${newAddr.title === t
+                      ? 'bg-sky-600/20 border-sky-500 text-sky-400'
+                      : 'bg-slate-950 border-slate-800 text-slate-400'
+                      }`}
                   >
                     {t}
                   </button>
@@ -2377,7 +2285,7 @@ function ProfilePanel({ user, setUser }) {
                 <input
                   type="text"
                   required
-                  placeholder="VD: Đặng Minh Thuận"
+                  placeholder="VD: Nguyễn Văn A"
                   value={newAddr.recipientName}
                   onChange={(e) => setNewAddr((prev) => ({ ...prev, recipientName: e.target.value }))}
                   className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-sky-500"
@@ -2389,7 +2297,7 @@ function ProfilePanel({ user, setUser }) {
                 <input
                   type="tel"
                   required
-                  placeholder="VD: 0908 123 456"
+                  placeholder="VD: 0912 345 678"
                   value={newAddr.phone}
                   onChange={(e) => setNewAddr((prev) => ({ ...prev, phone: e.target.value }))}
                   className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-sky-500"
@@ -2422,7 +2330,10 @@ function ProfilePanel({ user, setUser }) {
             <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-800">
               <button
                 type="button"
-                onClick={() => setShowAddAddressModal(false)}
+                onClick={() => {
+                  setShowAddAddressModal(false);
+                  setEditingAddressId(null);
+                }}
                 className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold transition cursor-pointer"
               >
                 Hủy
@@ -2431,66 +2342,13 @@ function ProfilePanel({ user, setUser }) {
                 type="submit"
                 className="px-4 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold transition cursor-pointer shadow-md shadow-sky-600/20"
               >
-                Lưu địa chỉ
+                {editingAddressId ? 'Cập nhật địa chỉ' : 'Lưu địa chỉ'}
               </button>
             </div>
           </form>
         </div>
       )}
 
-      {/* Modal 2FA Details */}
-      {showTwoFactorModal && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl text-white space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-              <h3 className="text-sm font-bold flex items-center gap-2">
-                <QrCode className="w-4 h-4 text-sky-400" />
-                <span>Cấu hình Google Authenticator</span>
-              </h3>
-              <button
-                type="button"
-                onClick={() => setShowTwoFactorModal(false)}
-                className="text-slate-400 hover:text-white font-bold cursor-pointer"
-              >
-                ✕
-              </button>
-            </div>
-
-            <div className="text-center space-y-3">
-              <div className="w-40 h-40 mx-auto rounded-xl bg-white p-2.5 flex items-center justify-center shadow-lg">
-                <img
-                  src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=otpauth://totp/TechShop:thuan.dang@techshop.vn?secret=TECH7892KJ89PASS&issuer=TechShop"
-                  alt="2FA QR Code"
-                  className="w-full h-full object-contain"
-                />
-              </div>
-              <div className="text-xs text-slate-300">
-                Mã khóa bí mật: <strong className="font-mono text-sky-400">TECH-7892-KJ89-PASS</strong>
-              </div>
-            </div>
-
-            <div className="p-3 rounded-xl bg-slate-950 border border-slate-800 space-y-1.5 text-xs">
-              <div className="font-bold text-white">Mã khôi phục dự phòng:</div>
-              <div className="font-mono text-[11px] text-slate-400 grid grid-cols-2 gap-1">
-                <span>• 8912-4019</span>
-                <span>• 5821-9942</span>
-                <span>• 3310-7491</span>
-                <span>• 6428-1102</span>
-              </div>
-            </div>
-
-            <div className="flex justify-end pt-2">
-              <button
-                type="button"
-                onClick={() => setShowTwoFactorModal(false)}
-                className="px-4 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold transition cursor-pointer"
-              >
-                Đã hiểu &amp; Đóng
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
@@ -2652,11 +2510,10 @@ function ReviewsPanel({ orders }) {
                             aria-label={`${star} sao`}
                           >
                             <Star
-                              className={`w-4 h-4 ${
-                                star <= currentRating
-                                  ? 'fill-amber-400 text-amber-400'
-                                  : 'text-slate-600'
-                              }`}
+                              className={`w-4 h-4 ${star <= currentRating
+                                ? 'fill-amber-400 text-amber-400'
+                                : 'text-slate-600'
+                                }`}
                             />
                           </button>
                         ))}
@@ -2868,11 +2725,10 @@ function ChatPanel() {
               className={`flex ${m.sender === 'user' ? 'justify-end' : 'justify-start'}`}
             >
               <div
-                className={`max-w-md rounded-2xl p-3.5 text-xs leading-relaxed ${
-                  m.sender === 'user'
-                    ? 'bg-sky-600 text-white rounded-br-none shadow-md shadow-sky-600/20'
-                    : 'bg-slate-950 border border-slate-800 text-slate-200 rounded-bl-none shadow-inner'
-                }`}
+                className={`max-w-md rounded-2xl p-3.5 text-xs leading-relaxed ${m.sender === 'user'
+                  ? 'bg-sky-600 text-white rounded-br-none shadow-md shadow-sky-600/20'
+                  : 'bg-slate-950 border border-slate-800 text-slate-200 rounded-bl-none shadow-inner'
+                  }`}
               >
                 {m.text}
               </div>
@@ -2900,6 +2756,7 @@ function ChatPanel() {
     </div>
   );
 }
+
 
 /* ---------- MAIN ORDERS / DASHBOARD PAGE ---------- */
 
@@ -2941,6 +2798,9 @@ export default function OrdersPage() {
   const [cancelSubmitting, setCancelSubmitting] = useState(false);
   const [cancelError, setCancelError] = useState('');
   const [reorderingCode, setReorderingCode] = useState('');
+  const [returnModalOrder, setReturnModalOrder] = useState(null);
+  const [returnReason, setReturnReason] = useState('');
+  const [returnSubmitting, setReturnSubmitting] = useState(false);
   const awaitingRef = React.useRef(new Set());
 
   const setActiveTab = (tab) => {
@@ -2954,6 +2814,32 @@ export default function OrdersPage() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tabParam, activeTab, navigate]);
+
+  // Tự động đồng bộ thông tin hồ sơ mới nhất (avatar, họ tên...) từ database
+  useEffect(() => {
+    let active = true;
+    if (user?.id && typeof setUser === 'function') {
+      api.getProfile(user.id)
+        .then((data) => {
+          if (active && data) {
+            setUser((prev) => {
+              if (!prev) return prev;
+              const av = data.avatar_url || data.avatar || prev.avatar || prev.avatar_url;
+              return {
+                ...prev,
+                name: data.name || prev.name,
+                avatar: av,
+                avatar_url: av
+              };
+            });
+          }
+        })
+        .catch(() => {});
+    }
+    return () => {
+      active = false;
+    };
+  }, [user?.id, setUser]);
 
   const fetchOrders = useCallback(async (opts) => {
     const silent = opts?.silent === true;
@@ -3140,6 +3026,50 @@ export default function OrdersPage() {
     filteredOrders[0] ||
     orders[0];
 
+  const handleCancelRequest = async (order) => {
+    const reason = window.prompt('Nhập lý do muốn hủy đơn (tối thiểu 5 ký tự):', 'Không còn nhu cầu mua');
+    if (!reason) return;
+    try {
+      await api.requestOrderCancellation(order.orderCode || order.orderId, reason);
+      await fetchOrders({ silent: true });
+    } catch (error) {
+      window.alert(error.response?.data?.message || error.message || 'Không thể gửi yêu cầu hủy đơn.');
+    }
+  };
+
+  const handleReturnRequest = async (order) => {
+    setReturnModalOrder(order);
+    setReturnReason('');
+  };
+
+  const submitReturnRequest = async () => {
+    if (!returnModalOrder || returnReason.trim().length < 5) return;
+    try {
+      setReturnSubmitting(true);
+      const code = returnModalOrder.orderCode || returnModalOrder.orderId;
+      await api.requestReturn(code, returnReason.trim());
+      await fetchOrders({ silent: true });
+      setReturnModalOrder(null);
+      setPaidNotice(`Đã gửi yêu cầu trả hàng cho đơn ${code}. Đơn vị CSKH sẽ tiếp nhận và xử lý cho bạn.`);
+      setTimeout(() => setPaidNotice(''), 6000);
+    } catch (error) {
+      setPaidNotice(error.response?.data?.message || error.message || 'Không thể gửi yêu cầu trả hàng.');
+    } finally {
+      setReturnSubmitting(false);
+    }
+  };
+
+  const handleConfirmReceived = async () => {
+    if (!selectedOrder) return;
+    try {
+      await api.confirmCustomerDecision(selectedOrder.orderCode || selectedOrder.orderId, 'received');
+      await fetchOrders({ silent: true });
+      setPaidNotice(`Đã ghi nhận bạn nhận hàng cho đơn ${selectedOrder.orderCode || selectedOrder.orderId}.`);
+    } catch (error) {
+      setPaidNotice(error.response?.data?.message || error.message || 'Không thể xác nhận nhận hàng.');
+    }
+  };
+
   const handleCopy = (code) => {
     navigator.clipboard?.writeText(code);
     setCopiedCode(code);
@@ -3181,16 +3111,19 @@ export default function OrdersPage() {
             <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 shadow-lg">
               <div className="flex items-center gap-3.5 pb-4 mb-3 border-b border-slate-800">
                 <img
-                  src={user?.avatar || DEFAULT_AVATAR}
-                  alt={user?.name || 'Đặng Minh Thuận'}
+                  src={user?.avatar || user?.avatar_url || DEFAULT_AVATAR}
+                  alt={user?.name || 'Khách hàng'}
                   className="w-12 h-12 rounded-xl object-cover border border-slate-700 shadow-sm shrink-0"
+                  onError={(e) => {
+                    e.currentTarget.src = DEFAULT_AVATAR;
+                  }}
                 />
                 <div className="min-w-0">
-                  <div className="text-sm font-bold text-white truncate">
-                    {user?.name || 'Đặng Minh Thuận'}
+                  <div className="text-sm font-bold text-slate-100 truncate">
+                    {user?.name || 'Khách hàng'}
                   </div>
-                  <div className="text-xs font-semibold text-sky-400 mt-0.5 truncate">
-                    {user?.role || 'Thành viên VIP Diamond'}
+                  <div className="text-xs font-semibold text-sky-400 mt-0.5 truncate capitalize">
+                    {user?.role || 'Khách hàng'}
                   </div>
                 </div>
               </div>
@@ -3212,7 +3145,7 @@ export default function OrdersPage() {
                           className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition cursor-pointer ${
                             isActive
                               ? 'bg-sky-600 text-white shadow-md shadow-sky-600/20'
-                              : 'text-slate-300 hover:text-white hover:bg-slate-800/80'
+                              : 'text-slate-200 hover:text-slate-100 hover:bg-slate-800/80'
                           }`}
                         >
                           <Icon className="w-4 h-4 shrink-0" />
@@ -3255,7 +3188,7 @@ export default function OrdersPage() {
 
                 <div className="flex items-center justify-between gap-3">
                   <div>
-                    <h1 className="text-xl sm:text-2xl font-extrabold text-white">
+                    <h1 className="text-xl sm:text-2xl font-extrabold text-slate-100">
                       Đơn Hàng Của Tôi
                     </h1>
                     <p className="text-xs text-slate-400 mt-1">
@@ -3271,7 +3204,7 @@ export default function OrdersPage() {
                       onClick={fetchOrders}
                       disabled={loadingOrders}
                       title="Làm mới danh sách đơn hàng"
-                      className="p-2 rounded-xl bg-slate-900 border border-slate-800 hover:border-slate-700 text-slate-300 hover:text-white transition cursor-pointer"
+                      className="p-2 rounded-xl bg-slate-900 border border-slate-800 hover:border-slate-700 text-slate-200 hover:text-slate-100 transition cursor-pointer"
                     >
                       <RefreshCw
                         className={`w-3.5 h-3.5 ${loadingOrders ? 'animate-spin text-sky-400' : ''}`}
@@ -3333,7 +3266,7 @@ export default function OrdersPage() {
                 ) : filteredOrders.length === 0 ? (
                   <div className="rounded-2xl border border-slate-800 bg-slate-900 p-12 text-center space-y-4 shadow-xl">
                     <Package className="w-12 h-12 text-slate-600 mx-auto" />
-                    <h3 className="text-base font-bold text-white">
+                    <h3 className="text-base font-bold text-slate-100">
                       {orders.length === 0
                         ? 'Bạn chưa có đơn hàng nào'
                         : 'Không tìm thấy đơn hàng phù hợp'}
@@ -3380,11 +3313,10 @@ export default function OrdersPage() {
                         return (
                           <div
                             key={order.orderId}
-                            className={`rounded-2xl border transition-all overflow-hidden ${
-                              isOpen
-                                ? 'bg-slate-900 border-sky-500 shadow-xl shadow-sky-500/10 ring-1 ring-sky-500/30'
-                                : 'bg-slate-900/90 border-slate-800 hover:border-slate-700'
-                            }`}
+                            className={`rounded-2xl border transition-all overflow-hidden ${isOpen
+                              ? 'bg-slate-900 border-sky-500 shadow-xl shadow-sky-500/10 ring-1 ring-sky-500/30'
+                              : 'bg-slate-900/90 border-slate-800 hover:border-slate-700'
+                              }`}
                           >
                             <button
                               type="button"
@@ -3407,7 +3339,7 @@ export default function OrdersPage() {
 
                                 <div className="min-w-0">
                                   <div className="flex items-center gap-2 flex-wrap">
-                                    <span className="font-mono text-sm font-bold text-white">
+                                    <span className="font-mono text-sm font-bold text-slate-100">
                                       {order.orderId}
                                     </span>
                                     <span
@@ -3447,9 +3379,8 @@ export default function OrdersPage() {
                                   </span>
                                 </div>
                                 <div
-                                  className={`p-1 rounded-lg transition-transform ${
-                                    isOpen ? 'rotate-180 text-sky-400' : 'text-slate-500'
-                                  }`}
+                                  className={`p-1 rounded-lg transition-transform ${isOpen ? 'rotate-180 text-sky-400' : 'text-slate-500'
+                                    }`}
                                 >
                                   <ChevronDown className="w-4 h-4" />
                                 </div>
@@ -3502,7 +3433,7 @@ export default function OrdersPage() {
                                             <div className="flex items-center gap-2">
                                               <span
                                                 className={`text-xs font-bold ${
-                                                  done || isCurrent ? 'text-white' : 'text-slate-500'
+                                                  done || isCurrent ? 'text-slate-100' : 'text-slate-500'
                                                 }`}
                                               >
                                                 {step.title}
@@ -3648,7 +3579,7 @@ export default function OrdersPage() {
                                   {item.name}
                                 </Link>
                               ) : (
-                                <div className="text-xs font-bold text-white line-clamp-2 leading-tight">
+                                <div className="text-xs font-bold text-slate-100 line-clamp-2 leading-tight">
                                   {item.name}
                                 </div>
                               )}
@@ -3673,7 +3604,7 @@ export default function OrdersPage() {
                           <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
                             Thông tin nhận hàng
                           </span>
-                          <div className="text-white font-semibold flex items-center justify-between">
+                          <div className="text-slate-100 font-semibold flex items-center justify-between">
                             <span>
                               {selectedOrder.recipientName || selectedOrder.customer?.fullName}
                             </span>
@@ -3732,14 +3663,65 @@ export default function OrdersPage() {
                                 <CheckCircle2 className="w-3.5 h-3.5" /> Đã thanh toán
                               </span>
                             ) : selectedOrder.paymentStatus === 'refunded' ? (
-                              <span className="text-sky-400 font-semibold">Đã hoàn tiền</span>
+                              <span className="text-cyan-400 font-semibold flex items-center gap-1">
+                                <CheckCircle2 className="w-3.5 h-3.5" /> Đã hoàn tiền (Refunded)
+                              </span>
                             ) : (
                               <span className="text-amber-400 font-semibold">Chưa thanh toán</span>
                             )}
                           </div>
                         )}
+
+                        {selectedOrder?.shippingStatus === 'cancelled' && (
+                          <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs space-y-1">
+                            <div className="font-bold flex items-center gap-1.5 text-rose-400">
+                              <AlertCircle className="w-3.5 h-3.5" /> Đơn hàng đã bị hủy
+                            </div>
+                            {selectedOrder.cancellationReason && (
+                              <div className="text-[11px] text-slate-300">
+                                <span className="text-slate-400">Lý do:</span> {selectedOrder.cancellationReason}
+                              </div>
+                            )}
+                            {selectedOrder.paymentStatus === 'refunded' && (
+                              <div className="text-[11px] text-cyan-400 font-medium pt-0.5">
+                                ✓ Đã ghi nhận hoàn tiền về tài khoản ngân hàng của bạn.
+                              </div>
+                            )}
+                          </div>
+                        )}
+                        <div className="flex flex-wrap gap-2 pt-2">
+                              {selectedOrder?.canRequestCancellation && !selectedOrder?.cancellationRequestedAt && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleCancelRequest(selectedOrder)}
+                                  className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-[11px] font-bold text-amber-300"
+                                >
+                                  Yêu cầu hủy đơn
+                                </button>
+                              )}
+                              {selectedOrder?.shippingStatus === 'delivered' &&
+                                !selectedOrder?.customerDecision &&
+                                selectedOrder?.paymentStatus !== 'refunded' && (
+                                <>
+                                  <button
+                                    type="button"
+                                    onClick={handleConfirmReceived}
+                                    className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-[11px] font-bold text-emerald-300"
+                                  >
+                                    Đã nhận hàng
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleReturnRequest(selectedOrder)}
+                                    className="rounded-lg border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-[11px] font-bold text-rose-300"
+                                  >
+                                    Trả hàng / Refund
+                                  </button>
+                                </>
+                              )}
+                            </div>
                         <div className="flex items-center justify-between pt-2 border-t border-slate-800/80">
-                          <span className="text-sm font-bold text-white">Tổng cộng:</span>
+                          <span className="text-sm font-bold text-slate-100">Tổng cộng:</span>
                           <span className="text-base font-extrabold font-mono text-sky-400">
                             {formatVND(selectedOrder?.total)}
                           </span>
@@ -3837,6 +3819,88 @@ export default function OrdersPage() {
               </button>
             </div>
           </form>
+        </div>
+      )}
+
+      {returnModalOrder && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/75 p-4 backdrop-blur-sm animate-fade-in">
+          <div className="w-full max-w-md rounded-2xl border border-slate-700 bg-slate-900 p-5 shadow-2xl">
+            <div className="flex items-center justify-between gap-3 border-b border-slate-800 pb-3">
+              <div className="flex items-center gap-2 text-rose-400">
+                <AlertCircle className="h-5 w-5" />
+                <h2 className="text-base font-extrabold text-slate-100">Yêu cầu trả hàng / Hoàn tiền</h2>
+              </div>
+              <button
+                type="button"
+                onClick={() => setReturnModalOrder(null)}
+                className="text-slate-400 hover:text-slate-100 p-1 rounded-lg hover:bg-slate-800 transition cursor-pointer"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            
+            <p className="mt-3 text-xs text-slate-400">
+              Đơn hàng: <strong className="font-mono text-sky-400 font-bold">{returnModalOrder.orderCode || returnModalOrder.orderId}</strong>
+            </p>
+            <p className="mt-1 text-xs text-slate-400">
+              Vui lòng chọn hoặc nêu rõ lý do để nhân viên CSKH / Kho tiếp nhận thẩm định:
+            </p>
+
+            {/* Quick preset reason chips */}
+            <div className="mt-2.5 flex flex-wrap gap-1.5">
+              {[
+                'Sản phẩm bị lỗi kỹ thuật / không lên nguồn',
+                'Giao sai phiên bản hoặc mã linh kiện',
+                'Thiếu phụ kiện / cáp nguồn đi kèm',
+                'Không tương thích kích thước case/mainboard'
+              ].map((preset) => (
+                <button
+                  key={preset}
+                  type="button"
+                  onClick={() => setReturnReason(preset)}
+                  className={`text-[11px] px-2.5 py-1 rounded-lg border transition cursor-pointer ${
+                    returnReason === preset
+                      ? 'bg-rose-500/20 text-rose-300 border-rose-500/40 font-semibold'
+                      : 'bg-slate-800/80 text-slate-300 border-slate-700/60 hover:bg-slate-800'
+                  }`}
+                >
+                  {preset}
+                </button>
+              ))}
+            </div>
+
+            <textarea
+              value={returnReason}
+              onChange={(event) => setReturnReason(event.target.value)}
+              placeholder="Nhập chi tiết tình trạng sản phẩm (tối thiểu 5 ký tự)..."
+              className="mt-3 min-h-24 w-full rounded-xl border border-slate-700 bg-slate-950 p-3 text-xs text-slate-100 outline-none placeholder:text-slate-500 focus:border-rose-500"
+            />
+            
+            <div className="mt-4 flex items-center justify-end gap-2 border-t border-slate-800 pt-3">
+              <button
+                type="button"
+                onClick={() => setReturnModalOrder(null)}
+                className="rounded-xl border border-slate-700 px-4 py-2 text-xs font-bold text-slate-300 hover:bg-slate-800 transition cursor-pointer"
+              >
+                Hủy bỏ
+              </button>
+              <button
+                type="button"
+                disabled={returnSubmitting || returnReason.trim().length < 5}
+                onClick={submitReturnRequest}
+                className="rounded-xl bg-rose-600 hover:bg-rose-500 px-4 py-2 text-xs font-bold text-white transition disabled:opacity-40 cursor-pointer shadow-lg shadow-rose-600/20 flex items-center gap-1.5"
+              >
+                {returnSubmitting ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <span>Đang gửi...</span>
+                  </>
+                ) : (
+                  <span>Gửi yêu cầu đổi trả</span>
+                )}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

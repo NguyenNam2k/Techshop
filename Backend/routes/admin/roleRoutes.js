@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { verifyToken, requireRole } = require('../../middleware/authMiddleware');
+const { verifyToken, requireRole } = require('../../middlewares/authMiddleware');
 const roleController = require('../../controllers/admin/roleController');
 
 // Tất cả các route quản lý Role đều yêu cầu quyền Admin

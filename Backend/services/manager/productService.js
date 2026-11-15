@@ -530,6 +530,13 @@ class ProductService {
   }
 
   /**
+   * Get all variants with product info for inventory control & batch adjustments
+   */
+  static async getAllVariantsForInventory() {
+    return await ProductRepository.getAllVariantsForInventory();
+  }
+
+  /**
    * =========================================================================
    * TRANSACTION 4: Batch Adjust Stock / Restock
    * =========================================================================
@@ -563,16 +570,20 @@ class ProductService {
         let stockAfter;
         let quantityChanged;
 
-        if (item.new_stock !== undefined && item.new_stock !== null && item.new_stock !== '') {
-          stockAfter = parseInt(item.new_stock, 10);
+        if (item.new_stock !== undefined && item.new_stock !== null && String(item.new_stock).trim() !== '') {
+          stockAfter = parseInt(String(item.new_stock).trim(), 10);
           if (isNaN(stockAfter) || stockAfter < 0) {
             throw new Error(`Số lượng tồn kho mới phải >= 0 cho SKU: ${variant.sku}`);
           }
           quantityChanged = stockAfter - currentStock;
-        } else if (item.quantity_change !== undefined && item.quantity_change !== null) {
-          quantityChanged = parseInt(item.quantity_change, 10);
+        } else if (item.quantity_change !== undefined && item.quantity_change !== null && String(item.quantity_change).trim() !== '') {
+          const cleanQtyStr = String(item.quantity_change).trim().replace(/^\+/, '');
+          quantityChanged = parseInt(cleanQtyStr, 10);
           if (isNaN(quantityChanged)) {
             throw new Error(`Số lượng thay đổi không hợp lệ cho SKU: ${variant.sku}`);
+          }
+          if (quantityChanged === 0) {
+            throw new Error(`Số lượng thay đổi phải khác 0 cho SKU: ${variant.sku}`);
           }
           stockAfter = currentStock + quantityChanged;
           if (stockAfter < 0) {
@@ -590,7 +601,13 @@ class ProductService {
           status: newVariantStatus
         }, connection);
 
-        const newProductStatus = stockAfter > 0 ? 'active' : 'out_of_stock';
+        // Tính toán lại trạng thái chung của sản phẩm dựa trên tổng tồn kho của tất cả biến thể
+        const [stockRow] = await connection.query(
+          `SELECT COALESCE(SUM(stock), 0) as total_stock FROM product_variants WHERE product_id = ?`,
+          [variant.product_id]
+        );
+        const totalProductStock = Number(stockRow[0]?.total_stock || 0);
+        const newProductStatus = totalProductStock > 0 ? 'active' : 'out_of_stock';
         await ProductRepository.updateProductStatus(variant.product_id, newProductStatus, connection);
 
         let changeType = 'manual_adjustment';
@@ -612,11 +629,14 @@ class ProductService {
 
         results.push({
           variant_id: variantId,
+          product_id: variant.product_id,
           sku: variant.sku,
           stock_before: currentStock,
           quantity_changed: quantityChanged,
           stock_after: stockAfter,
-          status: newVariantStatus
+          status: newVariantStatus,
+          total_product_stock: totalProductStock,
+          product_status: newProductStatus
         });
       }
 
@@ -683,32 +703,49 @@ class ProductService {
    */
   static async getSimilarProducts(productId, categoryId = null, limit = 4) {
     try {
-      let targetCategoryId = categoryId;
+      const safeLimit = Math.max(1, Math.min(20, parseInt(limit, 10) || 4));
+      const isNumeric = /^\d+$/.test(String(productId).trim());
+      let currentId = isNumeric ? parseInt(productId, 10) : null;
+      let targetCategoryId = categoryId ? parseInt(categoryId, 10) : null;
 
-      if (!targetCategoryId) {
-        const [prod] = await pool.query('SELECT category_id FROM products WHERE id = ?', [productId]);
+      if (!currentId || !targetCategoryId) {
+        const [prod] = await pool.query(
+          `SELECT id, category_id FROM products WHERE ${isNumeric ? 'id = ?' : 'slug = ? OR id = ?'} LIMIT 1`,
+          isNumeric ? [currentId] : [productId, productId]
+        );
         if (prod.length > 0) {
-          targetCategoryId = prod[0].category_id;
+          currentId = prod[0].id;
+          if (!targetCategoryId) {
+            targetCategoryId = prod[0].category_id;
+          }
         }
       }
 
       let similar = [];
 
-      if (targetCategoryId) {
+      if (targetCategoryId && currentId) {
         const query = `
           SELECT p.id, p.name, p.slug, p.brand, p.model_code, p.base_price, p.thumbnail_url,
-                 c.name AS category_name,
+                 COALESCE(MAX(c.name), 'Linh kiện') AS category_name,
                  COALESCE(MIN(pv.price), p.base_price) AS min_price,
-                 COALESCE(SUM(pv.stock), 0) AS total_stock
+                 COALESCE(SUM(pv.stock), 0) AS total_stock,
+                 COALESCE(MAX(review_stats.average_rating), 5.0) AS average_rating,
+                 COALESCE(MAX(review_stats.total_reviews), 0) AS total_reviews
           FROM products p
           LEFT JOIN categories c ON p.category_id = c.id
           LEFT JOIN product_variants pv ON pv.product_id = p.id
+          LEFT JOIN (
+            SELECT product_id, AVG(rating) AS average_rating, COUNT(*) AS total_reviews
+            FROM reviews
+            WHERE status = 'approved'
+            GROUP BY product_id
+          ) review_stats ON review_stats.product_id = p.id
           WHERE p.category_id = ? AND p.id != ? AND p.status != 'archived'
           GROUP BY p.id
           ORDER BY p.id DESC
           LIMIT ?
         `;
-        const [rows] = await pool.query(query, [targetCategoryId, productId, limit]);
+        const [rows] = await pool.query(query, [targetCategoryId, currentId, safeLimit]);
         similar = rows.map(r => ({
           id: r.id,
           name: r.name,
@@ -718,35 +755,46 @@ class ProductService {
           base_price: parseFloat(r.base_price),
           min_price: parseFloat(r.min_price),
           thumbnail_url: r.thumbnail_url,
+          average_rating: Number(Number(r.average_rating).toFixed(1)),
+          total_reviews: Number(r.total_reviews) || 0,
           category_name: r.category_name,
           in_stock: Number(r.total_stock) > 0,
           match_type: 'same_category'
         }));
       }
 
-      if (similar.length >= limit) {
+      if (similar.length >= safeLimit) {
         return similar;
       }
 
-      const needed = limit - similar.length;
-      const existingIds = [productId, ...similar.map(s => s.id)];
-      const placeholders = existingIds.map(() => '?').join(',');
+      const needed = safeLimit - similar.length;
+      const existingIds = currentId ? [currentId, ...similar.map(s => s.id)] : [...similar.map(s => s.id)];
+      const placeholders = existingIds.length > 0 ? existingIds.map(() => '?').join(',') : '0';
 
-      const randomQuery = `
+      const fallbackQuery = `
         SELECT p.id, p.name, p.slug, p.brand, p.model_code, p.base_price, p.thumbnail_url,
-               c.name AS category_name,
+               COALESCE(MAX(c.name), 'Linh kiện') AS category_name,
                COALESCE(MIN(pv.price), p.base_price) AS min_price,
-               COALESCE(SUM(pv.stock), 0) AS total_stock
+               COALESCE(SUM(pv.stock), 0) AS total_stock,
+               COALESCE(MAX(review_stats.average_rating), 5.0) AS average_rating,
+               COALESCE(MAX(review_stats.total_reviews), 0) AS total_reviews
         FROM products p
         LEFT JOIN categories c ON p.category_id = c.id
         LEFT JOIN product_variants pv ON pv.product_id = p.id
-        WHERE p.id NOT IN (${placeholders}) AND p.status != 'archived'
+        LEFT JOIN (
+          SELECT product_id, AVG(rating) AS average_rating, COUNT(*) AS total_reviews
+          FROM reviews
+          WHERE status = 'approved'
+          GROUP BY product_id
+        ) review_stats ON review_stats.product_id = p.id
+        ${existingIds.length > 0 ? `WHERE p.id NOT IN (${placeholders}) AND p.status != 'archived'` : `WHERE p.status != 'archived'`}
         GROUP BY p.id
-        ORDER BY RAND()
+        ORDER BY p.id DESC
         LIMIT ?
       `;
-      const [randomRows] = await pool.query(randomQuery, [...existingIds, needed]);
-      const randomProducts = randomRows.map(r => ({
+      const params = existingIds.length > 0 ? [...existingIds, needed] : [needed];
+      const [fallbackRows] = await pool.query(fallbackQuery, params);
+      const fallbackProducts = fallbackRows.map(r => ({
         id: r.id,
         name: r.name,
         slug: r.slug,
@@ -755,15 +803,17 @@ class ProductService {
         base_price: parseFloat(r.base_price),
         min_price: parseFloat(r.min_price),
         thumbnail_url: r.thumbnail_url,
+        average_rating: Number(Number(r.average_rating).toFixed(1)),
+        total_reviews: Number(r.total_reviews) || 0,
         category_name: r.category_name,
         in_stock: Number(r.total_stock) > 0,
         match_type: 'suggested'
       }));
 
-      return [...similar, ...randomProducts];
+      return [...similar, ...fallbackProducts];
     } catch (err) {
       console.error('Error in getSimilarProducts:', err);
-      throw err;
+      return [];
     }
   }
 

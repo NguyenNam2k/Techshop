@@ -25,7 +25,7 @@ class CategoryRepository extends BaseRepository {
       LEFT JOIN categories p_parent ON c.parent_id = p_parent.id
       LEFT JOIN products p ON c.id = p.category_id
       GROUP BY c.id
-      ORDER BY c.id ASC
+      ORDER BY c.sort_order ASC, c.id ASC
     `;
     const [rows] = await pool.query(query);
     return rows;
@@ -74,7 +74,7 @@ class CategoryRepository extends BaseRepository {
       LEFT JOIN products p ON c.id = p.category_id
       ${whereClause}
       GROUP BY c.id
-      ORDER BY c.id ASC
+      ORDER BY c.sort_order ASC, c.id ASC
       LIMIT ? OFFSET ?
     `;
 

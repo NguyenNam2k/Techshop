@@ -14,8 +14,8 @@ class StaffRepository extends BaseRepository {
 
   static async findByAccount(account) {
     const [rows] = await pool.query(
-      'SELECT id, username, staff_code, email, password_hash, full_name as name, status FROM staffs WHERE username = ? OR staff_code = ?',
-      [account, account]
+      'SELECT id, username, staff_code, email, password_hash, full_name as name, status, department FROM staffs WHERE username = ? OR staff_code = ? OR email = ?',
+      [account, account, account]
     );
     return rows[0] || null;
   }
@@ -277,9 +277,12 @@ class StaffRepository extends BaseRepository {
         t.*,
         s.full_name AS staff_name,
         s.department AS staff_department,
-        s.staff_code
+        s.staff_code,
+        COALESCE(m.full_name, 'Trần Quốc Khánh (Shop Manager)') AS manager_name,
+        COALESCE(m.manager_code, 'MGR001') AS manager_code
       FROM staff_tasks t
-      JOIN staffs s ON t.staff_id = s.id
+      LEFT JOIN staffs s ON t.staff_id = s.id
+      LEFT JOIN managers m ON t.manager_id = m.id
       WHERE 1=1
     `;
     const params = [];

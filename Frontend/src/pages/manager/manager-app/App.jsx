@@ -35,7 +35,7 @@ export default function App({ user: propUser, onLogout: propLogout }) {
       try {
         localStorage.removeItem('token');
         localStorage.removeItem('user');
-      } catch (e) {}
+      } catch (e) { }
       window.location.href = '/login';
     }
   };

@@ -125,37 +125,33 @@ export default function Sidebar({
                   key={item.id}
                   type="button"
                   onClick={() => onSelectView(item.id)}
-                  className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all text-left group ${
-                    isActive
-                      ? 'bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 shadow-md shadow-cyan-500/10 font-semibold'
-                      : 'text-slate-300 hover:text-white hover:bg-slate-800/60 border border-transparent'
-                  }`}
+                  className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all text-left group ${isActive
+                    ? 'bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 shadow-md shadow-cyan-500/10 font-semibold'
+                    : 'text-slate-300 hover:text-white hover:bg-slate-800/60 border border-transparent'
+                    }`}
                 >
                   <Icon
-                    className={`w-4 h-4 shrink-0 transition-colors ${
-                      isActive ? 'text-cyan-400' : 'text-slate-400 group-hover:text-cyan-300'
-                    }`}
+                    className={`w-4 h-4 shrink-0 transition-colors ${isActive ? 'text-cyan-400' : 'text-slate-400 group-hover:text-cyan-300'
+                      }`}
                   />
                   <span className="truncate">{item.label}</span>
 
                   {/* Badges / indicators */}
                   {item.count !== undefined ? (
                     <span
-                      className={`ml-auto text-xs px-2 py-0.5 rounded-full font-mono shrink-0 ${
-                        isActive
-                          ? 'bg-cyan-950 text-cyan-300 border border-cyan-800/60'
-                          : 'bg-slate-800 text-slate-400 border border-slate-700/60'
-                      }`}
+                      className={`ml-auto text-xs px-2 py-0.5 rounded-full font-mono shrink-0 ${isActive
+                        ? 'bg-cyan-950 text-cyan-300 border border-cyan-800/60'
+                        : 'bg-slate-800 text-slate-400 border border-slate-700/60'
+                        }`}
                     >
                       {item.count}
                     </span>
                   ) : item.badge ? (
                     <span
-                      className={`ml-auto text-[10px] font-mono px-2 py-0.5 rounded-full shrink-0 ${
-                        isActive
-                          ? 'bg-cyan-500/25 text-cyan-200 border border-cyan-400/40'
-                          : 'bg-slate-800 text-slate-400 border border-slate-700/40'
-                      }`}
+                      className={`ml-auto text-[10px] font-mono px-2 py-0.5 rounded-full shrink-0 ${isActive
+                        ? 'bg-cyan-500/25 text-cyan-200 border border-cyan-400/40'
+                        : 'bg-slate-800 text-slate-400 border border-slate-700/40'
+                        }`}
                     >
                       {item.badge}
                     </span>
@@ -187,18 +183,16 @@ export default function Sidebar({
             type="button"
             onClick={onToggleTheme}
             title={theme === 'dark' ? 'Bật chế độ Sáng' : 'Bật chế độ Tối'}
-            className={`w-11 h-6 rounded-full transition-colors relative focus:outline-none p-0.5 cursor-pointer ${
-              theme === 'dark'
-                ? 'bg-cyan-950 border border-cyan-500/40'
-                : 'bg-slate-300 border border-slate-400'
-            }`}
+            className={`w-11 h-6 rounded-full transition-colors relative focus:outline-none p-0.5 cursor-pointer ${theme === 'dark'
+              ? 'bg-cyan-950 border border-cyan-500/40'
+              : 'bg-slate-300 border border-slate-400'
+              }`}
           >
             <span
-              className={`w-5 h-5 rounded-full shadow-sm block transform transition-transform duration-200 flex items-center justify-center ${
-                theme === 'dark'
-                  ? 'translate-x-5 bg-cyan-400 text-slate-950'
-                  : 'translate-x-0 bg-white text-amber-500'
-              }`}
+              className={`w-5 h-5 rounded-full shadow-sm block transform transition-transform duration-200 flex items-center justify-center ${theme === 'dark'
+                ? 'translate-x-5 bg-cyan-400 text-slate-950'
+                : 'translate-x-0 bg-white text-amber-500'
+                }`}
             >
               {theme === 'dark' ? (
                 <Moon className="w-2.5 h-2.5 text-slate-950" />

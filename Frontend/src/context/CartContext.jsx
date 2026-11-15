@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { api } from '../services/api';
+import { useAuth } from './AuthContext';
 import { isSingleConfigurationProduct } from '../components/pdp/VariantSelector';
 
 const CartContext = createContext();
@@ -128,6 +129,7 @@ function saveLocalCart(items) {
 }
 
 export function CartProvider({ children }) {
+  const { user } = useAuth();
   const [cartItems, setCartItems] = useState(() => loadLocalCart());
   const [loading, setLoading] = useState(false);
 
@@ -175,7 +177,7 @@ export function CartProvider({ children }) {
 
   useEffect(() => {
     refreshCart();
-  }, [refreshCart]);
+  }, [refreshCart, user?.id]);
 
   const addToCart = async (product, variant, quantity = 1) => {
     const chosenVariant = variant || product?.variants?.[0] || {};

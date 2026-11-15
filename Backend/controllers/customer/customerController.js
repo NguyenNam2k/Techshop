@@ -1,127 +1,8 @@
 const bcrypt = require('bcryptjs');
-const pool = require('../../config/db');
 const jwt = require('jsonwebtoken');
+const { pool } = require('../../config/database');
+const couponService = require('../../services/customer/couponService');
 const { uploadToCloudinary, isCloudinaryConfigured } = require('../../config/cloudinary');
-
-const DEFAULT_ADDRESSES = [];
-
-const DEFAULT_PAYMENT_METHODS = [
-  {
-    id: 'pay-1',
-    type: 'vietqr',
-    bankName: 'MBBank (Ngân hàng Quân Đội)',
-    accountNumber: '0358599999',
-    accountName: 'CONG TY TNHH TECHSHOP VIET NAM',
-    isDefault: true,
-    note: 'Chuyển khoản VietQR tự động xác nhận tức thì'
-  },
-  {
-    id: 'pay-2',
-    type: 'bank',
-    bankName: 'Vietcombank (VCB Digital)',
-    accountNumber: '001100438912',
-    accountName: 'ĐẶNG MINH THUẬN',
-    isDefault: false,
-    note: 'Tài khoản hoàn tiền & nhận chiết khấu'
-  },
-  {
-    id: 'pay-3',
-    type: 'card',
-    cardBrand: 'Visa Infinite Gaming',
-    last4: '8821',
-    expiry: '08/29',
-    cardHolder: 'DANG MINH THUAN',
-    isDefault: false,
-    note: 'Thanh toán quốc tế 1-Click'
-  }
-];
-
-const DEFAULT_WISHLIST = [
-  {
-    id: 15,
-    productId: 15,
-    variantId: 15,
-    name: 'Chuột Gaming Không Dây Logitech G Pro X Superlight 2 DEX White',
-    variant: 'Trắng Tuyết (White) - 44K DPI HERO 2 Sensor',
-    price: 3490000,
-    originalPrice: 3890000,
-    image: 'https://images.unsplash.com/photo-1615663245857-ac93bb7c39e7?w=400&auto=format&fit=crop&q=80',
-    stock: 12,
-    rating: 4.9
-  },
-  {
-    id: 17,
-    productId: 17,
-    variantId: 17,
-    name: 'Màn Hình Gaming ASUS ROG Swift OLED 240Hz 0.03ms Ultra-Low Latency',
-    variant: '27 Inch 2K OLED (2560x1440) 240Hz',
-    price: 14990000,
-    originalPrice: 17500000,
-    image: 'https://images.unsplash.com/photo-1527443224154-c4a3942d3acf?w=400&auto=format&fit=crop&q=80',
-    stock: 5,
-    rating: 5.0
-  },
-  {
-    id: 14,
-    productId: 14,
-    variantId: 14,
-    name: 'Bàn Phím Cơ Custom Keychron Q1 Pro QMK/VIA Full Nhôm CNC',
-    variant: 'Bạc Trắng (Silver) - Kailh Banana Tactile Switch',
-    price: 4490000,
-    originalPrice: 4890000,
-    image: 'https://images.unsplash.com/photo-1587829741301-dc798b83add3?w=400&auto=format&fit=crop&q=80',
-    stock: 8,
-    rating: 4.8
-  },
-  {
-    id: 1,
-    productId: 1,
-    variantId: 1,
-    name: 'VGA ASUS ROG Strix GeForce RTX 4090 OC 24GB GDDR6X',
-    variant: 'Bản Ép Xung OC - 3 Quạt Axial-tech',
-    price: 36680000,
-    originalPrice: 39990000,
-    image: 'https://images.unsplash.com/photo-1587202372775-e229f172b9d7?w=400&auto=format&fit=crop&q=80',
-    stock: 2,
-    rating: 5.0
-  }
-];
-
-const DEFAULT_PC_BUILDS = [
-  {
-    id: 'build-1',
-    name: 'ROG Apex Ultra 4K Gaming & Render',
-    description: 'Cấu hình đỉnh cao cân mọi tựa game 4K Ray Tracing và Render 3D Blender.',
-    wattage: 780,
-    totalPrice: 94500000,
-    updatedAt: '18/10/2026',
-    components: [
-      { type: 'CPU', name: 'Intel Core i9-14900K 24 Nhân 32 Luồng 6.0GHz', price: 14890000 },
-      { type: 'VGA', name: 'ASUS ROG Strix GeForce RTX 4090 OC 24GB GDDR6X', price: 36680000 },
-      { type: 'Mainboard', name: 'ASUS ROG MAXIMUS Z790 DARK HERO DDR5', price: 17290000 },
-      { type: 'RAM', name: 'Corsair Dominator Titanium RGB 64GB (2x32GB) 6400MHz', price: 7890000 },
-      { type: 'SSD', name: 'Samsung 990 Pro 2TB PCIe Gen4 NVMe M.2 7450MB/s', price: 4690000 },
-      { type: 'Nguồn (PSU)', name: 'ASUS ROG Thor 1000W Platinum II OLED Aura Sync', price: 8390000 },
-      { type: 'Vỏ Case', name: 'Lian Li O11 Dynamic EVO RGB Modern Dual-Chamber Black', price: 4690000 }
-    ]
-  },
-  {
-    id: 'build-2',
-    name: 'Compact ITX Silent Workstation & Code',
-    description: 'Dàn máy nhỏ gọn đặt bàn học, tối ưu tản nhiệt êm ái cho lập trình viên.',
-    wattage: 520,
-    totalPrice: 48200000,
-    updatedAt: '12/10/2026',
-    components: [
-      { type: 'CPU', name: 'AMD Ryzen 7 7800X3D 8 Nhân 16 Luồng Gaming King', price: 10490000 },
-      { type: 'VGA', name: 'MSI GeForce RTX 4070 Ti SUPER 16G Ventus 3X', price: 22490000 },
-      { type: 'Mainboard', name: 'ASUS ROG STRIX B650E-I GAMING WIFI Mini-ITX', price: 8190000 },
-      { type: 'RAM', name: 'G.Skill Flare X5 32GB (2x16GB) DDR5 6000MHz', price: 3190000 },
-      { type: 'SSD', name: 'Kingston KC3000 1TB PCIe 4.0 NVMe 7000MB/s', price: 2190000 },
-      { type: 'Nguồn (PSU)', name: 'Corsair SF750 80 Plus Platinum SFX Modular', price: 3990000 }
-    ]
-  }
-];
 
 function parseJsonField(val, fallback) {
   if (!val) return fallback;
@@ -133,317 +14,700 @@ function parseJsonField(val, fallback) {
   }
 }
 
+function formatWishlistRow(row) {
+  const price = Number(row.variant_price ?? row.base_price ?? 0);
+  const basePrice = Number(row.base_price ?? price);
+  const stock = Number(row.variant_stock ?? 0);
+  const isAvailable =
+    row.product_status === 'active' &&
+    row.variant_status !== 'discontinued' &&
+    stock > 0;
+
+  const variantParts = [row.color, row.spec_version].filter(
+    (v) => v && v !== 'Tiêu chuẩn' && v !== 'Bản tiêu chuẩn'
+  );
+  const variantLabel =
+    variantParts.length > 0
+      ? variantParts.join(' - ')
+      : [row.color, row.spec_version].filter(Boolean).join(' - ') || 'Bản tiêu chuẩn';
+
+  return {
+    id: Number(row.wishlist_id),
+    wishlistId: Number(row.wishlist_id),
+    productId: Number(row.product_id),
+    variantId: row.resolved_variant_id ? Number(row.resolved_variant_id) : null,
+    slug: row.slug || '',
+    name: row.product_name,
+    brand: row.brand || 'TechShop',
+    categoryName: row.category_name || '',
+    sku: row.sku || '',
+    variant: variantLabel,
+    color: row.color || 'Tiêu chuẩn',
+    specVersion: row.spec_version || 'Bản tiêu chuẩn',
+    price,
+    originalPrice: basePrice > price ? basePrice : price,
+    image: row.image_url || '',
+    stock,
+    productStatus: row.product_status,
+    variantStatus: row.variant_status || 'available',
+    isAvailable,
+    addedAt: row.created_at ? new Date(row.created_at).toISOString() : new Date().toISOString()
+  };
+}
+
+async function fetchCustomerWishlist(connection, customerId) {
+  const [rows] = await connection.query(
+    `SELECT
+       w.id AS wishlist_id,
+       w.product_id,
+       w.variant_id,
+       w.created_at,
+       p.name AS product_name,
+       p.slug,
+       p.brand,
+       p.base_price,
+       p.thumbnail_url,
+       p.status AS product_status,
+       c.name AS category_name,
+       pv.id AS resolved_variant_id,
+       pv.sku,
+       pv.color,
+       pv.spec_version,
+       pv.price AS variant_price,
+       pv.stock AS variant_stock,
+       pv.status AS variant_status,
+       COALESCE(
+         pv.image_url,
+         p.thumbnail_url,
+         (SELECT pi.image_url FROM product_images pi
+          WHERE pi.product_id = p.id
+          ORDER BY pi.is_primary DESC, pi.sort_order ASC, pi.id ASC LIMIT 1)
+       ) AS image_url
+     FROM wishlists w
+     JOIN products p ON p.id = w.product_id
+     LEFT JOIN categories c ON c.id = p.category_id
+     LEFT JOIN product_variants pv ON pv.id = COALESCE(
+       w.variant_id,
+       (SELECT pv2.id FROM product_variants pv2
+        WHERE pv2.product_id = p.id
+        ORDER BY pv2.stock DESC, pv2.id ASC LIMIT 1)
+     )
+     WHERE w.customer_id = ?
+     ORDER BY w.created_at DESC, w.id DESC`,
+    [Number(customerId)]
+  );
+  return rows.map(formatWishlistRow);
+}
+
+function resolveVoucherStatus(row) {
+  const today = couponService.getTodayDateString ? couponService.getTodayDateString() : new Date().toISOString().slice(0, 10);
+  const startStr = couponService.toDateOnlyString ? couponService.toDateOnlyString(row.start_date) : String(row.start_date || '').slice(0, 10);
+  const endStr = couponService.toDateOnlyString ? couponService.toDateOnlyString(row.end_date) : String(row.end_date || '').slice(0, 10);
+  const usageLimit = Number(row.usage_limit || 0);
+  const usedCount = Number(row.used_count || 0);
+
+  if (row.used_at) return 'used';
+  if (Number(row.is_active) === 0) return 'disabled';
+  if (endStr && today > endStr) return 'expired';
+  if (usageLimit > 0 && usedCount >= usageLimit) return 'exhausted';
+  if (startStr && today < startStr) return 'upcoming';
+  return 'available';
+}
+
+function formatCouponItem(row, savedMeta = null) {
+  const isPercent = row.discount_type === 'percent' || row.discount_type === 'percentage';
+  const maxDiscount = row.max_discount_amount == null ? null : Number(row.max_discount_amount);
+  const usageLimit = Number(row.usage_limit || 0);
+  const usedCount = Number(row.used_count || 0);
+  const merged = savedMeta ? { ...row, ...savedMeta } : row;
+  const status = resolveVoucherStatus(merged);
+
+  return {
+    id: Number(row.id),
+    code: row.code,
+    description:
+      row.description ||
+      `Giảm ${isPercent ? `${Number(row.discount_value)}%` : `${Number(row.discount_value).toLocaleString('vi-VN')}₫`}`,
+    discount_type: isPercent ? 'percentage' : 'fixed',
+    discount_value: Number(row.discount_value),
+    min_order_value: Number(row.min_order_value || 0),
+    max_discount_amount: maxDiscount && maxDiscount > 0 ? maxDiscount : null,
+    usage_limit: usageLimit,
+    used_count: usedCount,
+    remaining_uses: usageLimit > 0 ? Math.max(0, usageLimit - usedCount) : null,
+    start_date: couponService.toDateOnlyString ? couponService.toDateOnlyString(row.start_date) : row.start_date,
+    end_date: couponService.toDateOnlyString ? couponService.toDateOnlyString(row.end_date) : row.end_date,
+    is_active: Number(row.is_active) === 1,
+    status,
+    is_saved: Boolean(savedMeta || row.saved_id),
+    is_used: Boolean(merged.used_at),
+    saved_at: merged.saved_at ? new Date(merged.saved_at).toISOString() : null,
+    used_at: merged.used_at ? new Date(merged.used_at).toISOString() : null,
+    used_order_code: merged.used_order_code || null
+  };
+}
+
+async function fetchCustomerVouchersData(connection, customerId) {
+  const [savedRows] = await connection.query(
+    `SELECT
+       cv.id AS saved_id,
+       cv.saved_at,
+       cv.used_at,
+       cv.used_order_code,
+       c.*
+     FROM customer_vouchers cv
+     JOIN coupons c ON c.id = cv.coupon_id
+     WHERE cv.customer_id = ?
+     ORDER BY (cv.used_at IS NOT NULL) ASC, c.is_active DESC, c.end_date ASC, cv.saved_at DESC`,
+    [Number(customerId)]
+  );
+
+  const savedByCouponId = new Map(savedRows.map((r) => [Number(r.id), r]));
+  const saved = savedRows.map((row) => formatCouponItem(row, row));
+
+  const [publicRows] = await connection.query(
+    `SELECT *
+     FROM coupons
+     WHERE is_active = 1
+       AND (start_date IS NULL OR start_date <= CURDATE())
+       AND (end_date IS NULL OR end_date >= CURDATE())
+       AND (usage_limit IS NULL OR usage_limit = 0 OR used_count < usage_limit)
+     ORDER BY discount_value DESC, id ASC`
+  );
+
+  const discover = publicRows.map((row) =>
+    formatCouponItem(row, savedByCouponId.get(Number(row.id)) || null)
+  );
+
+  return { saved, discover };
+}
+
+function getAuthenticatedCustomerId(req) {
+  if (req.user && (req.user.role === 'customer' || !req.user.role)) {
+    const id = Number(req.user.id);
+    if (Number.isInteger(id) && id > 0) return id;
+  }
+  const fallbackId = Number(req.body?.id || req.query?.id);
+  if (Number.isInteger(fallbackId) && fallbackId > 0) return fallbackId;
+  return null;
+}
+
 async function getProfile(req, res) {
   try {
-    const customerId = req.query.id || (req.user && req.user.id) || 1;
+    const customerId = getAuthenticatedCustomerId(req);
+    if (!customerId) {
+      return res.status(401).json({ success: false, message: 'Vui lòng đăng nhập tài khoản khách hàng.' });
+    }
+
     const [rows] = await pool.query(
-      `SELECT id, name, email, phone, address, avatar_url, birth_date, gender, bio,
-              two_factor_enabled, notification_preferences, saved_addresses,
-              saved_payment_methods, wishlist, pc_builds, points, saved_vouchers,
-              google_id, password_hash,
-              created_at, updated_at
+      `SELECT id, name, username, email, phone, address, avatar_url, status, created_at, updated_at,
+              birth_date, gender, bio, two_factor_enabled, notification_preferences, saved_addresses,
+              saved_payment_methods, wishlist, pc_builds, points, saved_vouchers, support_tickets, product_reviews
        FROM customers WHERE id = ? LIMIT 1`,
       [customerId]
     );
-
-    let orderCount = 0;
-    let totalSpent = 0;
-    try {
-      const [orderStats] = await pool.query(
-        `SELECT 
-           COUNT(id) as count,
-           COALESCE(SUM(CASE WHEN payment_status = 'paid' AND shipping_status IN ('delivered', 'completed') THEN final_amount ELSE 0 END), 0) as total
-         FROM orders 
-         WHERE customer_id = ? OR (recipient_phone = ? AND recipient_phone != '')`,
-        [customerId, rows[0]?.phone || '']
-      );
-      if (orderStats.length > 0) {
-        orderCount = Number(orderStats[0].count) || 0;
-        totalSpent = Number(orderStats[0].total) || 0;
-      }
-    } catch {
-      // ignore
-    }
-
     if (!rows.length) {
-      return res.status(200).json({
-        success: true,
-        data: {
-          id: customerId,
-          name: '',
-          email: '',
-          phone: '',
-          address: '',
-          avatar_url: '',
-          birth_date: '',
-          gender: 'male',
-          bio: '',
-          role: 'customer',
-          memberTier: 'Khách hàng thành viên',
-          points: 0,
-          totalSpent: 0,
-          orderCount: 0,
-          hasPassword: false,
-          isGoogleAccount: false,
-          two_factor_enabled: false,
-          notification_preferences: {
-            orderUpdates: true,
-            promotions: true,
-            warrantyAlerts: true,
-            smsAlerts: false
-          },
-          savedAddresses: [],
-          savedPaymentMethods: [],
-          wishlist: [],
-          pcBuilds: [],
-          savedVouchers: [],
-          supportTickets: null,
-          productReviews: null
-        }
-      });
+      return res.status(404).json({ success: false, message: 'Không tìm thấy thông tin khách hàng.' });
     }
 
     const customer = rows[0];
-    const savedAddresses = parseJsonField(customer.saved_addresses, []);
-    const savedPaymentMethods = parseJsonField(customer.saved_payment_methods, []);
-    const wishlist = parseJsonField(customer.wishlist, []);
-    const pcBuilds = parseJsonField(customer.pc_builds, []);
-    const savedVouchers = parseJsonField(customer.saved_vouchers, []);
-    const supportTickets = null;
-    const productReviews = null;
-    const notifPrefs = parseJsonField(customer.notification_preferences, {
-      orderUpdates: true,
-      promotions: true,
-      warrantyAlerts: true,
-      smsAlerts: false
-    });
+    const [orderStats] = await pool.query(
+      `SELECT COUNT(*) AS count, COALESCE(SUM(final_amount), 0) AS total
+       FROM orders
+       WHERE customer_id = ? AND shipping_status != 'cancelled'`,
+      [customerId]
+    );
+    const orderCount = Number(orderStats[0]?.count || 0);
+    const totalSpent = Number(orderStats[0]?.total || 0);
 
-    let birthDateStr = '';
-    if (customer.birth_date) {
-      birthDateStr = customer.birth_date instanceof Date
-        ? customer.birth_date.toISOString().slice(0, 10)
-        : String(customer.birth_date).slice(0, 10);
+    let wishlist = [];
+    try {
+      wishlist = await fetchCustomerWishlist(pool, customerId);
+    } catch {
+      wishlist = parseJsonField(customer.wishlist, []);
     }
 
-    // Tính toán cấp bậc thành viên thực tế dựa trên số tiền tích lũy
-    let memberTier = 'Khách hàng thành viên';
-    if (totalSpent >= 50000000) {
-      memberTier = 'Thành viên VIP Diamond';
-    } else if (totalSpent >= 20000000) {
-      memberTier = 'Thành viên VIP Gold';
-    } else if (totalSpent >= 5000000) {
-      memberTier = 'Thành viên Bạc';
+    let vouchers = { saved: [], discover: [] };
+    try {
+      vouchers = await fetchCustomerVouchersData(pool, customerId);
+    } catch {
+      vouchers = { saved: [], discover: [] };
     }
 
     return res.status(200).json({
       success: true,
       data: {
-        id: customer.id,
+        id: Number(customer.id),
         name: customer.name || '',
+        username: customer.username || '',
         email: customer.email || '',
         phone: customer.phone || '',
         address: customer.address || '',
         avatar_url: customer.avatar_url || '',
-        birth_date: birthDateStr,
-        gender: customer.gender || 'male',
+        status: customer.status,
+        created_at: customer.created_at,
+        birthDate: customer.birth_date ? new Date(customer.birth_date).toISOString().slice(0, 10) : '',
+        gender: customer.gender || '',
         bio: customer.bio || '',
-        role: 'customer',
-        memberTier,
-        points: customer.points != null ? Number(customer.points) : 0,
-        totalSpent,
+        twoFactorEnabled: Boolean(customer.two_factor_enabled),
+        notificationPreferences: parseJsonField(customer.notification_preferences, {
+          orderUpdates: true,
+          promotions: false,
+          securityAlerts: true,
+          newsletter: false
+        }),
+        savedAddresses: parseJsonField(customer.saved_addresses, []),
+        savedPaymentMethods: parseJsonField(customer.saved_payment_methods, []),
+        pcBuilds: parseJsonField(customer.pc_builds, []),
+        supportTickets: parseJsonField(customer.support_tickets, []),
+        productReviews: parseJsonField(customer.product_reviews, {}),
         orderCount,
-        hasPassword: Boolean(customer.password_hash && customer.password_hash.trim().length > 0),
-        isGoogleAccount: Boolean(customer.google_id),
-        two_factor_enabled: Boolean(customer.two_factor_enabled),
-        notification_preferences: notifPrefs,
-        savedAddresses,
-        savedPaymentMethods,
+        totalSpent,
+        points: customer.points != null ? Number(customer.points) : Math.floor(totalSpent / 100000),
         wishlist,
-        pcBuilds,
-        savedVouchers,
-        supportTickets,
-        productReviews,
-        created_at: customer.created_at
+        savedVouchers: vouchers.saved.map((v) => v.code),
+        vouchers
       }
     });
   } catch (error) {
     console.error('Error fetching customer profile:', error);
-    return res.status(500).json({ success: false, message: 'Lỗi tải thông tin hồ sơ.' });
+    return res.status(500).json({ success: false, message: 'Lỗi tải thông tin hồ sơ khách hàng.' });
   }
 }
 
 async function updateProfile(req, res) {
   try {
-    const customerId = req.body.id || req.query.id || (req.user && req.user.id) || 1;
+    const customerId = getAuthenticatedCustomerId(req);
+    if (!customerId) {
+      return res.status(401).json({ success: false, message: 'Vui lòng đăng nhập tài khoản khách hàng.' });
+    }
+
     const {
       name,
       email,
       phone,
       address,
-      birth_date,
       birthDate,
       gender,
       bio,
-      avatar_url,
-      avatarUrl,
-      two_factor_enabled,
       twoFactorEnabled,
-      notification_preferences,
       notificationPreferences,
-      saved_addresses,
-      savedAddresses,
-      saved_payment_methods,
-      savedPaymentMethods,
-      wishlist,
-      pc_builds,
-      pcBuilds,
-      points,
-      saved_vouchers,
-      savedVouchers
-    } = req.body;
-
-    const finalBirthDate = birth_date || birthDate || null;
-    const finalAvatarUrl = avatar_url || avatarUrl || null;
-    const final2FA =
-      two_factor_enabled !== undefined
-        ? (two_factor_enabled ? 1 : 0)
-        : twoFactorEnabled !== undefined
-        ? (twoFactorEnabled ? 1 : 0)
-        : null;
-
-    const notifObj = notification_preferences || notificationPreferences;
-    const finalNotifs = notifObj !== undefined ? JSON.stringify(notifObj) : null;
-
-    const addrsObj = saved_addresses || savedAddresses;
-    const finalAddrs = addrsObj !== undefined ? JSON.stringify(addrsObj) : null;
-
-    const paysObj = saved_payment_methods || savedPaymentMethods;
-    const finalPays = paysObj !== undefined ? JSON.stringify(paysObj) : null;
-
-    const wishObj = wishlist;
-    const finalWish = wishObj !== undefined ? JSON.stringify(wishObj) : null;
-
-    const buildsObj = pc_builds || pcBuilds;
-    const finalBuilds = buildsObj !== undefined ? JSON.stringify(buildsObj) : null;
-
-    const vouchObj = saved_vouchers || savedVouchers;
-    const finalVouch = vouchObj !== undefined ? JSON.stringify(vouchObj) : null;
+      avatar_url,
+      avatarUrl
+    } = req.body || {};
+    const finalAvatar = avatar_url ?? avatarUrl ?? null;
 
     await pool.query(
       `UPDATE customers SET
-        name = COALESCE(?, name),
-        email = COALESCE(?, email),
-        phone = COALESCE(?, phone),
-        address = COALESCE(?, address),
-        birth_date = COALESCE(?, birth_date),
-        gender = COALESCE(?, gender),
-        bio = COALESCE(?, bio),
-        avatar_url = COALESCE(?, avatar_url),
-        two_factor_enabled = COALESCE(?, two_factor_enabled),
-        notification_preferences = COALESCE(?, notification_preferences),
-        saved_addresses = COALESCE(?, saved_addresses),
-        saved_payment_methods = COALESCE(?, saved_payment_methods),
-        wishlist = COALESCE(?, wishlist),
-        pc_builds = COALESCE(?, pc_builds),
-        points = COALESCE(?, points),
-        saved_vouchers = COALESCE(?, saved_vouchers),
-        updated_at = NOW()
+         name = COALESCE(?, name),
+         email = COALESCE(?, email),
+         phone = COALESCE(?, phone),
+         address = COALESCE(?, address),
+         birth_date = COALESCE(?, birth_date),
+         gender = COALESCE(?, gender),
+         bio = COALESCE(?, bio),
+         two_factor_enabled = COALESCE(?, two_factor_enabled),
+         notification_preferences = COALESCE(?, notification_preferences),
+         avatar_url = COALESCE(?, avatar_url),
+         updated_at = NOW()
        WHERE id = ?`,
       [
-        name !== undefined ? name : null,
-        email !== undefined ? email : null,
-        phone !== undefined ? phone : null,
-        address !== undefined ? address : null,
-        finalBirthDate,
+        name !== undefined ? String(name).trim() : null,
+        email !== undefined ? String(email).trim() : null,
+        phone !== undefined ? String(phone).trim() : null,
+        address !== undefined ? String(address).trim() : null,
+        birthDate ? birthDate : null,
         gender !== undefined ? gender : null,
         bio !== undefined ? bio : null,
-        finalAvatarUrl,
-        final2FA,
-        finalNotifs,
-        finalAddrs,
-        finalPays,
-        finalWish,
-        finalBuilds,
-        points !== undefined ? Number(points) : null,
-        finalVouch,
+        twoFactorEnabled !== undefined ? (twoFactorEnabled ? 1 : 0) : null,
+        notificationPreferences ? JSON.stringify(notificationPreferences) : null,
+        finalAvatar !== null ? String(finalAvatar).trim() : null,
         customerId
       ]
     );
 
-    return res.status(200).json({
-      success: true,
-      message: 'Cập nhật cơ sở dữ liệu thành công!'
-    });
+    return getProfile(req, res);
   } catch (error) {
     console.error('Error updating customer profile in DB:', error);
-    return res.status(500).json({ success: false, message: 'Không thể cập nhật hồ sơ trong DB.' });
+    return res.status(500).json({ success: false, message: 'Không thể cập nhật hồ sơ khách hàng.' });
   }
 }
 
 async function changePassword(req, res) {
   try {
-    const customerId = req.body.id || req.query.id || (req.user && req.user.id) || 1;
-    const { currentPassword, newPassword } = req.body;
-
-    if (!newPassword || newPassword.length < 8) {
-      return res.status(400).json({
-        success: false,
-        message: 'Mật khẩu mới phải có tối thiểu 8 ký tự.'
-      });
+    const customerId = getAuthenticatedCustomerId(req);
+    if (!customerId) {
+      return res.status(401).json({ success: false, message: 'Vui lòng đăng nhập.' });
+    }
+    const { currentPassword, newPassword } = req.body || {};
+    if (!newPassword || String(newPassword).length < 6) {
+      return res.status(400).json({ success: false, message: 'Mật khẩu mới phải có tối thiểu 6 ký tự.' });
     }
 
     const [rows] = await pool.query(
-      'SELECT id, password_hash, google_id FROM customers WHERE id = ? LIMIT 1',
+      'SELECT password_hash FROM customers WHERE id = ? LIMIT 1',
       [customerId]
     );
-
     if (!rows.length) {
-      return res.status(404).json({ success: false, message: 'Không tìm thấy tài khoản khách hàng.' });
+      return res.status(404).json({ success: false, message: 'Tài khoản không tồn tại.' });
     }
 
-    const customer = rows[0];
-    const hasExistingPassword = Boolean(customer.password_hash && customer.password_hash.trim().length > 0);
-
-    if (hasExistingPassword) {
-      if (!currentPassword) {
-        return res.status(400).json({
-          success: false,
-          message: 'Vui lòng nhập mật khẩu hiện tại.'
-        });
-      }
-      const isMatch = await bcrypt.compare(currentPassword, customer.password_hash);
-      if (!isMatch) {
-        return res.status(400).json({
-          success: false,
-          message: 'Mật khẩu hiện tại không chính xác.'
-        });
+    if (rows[0].password_hash && currentPassword) {
+      const valid = await bcrypt.compare(String(currentPassword), rows[0].password_hash);
+      if (!valid) {
+        return res.status(400).json({ success: false, message: 'Mật khẩu hiện tại không chính xác.' });
       }
     }
 
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(newPassword, salt);
+    const hash = await bcrypt.hash(String(newPassword), 10);
+    await pool.query('UPDATE customers SET password_hash = ?, updated_at = NOW() WHERE id = ?', [
+      hash,
+      customerId
+    ]);
+    return res.status(200).json({ success: true, message: 'Đổi mật khẩu thành công!' });
+  } catch (error) {
+    console.error('Error changing password:', error);
+    return res.status(500).json({ success: false, message: 'Không thể đổi mật khẩu.' });
+  }
+}
 
-    await pool.query(
-      'UPDATE customers SET password_hash = ?, password_changed_at = NOW(), updated_at = NOW() WHERE id = ?',
-      [hashedPassword, customerId]
-    );
-
+async function getWishlist(req, res) {
+  try {
+    const customerId = getAuthenticatedCustomerId(req);
+    if (!customerId) {
+      return res.status(401).json({ success: false, message: 'Vui lòng đăng nhập để xem danh sách yêu thích.' });
+    }
+    const wishlist = await fetchCustomerWishlist(pool, customerId);
     return res.status(200).json({
       success: true,
-      message: hasExistingPassword
-        ? 'Đổi mật khẩu thành công!'
-        : 'Thiết lập mật khẩu thành công! Giờ đây bạn có thể đăng nhập bằng cả Google và Email + Mật khẩu này.',
-      hasPassword: true
+      count: wishlist.length,
+      data: wishlist
     });
   } catch (error) {
-    console.error('Error changing customer password:', error);
-    return res.status(500).json({ success: false, message: 'Không thể cập nhật mật khẩu.' });
+    console.error('Error loading customer wishlist:', error);
+    return res.status(500).json({ success: false, message: 'Không thể tải danh sách yêu thích từ cơ sở dữ liệu.' });
+  }
+}
+
+async function resolveProductAndVariant(connection, productId, variantId) {
+  let cleanProductId = Number(productId) || null;
+  let cleanVariantId = Number(variantId) || null;
+
+  if (!cleanProductId && cleanVariantId) {
+    const [vRows] = await connection.query(
+      'SELECT product_id FROM product_variants WHERE id = ? LIMIT 1',
+      [cleanVariantId]
+    );
+    cleanProductId = vRows[0]?.product_id ? Number(vRows[0].product_id) : null;
+  }
+
+  if (!cleanProductId) return null;
+
+  const [pRows] = await connection.query('SELECT id FROM products WHERE id = ? LIMIT 1', [cleanProductId]);
+  if (!pRows.length) return null;
+
+  if (cleanVariantId) {
+    const [vRows] = await connection.query(
+      'SELECT id FROM product_variants WHERE id = ? AND product_id = ? LIMIT 1',
+      [cleanVariantId, cleanProductId]
+    );
+    if (!vRows.length) cleanVariantId = null;
+  }
+
+  if (!cleanVariantId) {
+    const [vDefault] = await connection.query(
+      'SELECT id FROM product_variants WHERE product_id = ? ORDER BY stock DESC, id ASC LIMIT 1',
+      [cleanProductId]
+    );
+    cleanVariantId = vDefault[0]?.id ? Number(vDefault[0].id) : null;
+  }
+
+  return { productId: cleanProductId, variantId: cleanVariantId };
+}
+
+async function addToWishlist(req, res) {
+  try {
+    const customerId = getAuthenticatedCustomerId(req);
+    if (!customerId) {
+      return res.status(401).json({ success: false, message: 'Vui lòng đăng nhập để lưu sản phẩm yêu thích.' });
+    }
+
+    const resolved = await resolveProductAndVariant(
+      pool,
+      req.body?.productId ?? req.body?.id,
+      req.body?.variantId
+    );
+    if (!resolved) {
+      return res.status(404).json({ success: false, message: 'Không tìm thấy sản phẩm hợp lệ trong cơ sở dữ liệu.' });
+    }
+
+    await pool.query(
+      `INSERT INTO wishlists (customer_id, product_id, variant_id)
+       VALUES (?, ?, ?)
+       ON DUPLICATE KEY UPDATE variant_id = VALUES(variant_id), updated_at = NOW()`,
+      [customerId, resolved.productId, resolved.variantId]
+    );
+
+    const wishlist = await fetchCustomerWishlist(pool, customerId);
+    return res.status(200).json({
+      success: true,
+      wishlisted: true,
+      message: 'Đã lưu sản phẩm vào danh sách yêu thích.',
+      data: wishlist
+    });
+  } catch (error) {
+    console.error('Error adding to wishlist:', error);
+    return res.status(500).json({ success: false, message: 'Không thể lưu sản phẩm yêu thích.' });
+  }
+}
+
+async function toggleWishlist(req, res) {
+  try {
+    const customerId = getAuthenticatedCustomerId(req);
+    if (!customerId) {
+      return res.status(401).json({ success: false, message: 'Vui lòng đăng nhập để lưu sản phẩm yêu thích.' });
+    }
+
+    const resolved = await resolveProductAndVariant(
+      pool,
+      req.body?.productId ?? req.body?.id,
+      req.body?.variantId
+    );
+    if (!resolved) {
+      return res.status(404).json({ success: false, message: 'Không tìm thấy sản phẩm hợp lệ trong cơ sở dữ liệu.' });
+    }
+
+    const [existing] = await pool.query(
+      'SELECT id FROM wishlists WHERE customer_id = ? AND product_id = ? LIMIT 1',
+      [customerId, resolved.productId]
+    );
+
+    let wishlisted = false;
+    if (existing.length > 0) {
+      await pool.query('DELETE FROM wishlists WHERE id = ?', [existing[0].id]);
+      wishlisted = false;
+    } else {
+      await pool.query(
+        'INSERT INTO wishlists (customer_id, product_id, variant_id) VALUES (?, ?, ?)',
+        [customerId, resolved.productId, resolved.variantId]
+      );
+      wishlisted = true;
+    }
+
+    const wishlist = await fetchCustomerWishlist(pool, customerId);
+    return res.status(200).json({
+      success: true,
+      wishlisted,
+      message: wishlisted
+        ? 'Đã thêm sản phẩm vào danh sách yêu thích.'
+        : 'Đã bỏ sản phẩm khỏi danh sách yêu thích.',
+      data: wishlist
+    });
+  } catch (error) {
+    console.error('Error toggling wishlist:', error);
+    return res.status(500).json({ success: false, message: 'Không thể cập nhật danh sách yêu thích.' });
+  }
+}
+
+async function removeFromWishlist(req, res) {
+  try {
+    const customerId = getAuthenticatedCustomerId(req);
+    if (!customerId) {
+      return res.status(401).json({ success: false, message: 'Vui lòng đăng nhập.' });
+    }
+
+    const targetId = Number(req.params.productId);
+    if (!Number.isInteger(targetId) || targetId <= 0) {
+      return res.status(400).json({ success: false, message: 'Mã sản phẩm không hợp lệ.' });
+    }
+
+    const [result] = await pool.query(
+      'DELETE FROM wishlists WHERE customer_id = ? AND (product_id = ? OR id = ?)',
+      [customerId, targetId, targetId]
+    );
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ success: false, message: 'Sản phẩm không có trong danh sách yêu thích.' });
+    }
+
+    const wishlist = await fetchCustomerWishlist(pool, customerId);
+    return res.status(200).json({
+      success: true,
+      message: 'Đã xóa sản phẩm khỏi danh sách yêu thích.',
+      data: wishlist
+    });
+  } catch (error) {
+    console.error('Error removing from wishlist:', error);
+    return res.status(500).json({ success: false, message: 'Không thể xóa sản phẩm khỏi danh sách yêu thích.' });
+  }
+}
+
+async function updateWishlist(req, res) {
+  const customerId = getAuthenticatedCustomerId(req);
+  if (!customerId) {
+    return res.status(401).json({ success: false, message: 'Vui lòng đăng nhập.' });
+  }
+
+  const { wishlist } = req.body || {};
+  if (!Array.isArray(wishlist)) {
+    return res.status(400).json({ success: false, message: 'Danh sách yêu thích không hợp lệ.' });
+  }
+
+  const connection = await pool.getConnection();
+  try {
+    await connection.beginTransaction();
+    await connection.query('DELETE FROM wishlists WHERE customer_id = ?', [customerId]);
+
+    for (const item of wishlist) {
+      const pId = typeof item === 'object' ? item?.productId ?? item?.id : item;
+      const vId = typeof item === 'object' ? item?.variantId : null;
+      const resolved = await resolveProductAndVariant(connection, pId, vId);
+      if (resolved) {
+        await connection.query(
+          `INSERT INTO wishlists (customer_id, product_id, variant_id)
+           VALUES (?, ?, ?)
+           ON DUPLICATE KEY UPDATE variant_id = VALUES(variant_id)`,
+          [customerId, resolved.productId, resolved.variantId]
+        );
+      }
+    }
+
+    await connection.commit();
+    const updated = await fetchCustomerWishlist(connection, customerId);
+    return res.status(200).json({
+      success: true,
+      message: 'Đã đồng bộ danh sách yêu thích với cơ sở dữ liệu.',
+      data: updated
+    });
+  } catch (error) {
+    await connection.rollback();
+    console.error('Error syncing wishlist:', error);
+    return res.status(500).json({ success: false, message: 'Lỗi cập nhật danh sách yêu thích.' });
+  } finally {
+    connection.release();
+  }
+}
+
+async function getVouchers(req, res) {
+  try {
+    const customerId = getAuthenticatedCustomerId(req);
+    if (!customerId) {
+      return res.status(401).json({ success: false, message: 'Vui lòng đăng nhập để xem kho voucher.' });
+    }
+
+    const data = await fetchCustomerVouchersData(pool, customerId);
+    return res.status(200).json({
+      success: true,
+      data
+    });
+  } catch (error) {
+    console.error('Error loading customer vouchers:', error);
+    return res.status(500).json({ success: false, message: 'Không thể tải kho voucher từ cơ sở dữ liệu.' });
+  }
+}
+
+async function saveVoucher(req, res) {
+  try {
+    const customerId = getAuthenticatedCustomerId(req);
+    if (!customerId) {
+      return res.status(401).json({ success: false, message: 'Vui lòng đăng nhập để lưu mã giảm giá.' });
+    }
+
+    const cleanCode = String(req.body?.code || '').trim().toUpperCase();
+    if (!cleanCode) {
+      return res.status(400).json({ success: false, message: 'Vui lòng nhập mã voucher.' });
+    }
+
+    const coupon = await couponService.findCoupon(pool, cleanCode);
+    if (!coupon) {
+      return res.status(404).json({
+        success: false,
+        message: `Mã voucher "${cleanCode}" không tồn tại trên hệ thống.`
+      });
+    }
+
+    if (typeof couponService.evaluateCouponAvailability === 'function') {
+      const availability = couponService.evaluateCouponAvailability(coupon);
+      if (!availability.valid) {
+        return res.status(400).json({
+          success: false,
+          message: availability.message
+        });
+      }
+    }
+
+    const [existing] = await pool.query(
+      'SELECT id, used_at FROM customer_vouchers WHERE customer_id = ? AND coupon_id = ? LIMIT 1',
+      [customerId, coupon.id]
+    );
+    if (existing.length > 0) {
+      const data = await fetchCustomerVouchersData(pool, customerId);
+      return res.status(200).json({
+        success: true,
+        alreadySaved: true,
+        message: existing[0].used_at
+          ? `Bạn đã sử dụng mã "${cleanCode}" trước đó.`
+          : `Mã "${cleanCode}" đã có trong kho voucher của bạn.`,
+        data
+      });
+    }
+
+    await pool.query(
+      'INSERT INTO customer_vouchers (customer_id, coupon_id) VALUES (?, ?)',
+      [customerId, coupon.id]
+    );
+
+    const data = await fetchCustomerVouchersData(pool, customerId);
+    return res.status(201).json({
+      success: true,
+      alreadySaved: false,
+      message: `Đã lưu mã giảm giá "${cleanCode}" vào ví của bạn!`,
+      data
+    });
+  } catch (error) {
+    console.error('Error saving voucher in DB:', error);
+    return res.status(500).json({ success: false, message: 'Lỗi lưu voucher vào cơ sở dữ liệu.' });
+  }
+}
+
+async function removeSavedVoucher(req, res) {
+  try {
+    const customerId = getAuthenticatedCustomerId(req);
+    if (!customerId) {
+      return res.status(401).json({ success: false, message: 'Vui lòng đăng nhập.' });
+    }
+
+    const couponId = Number(req.params.couponId);
+    if (!Number.isInteger(couponId) || couponId <= 0) {
+      return res.status(400).json({ success: false, message: 'Mã voucher không hợp lệ.' });
+    }
+
+    const [rows] = await pool.query(
+      'SELECT id, used_at FROM customer_vouchers WHERE customer_id = ? AND coupon_id = ? LIMIT 1',
+      [customerId, couponId]
+    );
+    if (!rows.length) {
+      return res.status(404).json({ success: false, message: 'Voucher không tồn tại trong ví của bạn.' });
+    }
+    if (rows[0].used_at) {
+      return res.status(400).json({ success: false, message: 'Không thể xóa voucher đã được sử dụng cho đơn hàng.' });
+    }
+
+    await pool.query('DELETE FROM customer_vouchers WHERE id = ?', [rows[0].id]);
+    const data = await fetchCustomerVouchersData(pool, customerId);
+    return res.status(200).json({
+      success: true,
+      message: 'Đã gỡ voucher khỏi ví.',
+      data
+    });
+  } catch (error) {
+    console.error('Error removing saved voucher:', error);
+    return res.status(500).json({ success: false, message: 'Không thể gỡ voucher.' });
   }
 }
 
 async function updateAddresses(req, res) {
   try {
-    const customerId = req.body.id || req.query.id || (req.user && req.user.id) || 1;
+    const customerId = getAuthenticatedCustomerId(req);
     const { addresses } = req.body;
     if (!Array.isArray(addresses)) {
       return res.status(400).json({ success: false, message: 'Danh sách địa chỉ không hợp lệ.' });
@@ -478,7 +742,7 @@ async function updateAddresses(req, res) {
 
 async function updatePaymentMethods(req, res) {
   try {
-    const customerId = req.body.id || req.query.id || 1;
+    const customerId = getAuthenticatedCustomerId(req);
     const { methods } = req.body;
     if (!Array.isArray(methods)) {
       return res.status(400).json({ success: false, message: 'Phương thức thanh toán không hợp lệ.' });
@@ -500,33 +764,9 @@ async function updatePaymentMethods(req, res) {
   }
 }
 
-async function updateWishlist(req, res) {
-  try {
-    const customerId = req.body.id || req.query.id || 1;
-    const { wishlist } = req.body;
-    if (!Array.isArray(wishlist)) {
-      return res.status(400).json({ success: false, message: 'Danh sách yêu thích không hợp lệ.' });
-    }
-
-    await pool.query(
-      'UPDATE customers SET wishlist = ?, updated_at = NOW() WHERE id = ?',
-      [JSON.stringify(wishlist), customerId]
-    );
-
-    return res.status(200).json({
-      success: true,
-      message: 'Đã cập nhật danh sách yêu thích trong database!',
-      data: wishlist
-    });
-  } catch (error) {
-    console.error('Error updating wishlist in DB:', error);
-    return res.status(500).json({ success: false, message: 'Lỗi cập nhật yêu thích vào DB.' });
-  }
-}
-
 async function updatePCBuilds(req, res) {
   try {
-    const customerId = req.body.id || req.query.id || 1;
+    const customerId = getAuthenticatedCustomerId(req);
     const { pcBuilds } = req.body;
     if (!Array.isArray(pcBuilds)) {
       return res.status(400).json({ success: false, message: 'Cấu hình PC không hợp lệ.' });
@@ -548,41 +788,10 @@ async function updatePCBuilds(req, res) {
   }
 }
 
-async function saveVoucher(req, res) {
-  try {
-    const customerId = req.body.id || req.query.id || 1;
-    const { code } = req.body;
-    if (!code) {
-      return res.status(400).json({ success: false, message: 'Mã voucher không được để trống.' });
-    }
-
-    const [rows] = await pool.query('SELECT saved_vouchers FROM customers WHERE id = ? LIMIT 1', [customerId]);
-    const current = parseJsonField(rows[0]?.saved_vouchers, []);
-    const cleanCode = String(code).trim().toUpperCase();
-
-    if (!current.includes(cleanCode)) {
-      current.push(cleanCode);
-      await pool.query('UPDATE customers SET saved_vouchers = ?, updated_at = NOW() WHERE id = ?', [
-        JSON.stringify(current),
-        customerId
-      ]);
-    }
-
-    return res.status(200).json({
-      success: true,
-      message: `Đã lưu mã voucher "${cleanCode}" vào database!`,
-      data: current
-    });
-  } catch (error) {
-    console.error('Error saving voucher in DB:', error);
-    return res.status(500).json({ success: false, message: 'Lỗi lưu voucher vào DB.' });
-  }
-}
-
 async function redeemPoints(req, res) {
   try {
-    const customerId = req.body.id || req.query.id || 1;
-    const { cost, rewardTitle } = req.body;
+    const customerId = getAuthenticatedCustomerId(req);
+    const { cost } = req.body;
     const pointCost = Number(cost) || 0;
 
     const [rows] = await pool.query('SELECT points, saved_vouchers FROM customers WHERE id = ? LIMIT 1', [customerId]);
@@ -606,58 +815,32 @@ async function redeemPoints(req, res) {
       message: `Đổi quà thành công! Đã trừ ${pointCost} điểm trong database.`,
       data: {
         points: newPoints,
-        voucherCode: newVoucherCode,
-        rewardTitle
+        savedVouchers: currentVouchers,
+        newCode: newVoucherCode
       }
     });
   } catch (error) {
     console.error('Error redeeming points in DB:', error);
-    return res.status(500).json({ success: false, message: 'Lỗi đổi điểm trong DB.' });
+    return res.status(500).json({ success: false, message: 'Lỗi đổi điểm vào DB.' });
   }
 }
 
 async function createTicket(req, res) {
   try {
-    const customerId = req.body.id || req.query.id || 1;
+    const customerId = getAuthenticatedCustomerId(req);
     const { subject, priority } = req.body;
     if (!subject || !subject.trim()) {
       return res.status(400).json({ success: false, message: 'Nội dung ticket không được để trống.' });
     }
 
     const [rows] = await pool.query('SELECT support_tickets FROM customers WHERE id = ? LIMIT 1', [customerId]);
-    const current = parseJsonField(rows[0]?.support_tickets, [
-      {
-        id: 'TK-1042',
-        subject: 'RTX 4070 Super lỗi artifact sau 2 tuần',
-        customer: 'Đặng Minh Thuận',
-        priority: 'Cao',
-        status: 'open',
-        date: '19/10/2026'
-      },
-      {
-        id: 'TK-1038',
-        subject: 'Hỏi tương thích RAM DDR5 với mainboard B650',
-        customer: 'Đặng Minh Thuận',
-        priority: 'Thấp',
-        status: 'progress',
-        date: '14/10/2026'
-      },
-      {
-        id: 'TK-1021',
-        subject: 'Đổi switch bàn phím cơ sang Kailh tactile',
-        customer: 'Đặng Minh Thuận',
-        priority: 'Trung bình',
-        status: 'closed',
-        date: '02/10/2026'
-      }
-    ]);
+    const current = parseJsonField(rows[0]?.support_tickets, []);
     const newTicket = {
-      id: `TK-${1043 + current.length}`,
+      id: `TK-${Math.floor(1000 + Math.random() * 9000)}`,
       subject: subject.trim(),
-      customer: 'Đặng Minh Thuận',
       priority: priority || 'Trung bình',
       status: 'open',
-      date: 'Hôm nay'
+      date: new Date().toLocaleDateString('vi-VN')
     };
     current.unshift(newTicket);
 
@@ -666,20 +849,20 @@ async function createTicket(req, res) {
       customerId
     ]);
 
-    return res.status(200).json({
+    return res.status(201).json({
       success: true,
-      message: 'Mở ticket thành công và đã lưu vào cơ sở dữ liệu!',
-      data: newTicket
+      message: 'Đã tạo ticket khiếu nại thành công!',
+      data: current
     });
   } catch (error) {
     console.error('Error creating ticket in DB:', error);
-    return res.status(500).json({ success: false, message: 'Lỗi tạo ticket trong DB.' });
+    return res.status(500).json({ success: false, message: 'Lỗi tạo ticket vào DB.' });
   }
 }
 
 async function submitReview(req, res) {
   try {
-    const customerId = req.body.id || req.query.id || 1;
+    const customerId = getAuthenticatedCustomerId(req);
     const { key, rating, comment } = req.body;
     if (!key) {
       return res.status(400).json({ success: false, message: 'Thiếu thông tin sản phẩm đánh giá.' });
@@ -709,11 +892,6 @@ async function submitReview(req, res) {
   }
 }
 
-
-/**
- * Upload ảnh đại diện khách hàng (Customer Avatar)
- * POST /api/customer/profile/avatar
- */
 async function uploadAvatar(req, res) {
   try {
     if (!req.file) {
@@ -738,7 +916,6 @@ async function uploadAvatar(req, res) {
 
     let avatarUrl = '/uploads/avatars/' + req.file.filename;
 
-    // Nếu cấu hình Cloudinary sẵn sàng -> tải lên CDN Cloudinary
     if (typeof isCloudinaryConfigured === 'function' && isCloudinaryConfigured()) {
       try {
         const cloudRes = await uploadToCloudinary(req.file.path, 'techshop/avatars');
@@ -750,7 +927,6 @@ async function uploadAvatar(req, res) {
       }
     }
 
-    // Cập nhật đường dẫn avatar vào database
     await pool.query('UPDATE customers SET avatar_url = ?, updated_at = NOW() WHERE id = ?', [avatarUrl, customerId]);
 
     return res.status(200).json({
@@ -771,11 +947,17 @@ module.exports = {
   getProfile,
   updateProfile,
   changePassword,
+  getWishlist,
+  addToWishlist,
+  toggleWishlist,
+  removeFromWishlist,
+  updateWishlist,
+  getVouchers,
+  saveVoucher,
+  removeSavedVoucher,
   updateAddresses,
   updatePaymentMethods,
-  updateWishlist,
   updatePCBuilds,
-  saveVoucher,
   redeemPoints,
   createTicket,
   submitReview,

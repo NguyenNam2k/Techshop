@@ -11,6 +11,8 @@ import {
   CheckCircle2,
   Loader2
 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 import { api } from '../../services/api';
 
 const AddToCartSection = ({
@@ -21,6 +23,8 @@ const AddToCartSection = ({
   onBuyNow,
   onToast
 }) => {
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const activeVariant = variant || selectedVariant;
   const [quantity, setQuantity] = useState(1);
   const maxStock = Number(activeVariant?.stock || 0);
@@ -42,33 +46,32 @@ const AddToCartSection = ({
     setSubscribed(false);
   }, [activeVariant?.id]);
 
-  // Check if this item is in the user's wishlist
+  // Check if this item is in the customer's DB wishlist
   useEffect(() => {
-    try {
-      const stored = JSON.parse(localStorage.getItem('techgear_wishlist') || '[]');
-      const exists = stored.some(
-        (item) =>
-          item.id === productId ||
-          item.productId === productId ||
-          item.variantId === variantId
-      );
-      setIsWishlisted(exists);
-    } catch {
-      // ignore
+    let active = true;
+    if (!user || user.role !== 'customer') {
+      setIsWishlisted(false);
+      return undefined;
     }
-  }, [productId, variantId]);
+    api
+      .getWishlist()
+      .then((list) => {
+        if (!active || !Array.isArray(list)) return;
+        const exists = list.some((item) => Number(item.productId) === Number(productId));
+        setIsWishlisted(exists);
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, [productId, user]);
 
   // Pre-fill user email if logged in
   useEffect(() => {
-    try {
-      const user = JSON.parse(localStorage.getItem('techgear_user') || 'null');
-      if (user?.email) {
-        setNotifyEmail(user.email);
-      }
-    } catch {
-      // ignore
+    if (user?.email) {
+      setNotifyEmail(user.email);
     }
-  }, []);
+  }, [user?.email]);
 
   const handleQuantityChange = (change) => {
     const newQuantity = quantity + change;
@@ -78,56 +81,33 @@ const AddToCartSection = ({
   };
 
   const handleToggleWishlist = async () => {
+    if (!user) {
+      if (onToast) onToast('Vui lòng đăng nhập tài khoản khách hàng để lưu yêu thích.');
+      navigate('/login');
+      return;
+    }
+    if (user.role !== 'customer') {
+      if (onToast) onToast('Chỉ tài khoản khách hàng mới có thể sử dụng danh sách yêu thích.');
+      return;
+    }
     try {
-      const stored = JSON.parse(localStorage.getItem('techgear_wishlist') || '[]');
-      const itemKey = `${productId}-${variantId}`;
-      const existingIdx = stored.findIndex(
-        (i) => (i.id === productId && i.variantId === variantId) || i.itemKey === itemKey
-      );
-
-      let updated;
-      let nextState;
-
-      if (existingIdx >= 0) {
-        updated = stored.filter((_, idx) => idx !== existingIdx);
-        nextState = false;
-        if (onToast) onToast('Đã xóa sản phẩm khỏi danh sách yêu thích.');
-      } else {
-        const newItem = {
-          id: productId,
-          productId,
-          variantId,
-          itemKey,
-          name: product?.name || 'Sản phẩm Techshop',
-          variant: activeVariant
-            ? `${activeVariant.color || ''} - ${activeVariant.spec_version || ''}`.trim()
-            : 'Bản tiêu chuẩn',
-          price: Number(activeVariant?.price || product?.base_price || 0),
-          originalPrice: Number(product?.base_price || activeVariant?.price || 0),
-          image:
-            product?.thumbnail_url ||
-            product?.images?.[0]?.image_url ||
-            'https://images.unsplash.com/photo-1587202372775-e229f172b9d7?w=400',
-          stock: maxStock,
-          rating: 5.0,
-          addedAt: new Date().toISOString()
-        };
-        updated = [newItem, ...stored];
-        nextState = true;
-        if (onToast) onToast(`Đã thêm "${product?.name || 'sản phẩm'}" vào danh sách yêu thích`);
-      }
-
-      localStorage.setItem('techgear_wishlist', JSON.stringify(updated));
+      const res = await api.toggleWishlistItem({
+        productId: Number(productId),
+        variantId: activeVariant?.id ? Number(activeVariant.id) : null
+      });
+      const nextState = Boolean(res?.wishlisted);
       setIsWishlisted(nextState);
-
-      // Best effort sync with backend
-      try {
-        await api.updateWishlist?.(updated);
-      } catch {
-        // silent fallback to local storage
+      if (onToast) {
+        onToast(
+          nextState
+            ? `Đã lưu "${product?.name || 'sản phẩm'}" vào danh sách yêu thích`
+            : 'Đã bỏ sản phẩm khỏi danh sách yêu thích.'
+        );
       }
     } catch (err) {
-      console.warn('Lỗi cập nhật wishlist:', err);
+      if (onToast) {
+        onToast(err.response?.data?.message || err.message || 'Không thể cập nhật yêu thích.');
+      }
     }
   };
 
